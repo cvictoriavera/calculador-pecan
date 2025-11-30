@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Puedes dejar tu CSS personalizado (como el de Vite) debajo de estas líneas */
