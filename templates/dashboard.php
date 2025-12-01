@@ -10,9 +10,10 @@ if (!is_user_logged_in()) {
     exit;
 }
 
-// Leer el manifest de Vite para obtener los assets correctos
+// Detectar modo: si existe manifest, usar producción; sino, desarrollo
 $manifest_path = CALCULADOR_PECAN_PLUGIN_DIR . 'dist/.vite/manifest.json';
 if (file_exists($manifest_path)) {
+    // Modo producción: cargar desde manifest
     $manifest = json_decode(file_get_contents($manifest_path), true);
     if ($manifest && isset($manifest['index.html'])) {
         $entry = $manifest['index.html'];
@@ -24,6 +25,10 @@ if (file_exists($manifest_path)) {
             }
         }
     }
+} else {
+    // Modo desarrollo: cargar desde servidor Vite
+    wp_enqueue_script('vite-client', 'http://localhost:5173/@vite/client', [], null, true);
+    wp_enqueue_script('calculador-pecan-main', 'http://localhost:5173/src/main.tsx', ['vite-client'], null, true);
 }
 
 // Salida minimalista sin header/footer de WordPress
@@ -37,7 +42,7 @@ if (file_exists($manifest_path)) {
     <?php wp_head(); ?>
 </head>
 <body>
-    <div id="calculador-pecan-root"></div>
+    <div id="root"></div>
     <?php wp_footer(); ?>
 </body>
 </html>
