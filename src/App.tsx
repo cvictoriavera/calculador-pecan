@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -26,7 +26,7 @@ function ProtectedRoutes() {
   return (
     <Routes>
           <Route
-            path="/calculador-pecan/"
+            path="/"
             element={
               <Layout>
                 <Dashboard />
@@ -34,7 +34,7 @@ function ProtectedRoutes() {
             }
           />
           <Route
-            path="/calculador-pecan/montes"
+            path="/montes"
             element={
               <Layout>
                 <Montes />
@@ -84,12 +84,12 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </TooltipProvider>
     </AppProvider>
   </QueryClientProvider>
