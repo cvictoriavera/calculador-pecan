@@ -1,0 +1,77 @@
+PS C:\Users\cvict\Local Sites\testcappecan\app\public\wp-content\plugins\calculador-pecan> npm run build
+
+> calculador-pecan@1.0.0 build
+> tsc -b && vite build
+
+src/components/AppSidebar.tsx:30:9 - error TS6133: 'isActive' is declared but its value is never read.
+
+30   const isActive = (path: string) => {
+           ~~~~~~~~
+
+src/components/EditMonteDialog.tsx:18:10 - error TS1484: 'Monte' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+18 import { Monte, useApp } from "@/contexts/AppContext";
+            ~~~~~
+
+src/components/Layout.tsx:3:10 - error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+3 import { ReactNode } from "react";
+           ~~~~~~~~~
+
+src/components/NavLink.tsx:1:36 - error TS1484: 'NavLinkProps' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+1 import { NavLink as RouterNavLink, NavLinkProps } from "react-router-dom";
+                                     ~~~~~~~~~~~~
+
+src/components/ui/calendar.tsx:45:20 - error TS6133: '_props' is declared but its value is never read.
+
+45         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
+                      ~~~~~~~~~~~~~
+
+src/components/ui/calendar.tsx:46:21 - error TS6133: '_props' is declared but its value is never read.
+
+46         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+                       ~~~~~~~~~~~~~
+
+src/components/ui/form.tsx:4:22 - error TS1484: 'ControllerProps' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+4 import { Controller, ControllerProps, FieldPath, FieldValues, FormProvider, useFormContext } from "react-hook-form";
+                       ~~~~~~~~~~~~~~~
+
+src/components/ui/form.tsx:4:39 - error TS1484: 'FieldPath' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+4 import { Controller, ControllerProps, FieldPath, FieldValues, FormProvider, useFormContext } from "react-hook-form";
+                                        ~~~~~~~~~
+
+src/components/ui/form.tsx:4:50 - error TS1484: 'FieldValues' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+4 import { Controller, ControllerProps, FieldPath, FieldValues, FormProvider, useFormContext } from "react-hook-form";
+                                                   ~~~~~~~~~~~
+
+src/components/ui/pagination.tsx:5:10 - error TS1484: 'ButtonProps' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+5 import { ButtonProps, buttonVariants } from "@/components/ui/button";
+           ~~~~~~~~~~~
+
+src/components/ui/sidebar.tsx:3:10 - error TS1484: 'VariantProps' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+3 import { VariantProps, cva } from "class-variance-authority";
+           ~~~~~~~~~~~~
+
+src/contexts/AppContext.tsx:1:47 - error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+1 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+                                                ~~~~~~~~~
+
+src/pages/Montes.tsx:6:18 - error TS1484: 'Monte' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+
+6 import { useApp, Monte } from "@/contexts/AppContext";
+                   ~~~~~
+
+src/pages/Montes.tsx:19:9 - error TS6133: 'currentYear' is declared but its value is never read.
+
+19   const currentYear = new Date().getFullYear();
+           ~~~~~~~~~~~
+
+
+Found 14 errors.

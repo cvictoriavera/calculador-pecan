@@ -2,4 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Puedes dejar tu CSS personalizado (como el de Vite) debajo de estas líneas */
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* PecanManager Color System - AgroTech Theme */
+    --background: 30 67% 97%; /* cream */
+    --foreground: 6 5% 17%; /* dark-brown */
+
+    --card: 0 0% 100%;
+    --card-foreground: 6 5% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 6 5% 17%;
+
+    --primary: 10 15% 31%; /* chocolate */
+    --primary-foreground: 30 67% 97%;
+
+    --secondary: 39 85% 89%; /* beige */
+    --secondary-foreground: 6 5% 17%;
+
+    --muted: 39 85% 89%;
+    --muted-foreground: 10 14% 45%; /* cocoa */
+
+    --accent: 28 55% 52%; /* pecan */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 39 100% 49%; /* camel */
+    --warning-foreground: 6 5% 17%;
+
+    --border: 10 14% 45%; /* cocoa */
+    --input: 39 85% 89%;
+    --ring: 28 55% 52%; /* pecan */
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 6 5% 17%; /* dark-brown */
+    --sidebar-foreground: 30 67% 97%;
+    --sidebar-primary: 28 55% 52%; /* pecan */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 10 15% 31%; /* chocolate */
+    --sidebar-accent-foreground: 30 67% 97%;
+    --sidebar-border: 10 14% 45%;
+    --sidebar-ring: 28 55% 52%;
+    
+    /* Custom brand colors */
+    --chocolate: 10 15% 31%;
+    --cocoa: 10 14% 45%;
+    --pecan: 28 55% 52%;
+    --camel: 39 100% 49%;
+    --beige: 39 85% 89%;
+    --cream: 30 67% 97%;
+  }
+
+  .dark {
+    --background: 6 5% 17%;
+    --foreground: 30 67% 97%;
+
+    --card: 10 15% 25%;
+    --card-foreground: 30 67% 97%;
+
+    --popover: 10 15% 25%;
+    --popover-foreground: 30 67% 97%;
+
+    --primary: 28 55% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 10 15% 31%;
+    --secondary-foreground: 30 67% 97%;
+
+    --muted: 10 14% 45%;
+    --muted-foreground: 39 85% 89%;
+
+    --accent: 39 100% 49%;
+    --accent-foreground: 6 5% 17%;
+
+    --destructive: 0 62.8% 40%;
+    --destructive-foreground: 30 67% 97%;
+
+    --border: 10 14% 35%;
+    --input: 10 15% 25%;
+    --ring: 28 55% 52%;
+
+    --sidebar-background: 6 5% 12%;
+    --sidebar-foreground: 30 67% 97%;
+    --sidebar-primary: 28 55% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 10 15% 31%;
+    --sidebar-accent-foreground: 30 67% 97%;
+    --sidebar-border: 10 14% 25%;
+    --sidebar-ring: 28 55% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

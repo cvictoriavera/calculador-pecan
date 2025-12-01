@@ -56,3 +56,19 @@ function calculador_pecan_activate() {
     }
 }
 register_activation_hook(__FILE__, 'calculador_pecan_activate');
+
+
+/**
+ * Modificar la etiqueta <script> para agregar type="module"
+ * Esto es obligatorio para scripts generados por Vite
+ */
+add_filter('script_loader_tag', function($tag, $handle, $src) {
+    // Verificamos si el ID del script pertenece a nuestro plugin
+    // Esto detectará 'calculador-pecan-js' (tu app) y 'calculador-pecan-...' (los vendors)
+    if (strpos($handle, 'calculador-pecan') !== false) {
+        // Reconstruimos la etiqueta script agregando type="module"
+        return '<script type="module" src="' . esc_url($src) . '"></script>';
+    }
+    
+    return $tag;
+}, 10, 3);

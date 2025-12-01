@@ -1,33 +1,98 @@
-import { useState } from 'react'
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AppProvider, useApp } from "@/contexts/AppContext";
+import { Layout } from "@/components/Layout";
+import Dashboard from "./pages/Dashboard";
+import Montes from "./pages/Montes";
+import Campanas from "./pages/Campanas";
+import Inversiones from "./pages/Inversiones";
+import Costos from "./pages/Costos";
+import Config from "./pages/Config";
+import Onboarding from "./pages/Onboarding";
+import NotFound from "./pages/NotFound";
 
-function App() {
-  const [count, setCount] = useState(0)
+const queryClient = new QueryClient();
+
+function ProtectedRoutes() {
+  const { isOnboardingComplete } = useApp();
+
+  if (!isOnboardingComplete) {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard Calculador Pecan</h1>
-        </div>
-      </header>
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Bienvenido Chibis</h2>
-              <p className="text-gray-600 mb-4">Aquí irá el contenido del dashboard</p>
-              <button
-                onClick={() => setCount((count) => count + 1)}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Contador: {count}
-              </button>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  )
+    <Routes>
+          <Route
+            path="/calculador-pecan/"
+            element={
+              <Layout>
+                <Dashboard />
+              </Layout>
+            }
+          />
+          <Route
+            path="/calculador-pecan/montes"
+            element={
+              <Layout>
+                <Montes />
+              </Layout>
+            }
+          />
+          <Route
+            path="/campanas"
+            element={
+              <Layout>
+                <Campanas />
+              </Layout>
+            }
+          />
+          <Route
+            path="/inversiones"
+            element={
+              <Layout>
+                <Inversiones />
+              </Layout>
+            }
+          />
+          <Route
+            path="/costos"
+            element={
+              <Layout>
+                <Costos />
+              </Layout>
+            }
+          />
+          <Route
+            path="/config"
+            element={
+              <Layout>
+                <Config />
+              </Layout>
+            }
+          />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
 }
 
-export default App
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AppProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/*" element={<ProtectedRoutes />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AppProvider>
+  </QueryClientProvider>
+);
+
+export default App;
