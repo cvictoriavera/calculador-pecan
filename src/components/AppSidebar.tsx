@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Inicio", url: "/", icon: Home },
   { title: "Mis Montes", url: "/montes", icon: Sprout },
   { title: "Campañas", url: "/campanas", icon: CalendarRange },
   { title: "Inversiones", url: "/inversiones", icon: DollarSign },
@@ -33,7 +33,7 @@ export function AppSidebar() {
               <Sprout className="h-8 w-8 text-sidebar-primary" />
               <div>
                 <h1 className="text-lg font-bold text-sidebar-foreground">PecanManager</h1>
-                <p className="text-xs text-sidebar-foreground/70">Gestión Integral</p>
+                <p className="text-xs text-sidebar-foreground/70">Gestión Cultivo de Pecán</p>
               </div>
             </div>
           )}

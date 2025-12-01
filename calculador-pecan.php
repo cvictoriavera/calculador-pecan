@@ -35,6 +35,10 @@ add_filter('page_template', 'calculador_pecan_load_page_template');
 
 // Función de activación del plugin
 function calculador_pecan_activate() {
+    // Crear las tablas de la base de datos
+    require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-database-manager.php';
+    CCP_Database_Manager::create_tables();
+
     // Crear la página del dashboard si no existe
     $page_title = 'Calculador pecan';
     $page_content = ''; // Contenido vacío, la plantilla maneja todo
