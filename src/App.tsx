@@ -14,7 +14,7 @@ function App() {
         <div className="px-4 py-6 sm:px-0">
           <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
             <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Bienvenido al Dashboard</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Bienvenido Chibi</h2>
               <p className="text-gray-600 mb-4">Aquí irá el contenido del dashboard para producción, costos e inversiones.</p>
               <button
                 onClick={() => setCount((count) => count + 1)}

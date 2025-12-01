@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
+    manifest: true,
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',

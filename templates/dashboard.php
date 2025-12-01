@@ -10,9 +10,21 @@ if (!is_user_logged_in()) {
     exit;
 }
 
-// Encolar los assets de React
-wp_enqueue_script('calculador-pecan-js', plugin_dir_url(__FILE__) . '../dist/assets/index-D5wpJy8s.js', [], '1.0.0', true);
-wp_enqueue_style('calculador-pecan-css', plugin_dir_url(__FILE__) . '../dist/assets/index-407422Hf.css', [], '1.0.0');
+// Leer el manifest de Vite para obtener los assets correctos
+$manifest_path = CALCULADOR_PECAN_PLUGIN_DIR . 'dist/.vite/manifest.json';
+if (file_exists($manifest_path)) {
+    $manifest = json_decode(file_get_contents($manifest_path), true);
+    if ($manifest && isset($manifest['index.html'])) {
+        $entry = $manifest['index.html'];
+        $js_file = $entry['file'];
+        wp_enqueue_script('calculador-pecan-js', plugin_dir_url(__FILE__) . '../dist/' . $js_file, [], '1.0.0', true);
+        if (isset($entry['css']) && is_array($entry['css'])) {
+            foreach ($entry['css'] as $css_file) {
+                wp_enqueue_style('calculador-pecan-css-' . basename($css_file), plugin_dir_url(__FILE__) . '../dist/' . $css_file, [], '1.0.0');
+            }
+        }
+    }
+}
 
 // Salida minimalista sin header/footer de WordPress
 ?>
