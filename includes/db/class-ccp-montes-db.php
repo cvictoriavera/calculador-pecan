@@ -76,6 +76,29 @@ class CCP_Montes_DB {
 	}
 
 	/**
+		* Get a single monte by its ID, verifying user ownership.
+		*
+		* @param int $monte_id The ID of the monte.
+		* @param int $user_id  The ID of the user.
+		* @return object|null A monte object or null if not found or not owned by the user.
+		*/
+	public function get_by_id( $monte_id, $user_id ) {
+		if ( ! is_numeric( $monte_id ) || ! is_numeric( $user_id ) ) {
+			return null;
+		}
+
+		$query = $this->wpdb->prepare(
+			"SELECT m.* FROM {$this->table_montes} m
+			 JOIN {$this->table_projects} p ON m.project_id = p.id
+			 WHERE m.id = %d AND p.user_id = %d",
+			absint( $monte_id ),
+			absint( $user_id )
+		);
+
+		return $this->wpdb->get_row( $query );
+	}
+
+	/**
 	 * Create a new monte.
 	 *
 	 * @param array $data    The data for the new monte. It must contain project_id, campaign_created_id, etc.
@@ -83,7 +106,7 @@ class CCP_Montes_DB {
 	 * @return int|false The ID of the newly created monte or false on failure.
 	 */
 	public function create( $data, $user_id ) {
-		if ( empty( $data['project_id'] ) || empty( $data['campaign_created_id'] ) || empty( $data['monte_name'] ) ) {
+		if ( empty( $data['project_id'] ) || empty( $data['monte_name'] ) ) {
 			return false;
 		}
 
@@ -99,16 +122,16 @@ class CCP_Montes_DB {
 		$result = $this->wpdb->insert(
 			$this->table_montes,
 			array(
-				'project_id'            => absint( $data['project_id'] ),
-				'campaign_created_id'   => absint( $data['campaign_created_id'] ),
-				'monte_name'            => sanitize_text_field( $data['monte_name'] ),
-				'area_hectareas'        => (float) $data['area_hectareas'],
-				'plantas_por_hectarea'  => absint( $data['plantas_por_hectarea'] ),
-				'fecha_plantacion'      => $data['fecha_plantacion'] ?? null,
-				'variedad'              => sanitize_text_field( $data['variedad'] ?? '' ),
-				'status'                => 'active',
-				'created_at'            => current_time( 'mysql', 1 ),
-				'updated_at'            => current_time( 'mysql', 1 ),
+				'project_id'           => absint( $data['project_id'] ),
+				'campaign_created_id'  => isset( $data['campaign_created_id'] ) ? absint( $data['campaign_created_id'] ) : null,
+				'monte_name'           => sanitize_text_field( $data['monte_name'] ),
+				'area_hectareas'       => (float) $data['area_hectareas'],
+				'plantas_por_hectarea' => absint( $data['plantas_por_hectarea'] ),
+				'fecha_plantacion'     => $data['fecha_plantacion'] ?? null,
+				'variedad'             => sanitize_text_field( $data['variedad'] ?? '' ),
+				'status'               => 'active',
+				'created_at'           => current_time( 'mysql', 1 ),
+				'updated_at'           => current_time( 'mysql', 1 ),
 			),
 			array(
 				'%d', // project_id
@@ -140,8 +163,73 @@ class CCP_Montes_DB {
 	 * @return bool True on success, false on failure.
 	 */
 	public function update( $monte_id, $data, $user_id ) {
-		// Stub: Implementation to be added later.
-		return false;
+		if ( ! is_numeric( $monte_id ) || empty( $data ) || ! is_numeric( $user_id ) ) {
+			return false;
+		}
+
+		// Verify the user owns the monte's project.
+		$project_owner = $this->wpdb->get_var(
+			$this->wpdb->prepare(
+				"SELECT p.user_id FROM {$this->table_projects} p
+				 JOIN {$this->table_montes} m ON p.id = m.project_id
+				 WHERE m.id = %d",
+				$monte_id
+			)
+		);
+
+		if ( absint( $project_owner ) !== absint( $user_id ) ) {
+			return false; // User does not own the project.
+		}
+
+		$update_data = array();
+		$update_format = array();
+
+		if ( isset( $data['monte_name'] ) ) {
+			$update_data['monte_name'] = sanitize_text_field( $data['monte_name'] );
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['area_hectareas'] ) ) {
+			$update_data['area_hectareas'] = (float) $data['area_hectareas'];
+			$update_format[] = '%f';
+		}
+
+		if ( isset( $data['plantas_por_hectarea'] ) ) {
+			$update_data['plantas_por_hectarea'] = absint( $data['plantas_por_hectarea'] );
+			$update_format[] = '%d';
+		}
+
+		if ( isset( $data['fecha_plantacion'] ) ) {
+			$update_data['fecha_plantacion'] = $data['fecha_plantacion'];
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['variedad'] ) ) {
+			$update_data['variedad'] = sanitize_text_field( $data['variedad'] );
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['status'] ) ) {
+			$update_data['status'] = sanitize_text_field( $data['status'] );
+			$update_format[] = '%s';
+		}
+
+		$update_data['updated_at'] = current_time( 'mysql', 1 );
+		$update_format[] = '%s';
+
+		if ( empty( $update_data ) ) {
+			return false; // Nothing to update.
+		}
+
+		$result = $this->wpdb->update(
+			$this->table_montes,
+			$update_data,
+			array( 'id' => absint( $monte_id ) ),
+			$update_format,
+			array( '%d' )
+		);
+
+		return $result !== false;
 	}
 
 	/**
@@ -165,7 +253,30 @@ class CCP_Montes_DB {
 	 * @return bool True on success, false on failure.
 	 */
 	public function delete_permanent( $monte_id, $user_id ) {
-		// Stub: Implementation to be added later.
-		return false;
+		if ( ! is_numeric( $monte_id ) || ! is_numeric( $user_id ) ) {
+			return false;
+		}
+
+		// Verify the user owns the monte's project.
+		$project_owner = $this->wpdb->get_var(
+			$this->wpdb->prepare(
+				"SELECT p.user_id FROM {$this->table_projects} p
+				 JOIN {$this->table_montes} m ON p.id = m.project_id
+				 WHERE m.id = %d",
+				$monte_id
+			)
+		);
+
+		if ( absint( $project_owner ) !== absint( $user_id ) ) {
+			return false; // User does not own the project.
+		}
+
+		$result = $this->wpdb->delete(
+			$this->table_montes,
+			array( 'id' => absint( $monte_id ) ),
+			array( '%d' )
+		);
+
+		return $result !== false;
 	}
 }

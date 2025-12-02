@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { createCampaign, getCampaignsByProject } from "@/services/campaignService";
 import { getProjects } from "@/services/projectService";
+import { getMontesByProject, createMonte, updateMonte as updateMonteAPI, deleteMonte } from "@/services/monteService";
 
 export interface Monte {
   id: string;
@@ -36,9 +37,12 @@ interface AppContextType {
   campaignsLoading: boolean;
   currentCampaign: number;
   setCurrentCampaign: (year: number) => void;
+  currentCampaignId: number | null;
   montes: Monte[];
+  montesLoading: boolean;
   addMonte: (monte: Omit<Monte, "id">) => void;
   updateMonte: (id: string, monte: Omit<Monte, "id">) => void;
+  deleteMonte: (id: string) => void;
   isOnboardingComplete: boolean;
   isLoading: boolean;
   completeOnboarding: (name: string, year: number, projectId: number) => Promise<void>;
@@ -64,10 +68,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("currentCampaign");
     return stored ? parseInt(stored) : new Date().getFullYear();
   });
-  const [montes, setMontes] = useState<Monte[]>(() => {
-    const stored = localStorage.getItem("montes");
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [currentCampaignId, setCurrentCampaignId] = useState<number | null>(null);
+  const [montes, setMontes] = useState<Monte[]>([]);
+  const [montesLoading, setMontesLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const isOnboardingComplete = !!currentProjectId;
@@ -93,9 +96,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("currentCampaign", currentCampaign.toString());
   }, [currentCampaign]);
 
-  useEffect(() => {
-    localStorage.setItem("montes", JSON.stringify(montes));
-  }, [montes]);
 
   // Load campaigns when project changes
   useEffect(() => {
@@ -107,8 +107,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       setCampaignsLoading(true);
       try {
+        console.log('Loading campaigns for project:', currentProjectId);
         const data = await getCampaignsByProject(currentProjectId);
-        setCampaigns(Array.isArray(data) ? data : []);
+        console.log('Campaigns data:', data);
+        const campaignsData = Array.isArray(data) ? data : [];
+        setCampaigns(campaignsData);
+
+        // Set current campaign ID
+        const currentCamp = campaignsData.find(c => c.year === currentCampaign);
+        console.log('Current campaign year:', currentCampaign, 'found:', currentCamp);
+        if (currentCamp) {
+          setCurrentCampaignId(currentCamp.id);
+          console.log('Set currentCampaignId:', currentCamp.id);
+        } else {
+          console.log('No campaign found for current year');
+        }
       } catch (error) {
         console.error('Error loading campaigns:', error);
         setCampaigns([]);
@@ -143,6 +156,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const minYear = Math.min(...years);
             setInitialYear(minYear);
             console.log('Set initial year:', minYear);
+          }
+
+          // Load montes
+          setMontesLoading(true);
+          try {
+            const montesData = await getMontesByProject(project.id);
+            console.log('Montes fetched:', montesData);
+            if (montesData && Array.isArray(montesData)) {
+              // Transform DB data to frontend format
+              const transformedMontes = montesData.map(monte => ({
+                id: monte.id.toString(),
+                nombre: monte.monte_name,
+                hectareas: parseFloat(monte.area_hectareas),
+                densidad: monte.plantas_por_hectarea,
+                añoPlantacion: monte.fecha_plantacion ? parseInt(monte.fecha_plantacion.substring(0, 4)) : new Date().getFullYear(),
+                variedad: monte.variedad,
+              }));
+              setMontes(transformedMontes);
+              console.log('Set montes:', transformedMontes);
+            }
+          } catch (error) {
+            console.error('Error loading montes:', error);
+          } finally {
+            setMontesLoading(false);
           }
         } else {
           console.log('No existing projects found');
@@ -191,18 +228,86 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentCampaign(currentYear);
   };
 
-  const addMonte = (monte: Omit<Monte, "id">) => {
-    const newMonte = {
-      ...monte,
-      id: Date.now().toString(),
-    };
-    setMontes([...montes, newMonte]);
+  const addMonte = async (monte: Omit<Monte, "id">) => {
+    if (!currentProjectId) {
+      console.error('No current project');
+      return;
+    }
+
+    try {
+      const monteData = {
+        project_id: currentProjectId,
+        campaign_created_id: currentCampaignId || undefined,
+        monte_name: monte.nombre,
+        area_hectareas: monte.hectareas,
+        plantas_por_hectarea: monte.densidad,
+        fecha_plantacion: `${monte.añoPlantacion}-01-01`,
+        variedad: monte.variedad,
+      } as Parameters<typeof createMonte>[0];
+
+      const createdMonte = await createMonte(monteData);
+      console.log('Monte created:', createdMonte);
+
+      // Transform to frontend format
+      const newMonte: Monte = {
+        id: createdMonte.id.toString(),
+        nombre: createdMonte.monte_name,
+        hectareas: parseFloat(createdMonte.area_hectareas),
+        densidad: createdMonte.plantas_por_hectarea,
+        añoPlantacion: createdMonte.fecha_plantacion ? parseInt(createdMonte.fecha_plantacion.substring(0, 4)) : monte.añoPlantacion,
+        variedad: createdMonte.variedad,
+      };
+
+      setMontes([...montes, newMonte]);
+    } catch (error) {
+      console.error('Error creating monte:', error);
+      throw error;
+    }
   };
 
-  const updateMonte = (id: string, updatedData: Omit<Monte, "id">) => {
-    setMontes(montes.map(monte => 
-      monte.id === id ? { ...updatedData, id } : monte
-    ));
+  const updateMonte = async (id: string, updatedData: Omit<Monte, "id">) => {
+    try {
+      const updateData = {
+        monte_name: updatedData.nombre,
+        area_hectareas: updatedData.hectareas,
+        plantas_por_hectarea: updatedData.densidad,
+        fecha_plantacion: `${updatedData.añoPlantacion}-01-01`,
+        variedad: updatedData.variedad,
+      };
+
+      const updatedMonte = await updateMonteAPI(parseInt(id), updateData);
+      console.log('Monte updated:', updatedMonte);
+
+      // Transform and update local state
+      const transformed: Monte = {
+        id: updatedMonte.id.toString(),
+        nombre: updatedMonte.monte_name,
+        hectareas: parseFloat(updatedMonte.area_hectareas),
+        densidad: updatedMonte.plantas_por_hectarea,
+        añoPlantacion: updatedMonte.fecha_plantacion ? parseInt(updatedMonte.fecha_plantacion.substring(0, 4)) : updatedData.añoPlantacion,
+        variedad: updatedMonte.variedad,
+      };
+
+      setMontes(montes.map(monte =>
+        monte.id === id ? transformed : monte
+      ));
+    } catch (error) {
+      console.error('Error updating monte:', error);
+      throw error;
+    }
+  };
+
+  const deleteMonteContext = async (id: string) => {
+    try {
+      await deleteMonte(parseInt(id));
+      console.log('Monte deleted:', id);
+
+      // Remove from local state
+      setMontes(montes.filter(monte => monte.id !== id));
+    } catch (error) {
+      console.error('Error deleting monte:', error);
+      throw error;
+    }
   };
 
   return (
@@ -218,9 +323,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         campaignsLoading,
         currentCampaign,
         setCurrentCampaign,
+        currentCampaignId,
         montes,
+        montesLoading,
         addMonte,
         updateMonte,
+        deleteMonte: deleteMonteContext,
         isOnboardingComplete,
         isLoading,
         completeOnboarding,

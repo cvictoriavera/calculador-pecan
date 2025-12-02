@@ -32,29 +32,34 @@ export function AddMonteDialog() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!hectareas || !densidad || !añoPlantacion || !variedad) {
       toast.error("Por favor completa todos los campos requeridos");
       return;
     }
 
-    const monteNombre = nombre || `Monte ${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      const monteNombre = nombre || `Monte ${Math.random().toString(36).substr(2, 9)}`;
 
-    addMonte({
-      nombre: monteNombre,
-      hectareas: parseFloat(hectareas),
-      densidad: parseFloat(densidad),
-      añoPlantacion: parseInt(añoPlantacion),
-      variedad,
-    });
+      await addMonte({
+        nombre: monteNombre,
+        hectareas: parseFloat(hectareas),
+        densidad: parseFloat(densidad),
+        añoPlantacion: parseInt(añoPlantacion),
+        variedad,
+      });
 
-    toast.success("Monte agregado exitosamente");
-    setOpen(false);
-    setNombre("");
-    setHectareas("");
-    setDensidad("");
-    setAñoPlantacion("");
-    setVariedad("");
+      toast.success("Monte agregado exitosamente");
+      setOpen(false);
+      setNombre("");
+      setHectareas("");
+      setDensidad("");
+      setAñoPlantacion("");
+      setVariedad("");
+    } catch (error) {
+      console.error('Error adding monte:', error);
+      toast.error("Error al agregar el monte");
+    }
   };
 
   return (

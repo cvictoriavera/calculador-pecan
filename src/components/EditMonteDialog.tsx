@@ -44,22 +44,27 @@ export function EditMonteDialog({ monte, open, onOpenChange }: EditMonteDialogPr
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!nombre || !hectareas || !densidad || !añoPlantacion || !variedad) {
       toast.error("Por favor completa todos los campos");
       return;
     }
 
-    updateMonte(monte.id, {
-      nombre,
-      hectareas: parseFloat(hectareas),
-      densidad: parseFloat(densidad),
-      añoPlantacion: parseInt(añoPlantacion),
-      variedad,
-    });
+    try {
+      await updateMonte(monte.id, {
+        nombre,
+        hectareas: parseFloat(hectareas),
+        densidad: parseFloat(densidad),
+        añoPlantacion: parseInt(añoPlantacion),
+        variedad,
+      });
 
-    toast.success("Monte actualizado exitosamente");
-    onOpenChange(false);
+      toast.success("Monte actualizado exitosamente");
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating monte:', error);
+      toast.error("Error al actualizar el monte");
+    }
   };
 
   return (

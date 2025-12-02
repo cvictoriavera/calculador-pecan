@@ -42,7 +42,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <div className="flex items-center gap-4 text-sm">
               <div className="text-right">
-                <p className="text-muted-foreground">Área Total</p>
+                <p className="text-muted-foreground">Área Total Plantada</p>
                 <p className="font-semibold text-foreground">{totalArea.toFixed(1)} ha</p>
               </div>
             </div>

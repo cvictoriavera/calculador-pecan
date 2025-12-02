@@ -126,7 +126,7 @@ const Campanas = () => {
                         <Badge variant="outline">Archivada</Badge>
                       )
                     ) : (
-                      <Badge variant="outline">No creada</Badge>
+                      <Badge variant="outline">Sin datos</Badge>
                     )}
                   </div>
                 </CardHeader>

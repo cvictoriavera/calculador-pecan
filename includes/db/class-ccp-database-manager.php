@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '4.4';
+    private static $db_version = '4.5';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -155,11 +155,12 @@ class CCP_Database_Manager {
 
             // Tabla de Montes
             $table_name_montes = $wpdb->prefix . 'pecan_montes';
+            $wpdb->query("DROP TABLE IF EXISTS $table_name_montes");
             $sql_montes = "CREATE TABLE $table_name_montes (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-               
+
                 project_id BIGINT UNSIGNED NOT NULL,
-                campaign_created_id BIGINT UNSIGNED NOT NULL,
+                campaign_created_id BIGINT UNSIGNED NULL,
                 monte_name VARCHAR(255) NOT NULL,
                 area_hectareas DECIMAL(10,2) NOT NULL,
                 plantas_por_hectarea INT NOT NULL,
@@ -168,18 +169,18 @@ class CCP_Database_Manager {
 
                 status ENUM('active', 'retired') DEFAULT 'active',
                 campaign_retired_id BIGINT UNSIGNED NULL,
-                              
+
                 notes TEXT NULL,
-                
+
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                
+
                 INDEX idx_project_id (project_id),
                 INDEX idx_campaign_created (campaign_created_id),
                 INDEX idx_project_status (project_id, status),
-                
+
                 FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
-                FOREIGN KEY (campaign_created_id) REFERENCES $table_name_campaigns(id) ON DELETE RESTRICT,
+                FOREIGN KEY (campaign_created_id) REFERENCES $table_name_campaigns(id) ON DELETE SET NULL,
                 FOREIGN KEY (campaign_retired_id) REFERENCES $table_name_campaigns(id) ON DELETE SET NULL
             ) $charset_collate;";
             dbDelta($sql_montes);

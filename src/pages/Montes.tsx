@@ -1,26 +1,57 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Calendar, Info, Pencil } from "lucide-react";
+import { MapPin, Calendar, Info, Pencil, MoreVertical, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useApp } from "@/contexts/AppContext";
 import type { Monte } from "@/contexts/AppContext";
 import { AddMonteDialog } from "@/components/AddMonteDialog";
 import { EditMonteDialog } from "@/components/EditMonteDialog";
+import { toast } from "sonner";
 
 const Montes = () => {
-  const { montes, currentCampaign } = useApp();
+  const { montes, currentCampaign, deleteMonte } = useApp();
   const [editingMonte, setEditingMonte] = useState<Monte | null>(null);
+  const [deletingMonte, setDeletingMonte] = useState<Monte | null>(null);
   
-  // Filter montes based on selected campaign
-  const filteredMontes = montes.filter(
-    (monte) => monte.añoPlantacion <= currentCampaign
-  );
+  // Filter montes based on selected campaign and sort by planting year (oldest first)
+  const filteredMontes = montes
+    .filter((monte) => monte.añoPlantacion <= currentCampaign)
+    .sort((a, b) => a.añoPlantacion - b.añoPlantacion);
 
   const montesWithAge = filteredMontes.map((monte) => ({
     ...monte,
     edad: currentCampaign - monte.añoPlantacion,
   }));
+
+  const handleDeleteMonte = async () => {
+    if (!deletingMonte) return;
+
+    try {
+      await deleteMonte(deletingMonte.id);
+      toast.success("Monte eliminado exitosamente");
+      setDeletingMonte(null);
+    } catch (error) {
+      console.error('Error deleting monte:', error);
+      toast.error("Error al eliminar el monte");
+    }
+  };
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -87,14 +118,30 @@ const Montes = () => {
             key={monte.id}
             className="border-border/50 shadow-md hover:shadow-lg transition-all relative"
           >
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-foreground"
-              onClick={() => setEditingMonte(monte)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setEditingMonte(monte)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeletingMonte(monte)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <CardHeader>
               <div className="flex justify-between items-start pr-8">
                 <CardTitle className="text-lg font-bold text-foreground">{monte.nombre}</CardTitle>
@@ -157,6 +204,24 @@ const Montes = () => {
           onOpenChange={(open) => !open && setEditingMonte(null)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingMonte} onOpenChange={(open) => !open && setDeletingMonte(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar monte?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente el monte "{deletingMonte?.nombre}" y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMonte} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
