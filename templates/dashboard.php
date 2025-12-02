@@ -81,6 +81,14 @@ if (file_exists($manifest_path)) {
     <meta charset="<?php bloginfo('charset'); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php wp_title('|', true, 'right'); ?></title>
+    <script type="text/javascript">
+        console.log("🔵 PHP intentando inyectar variables...");
+        window.pecanSettings = {
+            root: "<?php echo esc_url_raw(rest_url()); ?>",
+            nonce: "<?php echo wp_create_nonce('wp_rest'); ?>"
+        };
+        console.log("🟢 Variables inyectadas:", window.pecanSettings);
+    </script>
     <?php wp_head(); ?>
 </head>
 <body>

@@ -11,13 +11,13 @@ class CCP_Page_Handler {
      */
     public static function create_dashboard_page() {
         // Verificar si la página ya existe
-        $page = get_page_by_path('calculadora-costos-pecan');
+        $page = get_page_by_path('calculador-pecan');
         
         if (!$page) {
             // Crear la página
             $page_id = wp_insert_post(array(
-                'post_title'     => 'Calculadora Costos Pecan',
-                'post_name'      => 'calculadora-costos-pecan',
+                'post_title'     => 'Calculador Pecan',
+                'post_name'      => 'calculador-pecan',
                 'post_content'   => '',
                 'post_status'    => 'publish',
                 'post_type'      => 'page',
@@ -98,8 +98,8 @@ class CCP_Page_Handler {
      * @return string La ruta de la plantilla personalizada si aplica, de lo contrario la original.
      */
     public function register_template($template) {
-        if (is_page('calculadora-costos-pecan')) {
-            $plugin_template = CALCULADORA_PECAN_PLUGIN_DIR . 'templates/template-fullwidth.php';
+        if (is_page('calculador-pecan')) {
+            $plugin_template = CALCULADOR_PECAN_PLUGIN_DIR . 'templates/template-fullwidth.php';
             if (file_exists($plugin_template)) {
                 return $plugin_template;
             }

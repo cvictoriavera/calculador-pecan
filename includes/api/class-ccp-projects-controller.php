@@ -2,7 +2,7 @@
 /**
  * REST API Projects Controller
  *
- * @package Calculadora_Costos_Pecan
+ * @package Calculador_Pecan
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -99,7 +99,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
 						'id' => array(
-							'description' => __( 'Unique identifier for the project.', 'calculadora-costos-pecan' ),
+							'description' => __( 'Unique identifier for the project.', 'calculador-pecan' ),
 							'type'        => 'integer',
 						),
 					),
@@ -116,7 +116,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to view projects.', 'calculadora-costos-pecan' ), array( 'status' => 401 ) );
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to view projects.', 'calculador-pecan' ), array( 'status' => 401 ) );
 		}
 		return true;
 	}
@@ -147,7 +147,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to view projects.', 'calculadora-costos-pecan' ), array( 'status' => 401 ) );
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to view projects.', 'calculador-pecan' ), array( 'status' => 401 ) );
 		}
 		return true;
 	}
@@ -165,7 +165,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		$project = $this->proyectos_db->get_by_id( $project_id, $user_id );
 
 		if ( is_null( $project ) ) {
-			return new WP_Error( 'rest_project_invalid_id', __( 'Invalid project ID.', 'calculadora-costos-pecan' ), array( 'status' => 404 ) );
+			return new WP_Error( 'rest_project_invalid_id', __( 'Invalid project ID.', 'calculador-pecan' ), array( 'status' => 404 ) );
 		}
 
 		$response = rest_ensure_response( $project );
@@ -180,7 +180,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to create a project.', 'calculadora-costos-pecan' ), array( 'status' => 401 ) );
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to create a project.', 'calculador-pecan' ), array( 'status' => 401 ) );
 		}
 		return true;
 	}
@@ -208,8 +208,8 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 			// 1. Create Project
 			$project_data = array(
 				'user_id' => $user_id,
-				'project_name' => sanitize_text_field($params['name'] ?? 'Nuevo Proyecto'),
-				'description' => sanitize_textarea_field($params['location'] ?? ''),
+				'project_name' => sanitize_text_field($params['project_name'] ?? 'Nuevo Proyecto'),
+				'description' => sanitize_textarea_field($params['description'] ?? ''),
 			);
 
 			error_log('CCP: Creating project with data: ' . print_r($project_data, true));
@@ -220,7 +220,8 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 				throw new Exception('Could not create project');
 			}
 
-			// 2. Create Initial Campaign
+			// 2. Create Initial Campaign (optional)
+			$campaign_id = null;
 			if (isset($params['initial_campaign'])) {
 				$campaign_year = intval($params['initial_campaign']['year'] ?? date('Y'));
 				$campaign_data = array(
@@ -238,8 +239,6 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 				if (!$campaign_id) {
 					throw new Exception('Could not create campaign');
 				}
-			} else {
-				throw new Exception('Initial campaign data required');
 			}
 
 			// 3. Create Montes
@@ -322,7 +321,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 			$wpdb->query('ROLLBACK');
 			error_log('CCP: Project creation failed: ' . $e->getMessage());
 			error_log('CCP: Stack trace: ' . $e->getTraceAsString());
-			return new WP_Error('create-failed', esc_html__('Could not create project: ' . $e->getMessage(), 'calculadora-costos-pecan'), array('status' => 500));
+			return new WP_Error('create-failed', esc_html__('Could not create project: ' . $e->getMessage(), 'calculador-pecan'), array('status' => 500));
 		}
 	}
 }

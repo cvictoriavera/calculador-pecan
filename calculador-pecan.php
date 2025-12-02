@@ -55,11 +55,21 @@ function calculador_pecan_activate() {
                 '_wp_page_template' => $page_template,
             ),
         ));
-        // Opcional: guardar el ID de la página para referencia futura
-        update_option('calculador_pecan_dashboard_page_id', $page_id);
+    } else {
+        $page_id = $page_check->ID;
     }
+    // Guardar el ID de la página para referencia futura
+    update_option('calculador_pecan_dashboard_page_id', $page_id);
 }
 register_activation_hook(__FILE__, 'calculador_pecan_activate');
+
+// Registrar las rutas de la API REST
+function calculador_pecan_register_rest_routes() {
+    require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-api-manager.php';
+    $api_manager = new CCP_API_Manager();
+    $api_manager->register_rest_routes();
+}
+add_action('rest_api_init', 'calculador_pecan_register_rest_routes');
 
 
 /**

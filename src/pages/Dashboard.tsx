@@ -24,7 +24,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Inicio</h1>
         <p className="text-muted-foreground">Visión general de tu operación pecanera</p>
       </div>
 

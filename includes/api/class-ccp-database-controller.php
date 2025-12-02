@@ -38,7 +38,7 @@ class CCP_Database_Controller {
      * @return WP_REST_Response
      */
     public function reset_database_version() {
-        require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-database-manager.php';
+        require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-database-manager.php';
 
         CCP_Database_Manager::reset_version();
 
@@ -54,7 +54,7 @@ class CCP_Database_Controller {
      * @return WP_REST_Response
      */
     public function get_database_status() {
-        require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-database-manager.php';
+        require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-database-manager.php';
 
         $status = CCP_Database_Manager::check_tables_status();
 

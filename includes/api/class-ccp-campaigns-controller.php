@@ -65,6 +65,19 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base,
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -76,6 +89,19 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to view campaigns.', 'calculadora-costos-pecan' ), array( 'status' => 401 ) );
+		}
+		return true;
+	}
+
+	/**
+	 * Check if a given request has access to create items.
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return bool|WP_Error True if the request has create access, WP_Error object otherwise.
+	 */
+	public function create_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to create campaigns.', 'calculadora-costos-pecan' ), array( 'status' => 401 ) );
 		}
 		return true;
 	}
@@ -96,6 +122,45 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 		}
 
 		$response = rest_ensure_response( $campaigns );
+		return $response;
+	}
+
+	/**
+	 * Create a campaign.
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+	 */
+	public function create_item( $request ) {
+		$user_id = get_current_user_id();
+
+		$data = array(
+			'project_id'   => (int) $request->get_param( 'project_id' ),
+			'campaign_name' => sanitize_text_field( $request->get_param( 'campaign_name' ) ),
+			'year'         => (int) $request->get_param( 'year' ),
+			'start_date'   => sanitize_text_field( $request->get_param( 'start_date' ) ),
+			'end_date'     => $request->get_param( 'end_date' ) ? sanitize_text_field( $request->get_param( 'end_date' ) ) : null,
+			'status'       => $request->get_param( 'status' ) ? sanitize_text_field( $request->get_param( 'status' ) ) : 'open',
+			'is_current'   => $request->get_param( 'is_current' ) ? (int) $request->get_param( 'is_current' ) : 0,
+			'notes'        => $request->get_param( 'notes' ) ? sanitize_textarea_field( $request->get_param( 'notes' ) ) : null,
+		);
+
+		$campaign_id = $this->campaigns_db->create( $data, $user_id );
+
+		if ( is_wp_error( $campaign_id ) ) {
+			return $campaign_id;
+		}
+
+		if ( false === $campaign_id ) {
+			return new WP_Error( 'campaign_creation_failed', 'Failed to create campaign.', array( 'status' => 500 ) );
+		}
+
+		// Get the created campaign
+		$campaign = $this->campaigns_db->get_by_id( $campaign_id, $user_id );
+
+		$response = rest_ensure_response( $campaign );
+		$response->set_status( 201 );
+
 		return $response;
 	}
 }

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useApp } from "@/contexts/AppContext";
-import { ChevronRight, Check } from "lucide-react";
+import { createProject } from "@/services/projectService";
+import { ChevronRight, Check, Loader2 } from "lucide-react";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const Onboarding = () => {
   const [step, setStep] = useState(0);
   const [projectName, setProjectName] = useState("");
   const [initialYear, setInitialYear] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleStart = () => {
     setStep(1);
@@ -24,9 +27,32 @@ const Onboarding = () => {
     }
   };
 
-  const handleFinish = () => {
-    completeOnboarding(projectName, parseInt(initialYear));
-    navigate("/montes");
+  const handleFinish = async () => {
+    if (!projectName || !initialYear) return;
+
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      // Create the project
+      const projectData = {
+        project_name: projectName,
+        description: `Proyecto creado en ${new Date().getFullYear()}`,
+      };
+
+      const createdProject = await createProject(projectData);
+      const projectId = createdProject.id;
+
+      // Complete onboarding with project ID to create campaigns
+      await completeOnboarding(projectName, parseInt(initialYear), projectId);
+
+      navigate("/montes");
+    } catch (err) {
+      console.error('Error creating project:', err);
+      setError('Error al crear el proyecto. Por favor, inténtalo de nuevo.');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   if (step === 0) {
@@ -125,13 +151,30 @@ const Onboarding = () => {
               <p className="text-xl font-semibold text-foreground">{initialYear}</p>
             </div>
           </div>
+
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-destructive text-sm">{error}</p>
+            </div>
+          )}
+
           <div className="flex justify-end pt-4">
             <Button
               onClick={handleFinish}
+              disabled={isCreating}
               className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
             >
-              <Check className="h-5 w-5" />
-              Finalizar
+              {isCreating ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Creando proyecto...
+                </>
+              ) : (
+                <>
+                  <Check className="h-5 w-5" />
+                  Finalizar
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

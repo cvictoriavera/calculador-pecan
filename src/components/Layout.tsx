@@ -31,9 +31,9 @@ export function Layout({ children }: LayoutProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {campaigns.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        Campaña {year}
+                    {campaigns.filter(campaign => campaign && campaign.year).map((campaign) => (
+                      <SelectItem key={campaign.id} value={campaign.year.toString()}>
+                        Campaña {campaign.year}
                       </SelectItem>
                     ))}
                   </SelectContent>

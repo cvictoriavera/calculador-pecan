@@ -19,17 +19,17 @@ class CCP_API_Manager {
 	 */
 	public function register_rest_routes() {
 		// Include base classes
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-proyectos-db.php';
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-montes-db.php';
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-campaigns-db.php';
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-annual-records-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-proyectos-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-montes-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-campaigns-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-annual-records-db.php';
 
 		// Include controller classes
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-projects-controller.php';
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-montes-controller.php';
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-campaigns-controller.php';
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-annual-records-controller.php';
-		require_once CALCULADORA_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-database-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-projects-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-montes-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-campaigns-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-annual-records-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-database-controller.php';
 
 		// Instantiate controllers and register routes
 		$projects_controller = new CCP_Projects_Controller();

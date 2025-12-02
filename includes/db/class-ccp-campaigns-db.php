@@ -105,6 +105,29 @@ class CCP_Campaigns_DB {
 	}
 
 	/**
+	 * Get a campaign by its ID, verifying user ownership.
+	 *
+	 * @param int $campaign_id The ID of the campaign.
+	 * @param int $user_id     The ID of the user.
+	 * @return object|null The campaign object or null if not found or not owned by user.
+	 */
+	public function get_by_id( $campaign_id, $user_id ) {
+		if ( ! is_numeric( $campaign_id ) || ! is_numeric( $user_id ) ) {
+			return null;
+		}
+
+		$query = $this->wpdb->prepare(
+			"SELECT c.* FROM {$this->table_campaigns} c
+			 INNER JOIN {$this->table_projects} p ON c.project_id = p.id
+			 WHERE c.id = %d AND p.user_id = %d",
+			absint( $campaign_id ),
+			absint( $user_id )
+		);
+
+		return $this->wpdb->get_row( $query );
+	}
+
+	/**
 	 * Create a new campaign.
 	 *
 	 * @param array $data    The data for the new campaign.

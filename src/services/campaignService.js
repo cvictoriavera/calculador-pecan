@@ -18,3 +18,24 @@ export const getCampaignsByProject = (projectId) => {
 	}
 	return apiRequest(`${BASE_ENDPOINT}/by-project/${projectId}`);
 };
+
+/**
+ * Creates a new campaign.
+ *
+ * @param {object} campaignData - The data for the new campaign.
+ * @param {number} campaignData.project_id - The ID of the project.
+ * @param {string} campaignData.campaign_name - The name of the campaign.
+ * @param {number} campaignData.year - The year of the campaign.
+ * @param {string} campaignData.start_date - The start date of the campaign.
+ * @param {string} [campaignData.end_date] - The end date of the campaign.
+ * @param {string} [campaignData.status] - The status of the campaign.
+ * @param {number} [campaignData.is_current] - Whether this is the current campaign.
+ * @param {string} [campaignData.notes] - Notes for the campaign.
+ * @returns {Promise<object>} A promise that resolves to the created campaign object.
+ */
+export const createCampaign = (campaignData) => {
+	return apiRequest(BASE_ENDPOINT, {
+		method: 'POST',
+		body: JSON.stringify(campaignData),
+	});
+};
