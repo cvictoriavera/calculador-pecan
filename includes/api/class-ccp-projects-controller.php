@@ -129,7 +129,9 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$user_id  = get_current_user_id();
+		error_log('CCP: get_items called for user_id: ' . $user_id);
 		$projects = $this->proyectos_db->get_all_by_user( $user_id );
+		error_log('CCP: projects found: ' . print_r($projects, true));
 
 		if ( is_null( $projects ) ) {
 			$projects = array();

@@ -16,7 +16,7 @@ const settings = window.pecanSettings || window.wpApiSettings;
 /**
  * The root URL of the WordPress REST API.
  */
-const apiRoot = settings?.root ?? '';
+const apiRoot = settings?.root ?? '/wp-json';
 
 /**
  * The nonce for authenticating API requests.

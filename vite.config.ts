@@ -13,6 +13,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, './src')
     },
   },
+  server: {
+    proxy: {
+      '/wp-json': {
+        target: 'http://localhost',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  },
   build: {
     outDir: 'dist',
     manifest: true,

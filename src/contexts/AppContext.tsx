@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { createCampaign, getCampaignsByProject } from "@/services/campaignService";
+import { getProjects } from "@/services/projectService";
 
 export interface Monte {
   id: string;
@@ -39,6 +40,7 @@ interface AppContextType {
   addMonte: (monte: Omit<Monte, "id">) => void;
   updateMonte: (id: string, monte: Omit<Monte, "id">) => void;
   isOnboardingComplete: boolean;
+  isLoading: boolean;
   completeOnboarding: (name: string, year: number, projectId: number) => Promise<void>;
 }
 
@@ -66,8 +68,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("montes");
     return stored ? JSON.parse(stored) : [];
   });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const isOnboardingComplete = !!projectName && !!initialYear;
+  const isOnboardingComplete = !!currentProjectId;
 
   useEffect(() => {
     localStorage.setItem("projectName", projectName);
@@ -116,6 +119,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     loadCampaigns();
   }, [currentProjectId]);
+
+  // Check for existing projects on mount
+  useEffect(() => {
+    const checkExistingProjects = async () => {
+      console.log('Checking for existing projects...');
+      try {
+        const projects = await getProjects();
+        console.log('Projects fetched:', projects);
+        if (projects && projects.length > 0) {
+          console.log('Found existing projects, loading first one');
+          // Load the first project
+          const project = projects[0];
+          setCurrentProjectId(project.id);
+          setProjectName(project.project_name);
+          console.log('Set project:', project.project_name, project.id);
+
+          // Fetch campaigns to get initial year
+          const campaignsData = await getCampaignsByProject(project.id);
+          console.log('Campaigns fetched:', campaignsData);
+          if (campaignsData && campaignsData.length > 0) {
+            const years = campaignsData.map(c => c.year);
+            const minYear = Math.min(...years);
+            setInitialYear(minYear);
+            console.log('Set initial year:', minYear);
+          }
+        } else {
+          console.log('No existing projects found');
+        }
+      } catch (error) {
+        console.error('Error checking existing projects:', error);
+      } finally {
+        console.log('Setting loading to false');
+        setIsLoading(false);
+      }
+    };
+
+    checkExistingProjects();
+  }, []);
 
   const completeOnboarding = async (name: string, year: number, projectId: number) => {
     setProjectName(name);
@@ -181,6 +222,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addMonte,
         updateMonte,
         isOnboardingComplete,
+        isLoading,
         completeOnboarding,
       }}
     >

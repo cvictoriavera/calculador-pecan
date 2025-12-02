@@ -181,14 +181,11 @@ const Campanas = () => {
                     <div className="text-center py-8">
                       <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-foreground mb-2">
-                        Campaña {year} no creada
+                        Campaña {year} sin datos para mostrar
                       </h3>
                       <p className="text-muted-foreground mb-4">
-                        Esta campaña aún no ha sido configurada en el sistema
+                        Aun no has registrado datos en tu campaña
                       </p>
-                      <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                        Crear Campaña {year}
-                      </Button>
                     </div>
                   )}
                 </CardContent>
