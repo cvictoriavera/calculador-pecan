@@ -136,7 +136,7 @@ const Dashboard = () => {
       {/* Payback Table */}
       <Card className="border-border/50 shadow-md">
         <CardHeader>
-          <CardTitle className="text-foreground">Tabla Maestra de Payback</CardTitle>
+          <CardTitle className="text-foreground">Tabla Payback</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

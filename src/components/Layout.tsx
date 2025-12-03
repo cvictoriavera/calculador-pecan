@@ -18,7 +18,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-card shadow-sm">
+          <header className="h-16 flex items-center justify-between px-6 border-none border-border bg-card shadow-sm">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-foreground" />
               <div className="flex items-center gap-3">

@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '4.5';
+    private static $db_version = '4.6';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -124,26 +124,23 @@ class CCP_Database_Manager {
             $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
             $sql_campaigns = "CREATE TABLE $table_name_campaigns (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                
-                project_id BIGINT UNSIGNED NOT NULL,
-                
-                -- Identificación
-                campaign_name VARCHAR(100) NOT NULL, -- Ej: 'Cosecha 2024'
-                year INT NOT NULL, -- Ej: 2024 (Mucho más útil para reportes que un número correlativo)
-                
-                -- Fechas (Clave para imputar costos automáticamente)
-                start_date DATE NOT NULL,
-                end_date DATE NULL, -- Recomendado NOT NULL para cerrar el ciclo
 
-                -- Lógica de Estado
-                status ENUM('open', 'closed', 'archived') DEFAULT 'open', -- 'open' permite editar, 'closed' es solo lectura
-                is_current TINYINT(1) DEFAULT 0, -- 1 = Esta es la campaña que se ve en el Home
-                
+                project_id BIGINT UNSIGNED NOT NULL,
+
+                campaign_name VARCHAR(100) NOT NULL,
+                year INT NOT NULL,
+
+                start_date DATE NOT NULL,
+                end_date DATE NULL,
+
+                status ENUM('open', 'closed', 'archived') DEFAULT 'open',
+                is_current TINYINT(1) DEFAULT 0,
+
                 notes TEXT NULL,
-                
+
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                
+
                 INDEX idx_project_id (project_id),
                 INDEX idx_project_year (project_id, year),
                 INDEX idx_project_status (project_id, status),

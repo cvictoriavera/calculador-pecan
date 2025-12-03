@@ -63,19 +63,6 @@ const Config = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-foreground">Precios de Referencia</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="precio-venta">Precio de Venta Promedio (por kg)</Label>
-            <Input id="precio-venta" type="number" placeholder="Ej: 70" defaultValue="70" />
-          </div>
-
-          <p className="text-sm text-muted-foreground">Este precio se usará como valor predeterminado.</p>
-        </CardContent>
-      </Card>
     </div>
   );
 };

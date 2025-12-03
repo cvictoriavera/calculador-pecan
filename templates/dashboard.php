@@ -73,6 +73,8 @@ if (file_exists($manifest_path)) {
     wp_enqueue_script('calculador-pecan-main', 'http://localhost:5173/src/main.tsx', ['vite-client'], null, true);
 }
 
+show_admin_bar(false);
+
 // Salida minimalista sin header/footer de WordPress
 ?>
 <!DOCTYPE html>
