@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '4.6';
+    private static $db_version = '1.1';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -75,16 +75,21 @@ class CCP_Database_Manager {
      */
     public static function create_tables() {
         global $wpdb;
+        error_log('CCP DB: Starting create_tables');
         $installed_version = get_option(self::$db_version_key);
+        error_log('CCP DB: Installed version: ' . $installed_version . ', Current version: ' . self::$db_version);
 
         // Verificar si las tablas existen
         $table_name_annual_records = $wpdb->prefix . 'pecan_annual_records';
         $table_name_project_data = $wpdb->prefix . 'pecan_project_data';
         $annual_records_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_annual_records));
         $project_data_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_project_data));
+        error_log('CCP DB: annual_records exists: ' . ($annual_records_exists ? 'yes' : 'no'));
+        error_log('CCP DB: project_data exists: ' . ($project_data_exists ? 'yes' : 'no'));
 
         // Crear tablas si no existen o si la versión ha cambiado
         if (!$annual_records_exists || $installed_version != self::$db_version) {
+            error_log('CCP DB: Creating tables');
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             $charset_collate = $wpdb->get_charset_collate();
 
@@ -98,29 +103,32 @@ class CCP_Database_Manager {
             }
 
             // Tabla de Proyectos
+            error_log('CCP DB: Creating projects table');
             $table_name_projects = $wpdb->prefix . 'pecan_projects';
             $sql_projects = "CREATE TABLE $table_name_projects (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                
+
                 user_id BIGINT UNSIGNED NOT NULL,
                 project_name VARCHAR(255) NOT NULL,
                 description TEXT NULL,
-                
+
                 status ENUM('active', 'archived') DEFAULT 'active',
-                
+
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                
+
                 last_sync DATETIME NULL,
-                
+
                 INDEX idx_user_id (user_id),
                 INDEX idx_user_status (user_id, status),
-                
+
                 FOREIGN KEY (user_id) REFERENCES {$wpdb->prefix}users(ID) ON DELETE CASCADE
             ) $charset_collate;";
             dbDelta($sql_projects);
+            error_log('CCP DB: Projects table created');
 
             // Tabla de Campañas
+            error_log('CCP DB: Creating campaigns table');
             $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
             $sql_campaigns = "CREATE TABLE $table_name_campaigns (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -149,8 +157,10 @@ class CCP_Database_Manager {
                 FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE
             ) $charset_collate;";
             dbDelta($sql_campaigns);
+            error_log('CCP DB: Campaigns table created');
 
             // Tabla de Montes
+            error_log('CCP DB: Creating montes table');
             $table_name_montes = $wpdb->prefix . 'pecan_montes';
             $wpdb->query("DROP TABLE IF EXISTS $table_name_montes");
             $sql_montes = "CREATE TABLE $table_name_montes (
@@ -181,15 +191,17 @@ class CCP_Database_Manager {
                 FOREIGN KEY (campaign_retired_id) REFERENCES $table_name_campaigns(id) ON DELETE SET NULL
             ) $charset_collate;";
             dbDelta($sql_montes);
+            error_log('CCP DB: Montes table created');
 
             // Tabla de Registros Anuales (Nueva estructura híbrida)
+            error_log('CCP DB: Creating annual_records table');
             $table_name_annual_records = $wpdb->prefix . 'pecan_annual_records';
             $sql_data = "CREATE TABLE $table_name_annual_records (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
                 project_id BIGINT UNSIGNED NOT NULL,
                 campaign_id BIGINT UNSIGNED NULL,
-                monte_id BIGINT UNSIGNED NULL, -- Para registros granulares por monte
+                monte_id BIGINT UNSIGNED NULL,
 
                 type ENUM('production', 'investment', 'cost', 'global_config') NOT NULL,
                 category VARCHAR(100) NOT NULL,
@@ -213,13 +225,20 @@ class CCP_Database_Manager {
                 FOREIGN KEY (monte_id) REFERENCES $table_name_montes(id) ON DELETE CASCADE
             ) $charset_collate;";
             dbDelta($sql_data);
+            error_log('CCP DB: Annual_records table created');
 
             // Migrar datos existentes si es necesario
+            error_log('CCP DB: Starting migration');
             self::migrate_existing_data();
+            error_log('CCP DB: Migration completed');
 
             // Actualizar la versión de la BD en la base de datos.
             update_option(self::$db_version_key, self::$db_version);
+            error_log('CCP DB: Database version updated to ' . self::$db_version);
+        } else {
+            error_log('CCP DB: Tables already exist and version is current, skipping creation');
         }
+        error_log('CCP DB: create_tables completed');
     }
 
     /**

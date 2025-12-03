@@ -39,6 +39,7 @@ archive.pipe(output);
 
 const filesToInclude = [
   'calculador-pecan.php',
+  'includes/',
   'templates/',
   'dist/',
   'README.md'
