@@ -108,4 +108,13 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #wpadminbar {
+    display: none !important;
+  }
 }
