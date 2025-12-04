@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
 import { formatCurrency } from "@/lib/calculations";
-import { useApp } from "@/contexts/AppContext";
+import { useUiStore } from "@/stores";
 
 interface InversionRegistro {
   id: number;
@@ -43,7 +43,7 @@ const categoriaColors: Record<string, string> = {
 };
 
 const Inversiones = () => {
-  const { currentCampaign } = useApp();
+  const { currentCampaign } = useUiStore();
   const [inversiones, setInversiones] = useState<InversionRegistro[]>([
     { id: 1, año: 2025, categoria: "Maquinaria", descripcion: "Shaker nuevo", monto: 8000 },
     { id: 2, año: 2024, categoria: "Riego", descripcion: "Sistema de riego por goteo", monto: 10000 },

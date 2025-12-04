@@ -1,8 +1,10 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useApp } from "@/contexts/AppContext";
+import { useUiStore } from "@/stores";
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,8 +12,39 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { campaigns, currentCampaign, setCurrentCampaign, montes } = useApp();
-  
+  const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
+
   const totalArea = montes.reduce((acc, m) => acc + m.hectareas, 0);
+
+  // Sincronizar activeCampaignId con currentCampaign
+  useEffect(() => {
+    if (campaigns.length > 0) {
+      const campaign = campaigns.find(c => c.year === currentCampaign);
+      if (campaign) {
+        console.log('Syncing activeCampaignId to:', campaign.id, 'for year:', currentCampaign);
+        setActiveCampaign(campaign.id);
+      } else {
+        console.log('No campaign found for year:', currentCampaign, 'available campaigns:', campaigns.map(c => c.year));
+      }
+    }
+  }, [campaigns, currentCampaign, setActiveCampaign]);
+
+  // Sincronizar currentCampaign con el store
+  const handleCampaignChange = (year: number) => {
+    console.log('Changing campaign to year:', year);
+    setCurrentCampaign(year);
+    setStoreCurrentCampaign(year);
+
+    // Encontrar la campaña correspondiente y actualizar activeCampaignId
+    const campaign = campaigns.find(c => c.year === year);
+    console.log('Found campaign:', campaign);
+    if (campaign) {
+      console.log('Setting activeCampaignId to:', campaign.id);
+      setActiveCampaign(campaign.id);
+    } else {
+      console.log('No campaign found for year:', year);
+    }
+  };
   
   return (
     <SidebarProvider>
@@ -23,9 +56,9 @@ export function Layout({ children }: LayoutProps) {
               <SidebarTrigger className="text-foreground" />
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-muted-foreground">Campaña Actual:</span>
-                <Select 
-                  value={currentCampaign.toString()} 
-                  onValueChange={(value) => setCurrentCampaign(parseInt(value))}
+                <Select
+                  value={currentCampaign.toString()}
+                  onValueChange={(value) => handleCampaignChange(parseInt(value))}
                 >
                   <SelectTrigger className="w-[180px] bg-secondary">
                     <SelectValue />

@@ -3,9 +3,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface UiState {
-  // Navegación
-  activeProjectId: string | null;
-  activeCampaignId: string | null;
+  // Navegación (migrado desde AppContext)
+  activeProjectId: number | null;
+  activeCampaignId: number | null;
+  currentCampaign: number; // año actual (ej: 2024)
   currentPage: string;
 
   // UI States
@@ -14,8 +15,9 @@ interface UiState {
   errors: Record<string, string | null>;
 
   // Acciones
-  setActiveProject: (id: string | null) => void;
-  setActiveCampaign: (id: string | null) => void;
+  setActiveProject: (id: number | null) => void;
+  setActiveCampaign: (id: number | null) => void;
+  setCurrentCampaign: (year: number) => void;
   setCurrentPage: (page: string) => void;
   setLoading: (key: string, loading: boolean) => void;
   setError: (key: string, error: string | null) => void;
@@ -28,6 +30,7 @@ export const useUiStore = create<UiState>()(
       // Estado inicial
       activeProjectId: null,
       activeCampaignId: null,
+      currentCampaign: new Date().getFullYear(),
       currentPage: 'dashboard',
       sidebarOpen: true,
       loadingStates: {},
@@ -36,6 +39,7 @@ export const useUiStore = create<UiState>()(
       // Acciones
       setActiveProject: (id) => set({ activeProjectId: id }),
       setActiveCampaign: (id) => set({ activeCampaignId: id }),
+      setCurrentCampaign: (year) => set({ currentCampaign: year }),
       setCurrentPage: (page) => set({ currentPage: page }),
       setLoading: (key, loading) =>
         set((state) => ({
@@ -52,6 +56,7 @@ export const useUiStore = create<UiState>()(
       partialize: (state) => ({
         activeProjectId: state.activeProjectId,
         activeCampaignId: state.activeCampaignId,
+        currentCampaign: state.currentCampaign,
         sidebarOpen: state.sidebarOpen,
       }),
     }

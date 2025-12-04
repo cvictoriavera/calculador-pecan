@@ -19,7 +19,7 @@ export interface Campaign {
 
 export interface CostRecord {
   id: string;
-  campaignId: string;
+  campaignId?: string;
   category: string;
   description: string;
   amount: number;
@@ -197,10 +197,12 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   // Cost actions
   addCost: (cost) => {
-    // Validación: Campaign existe
-    const campaignExists = get().campaigns.some((c: Campaign) => c.id === cost.campaignId);
-    if (!campaignExists) {
-      throw new Error(`Campaign with ID ${cost.campaignId} does not exist`);
+    // Validación: Campaign existe si se proporciona
+    if (cost.campaignId) {
+      const campaignExists = get().campaigns.some((c: Campaign) => c.id === cost.campaignId);
+      if (!campaignExists) {
+        throw new Error(`Campaign with ID ${cost.campaignId} does not exist`);
+      }
     }
 
     // Validación: Monto positivo
@@ -222,8 +224,8 @@ export const useDataStore = create<DataState>((set, get) => ({
       throw new Error(`Cost with ID ${id} not found`);
     }
 
-    // Validación: Campaign existe si se cambia
-    if (updates.campaignId) {
+    // Validación: Campaign existe si se cambia y se proporciona
+    if (updates.campaignId !== undefined && updates.campaignId) {
       const campaignExists = get().campaigns.some((c: Campaign) => c.id === updates.campaignId);
       if (!campaignExists) {
         throw new Error(`Campaign with ID ${updates.campaignId} does not exist`);

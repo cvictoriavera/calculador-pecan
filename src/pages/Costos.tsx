@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
-import { useApp } from "@/contexts/AppContext";
+import { useUiStore, useDataStore, useCalculationsStore } from "@/stores";
 import { toast } from "sonner";
 
 const categoriaLabels: Record<string, string> = {
@@ -30,86 +30,88 @@ const categoriaLabels: Record<string, string> = {
 };
 
 const categoriaColors: Record<string, string> = {
-  Insumos: "#CF7E3C",
-  Combustible: "#5C4844",
-  "Mano de Obra": "#846761",
-  Energía: "#F9A300",
-  Cosecha: "#CF7E3C",
-  Administración: "#2F2928",
-  Mantenimientos: "#5C4844",
-  Oportunidad: "#846761",
+  insumos: "#CF7E3C",
+  combustible: "#5C4844",
+  "mano-obra": "#846761",
+  energia: "#F9A300",
+  cosecha: "#CF7E3C",
+  "gastos-admin": "#2F2928",
+  mantenimientos: "#5C4844",
+  "costos-oportunidad": "#846761",
 };
 
-interface CostoRegistro {
-  id: string;
-  categoria: string;
-  descripcion: string;
-  monto: number;
-  año: number;
-  data?: any;
-}
 
 const Costos = () => {
-  const { currentCampaign } = useApp();
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [costos, setCostos] = useState<CostoRegistro[]>([]);
-  const [editingCosto, setEditingCosto] = useState<CostoRegistro | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [costoToDelete, setCostoToDelete] = useState<CostoRegistro | null>(null);
+  const { currentCampaign, activeCampaignId } = useUiStore();
+  const { costs, addCost, updateCost, deleteCost } = useDataStore();
+  const { getTotalCosts } = useCalculationsStore();
 
-  const handleDeleteCosto = (costo: CostoRegistro) => {
+  console.log('Costos page - activeCampaignId:', activeCampaignId, 'currentCampaign:', currentCampaign);
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingCosto, setEditingCosto] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [costoToDelete, setCostoToDelete] = useState<any>(null);
+
+  const handleDeleteCosto = (costo: any) => {
     setCostoToDelete(costo);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
     if (costoToDelete) {
-      setCostos(costos.filter((c) => c.id !== costoToDelete.id));
+      deleteCost(costoToDelete.id);
       toast.success("Costo eliminado correctamente");
     }
     setDeleteDialogOpen(false);
     setCostoToDelete(null);
   };
 
-  const handleEditCosto = (costo: CostoRegistro) => {
+  const handleEditCosto = (costo: any) => {
     setEditingCosto(costo);
     setSheetOpen(true);
   };
 
   const handleUpdateCosto = (categoria: string, formData: any) => {
     if (editingCosto) {
-      setCostos(costos.map((c) => 
-        c.id === editingCosto.id 
-          ? { ...c, categoria: categoriaLabels[categoria] || categoria, monto: formData.total || 0, data: formData }
-          : c
-      ));
+      updateCost(editingCosto.id, {
+        category: categoria,
+        description: categoriaLabels[categoria] || categoria,
+        amount: formData.total || 0,
+        data: formData,
+      });
       toast.success("Costo actualizado correctamente");
       setEditingCosto(null);
     } else {
-      const nuevoCosto: CostoRegistro = {
+      addCost({
         id: Date.now().toString(),
-        categoria: categoriaLabels[categoria] || categoria,
-        descripcion: categoriaLabels[categoria] || categoria,
-        monto: formData.total || 0,
-        año: currentCampaign,
+        campaignId: activeCampaignId ? activeCampaignId.toString() : undefined,
+        category: categoria,
+        description: categoriaLabels[categoria] || categoria,
+        amount: formData.total || 0,
+        date: new Date(),
         data: formData,
-      };
-      setCostos([...costos, nuevoCosto]);
+      });
       toast.success("Costo registrado correctamente");
     }
   };
 
 
-  const costosFiltered = costos.filter((c) => c.año === currentCampaign);
-  const totalCostos = costosFiltered.reduce((acc, cost) => acc + cost.monto, 0);
+  // Filter costs by current campaign
+  const costosFiltered = activeCampaignId
+    ? costs.filter((c) => c.campaignId === activeCampaignId.toString())
+    : costs.filter((c) => !c.campaignId);
+  const totalCostos = activeCampaignId
+    ? getTotalCosts(activeCampaignId.toString())
+    : costosFiltered.reduce((acc, c) => acc + c.amount, 0);
 
   // Prepare data for pie chart
   const costoPorCategoria = costosFiltered.reduce((acc, cost) => {
-    const existing = acc.find((item) => item.name === cost.categoria);
+    const existing = acc.find((item) => item.name === cost.category);
     if (existing) {
-      existing.value += cost.monto;
+      existing.value += cost.amount;
     } else {
-      acc.push({ name: cost.categoria, value: cost.monto });
+      acc.push({ name: cost.category, value: cost.amount });
     }
     return acc;
   }, [] as { name: string; value: number }[]);
@@ -119,9 +121,14 @@ const Costos = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Costos Operativos</h1>
-          <p className="text-muted-foreground">Registro de gastos operacionales - Campaña {currentCampaign}</p>
+          <p className="text-muted-foreground">
+            {activeCampaignId
+              ? `Registro de gastos operacionales - Campaña ${currentCampaign}`
+              : "Registro de gastos operacionales"
+            }
+          </p>
         </div>
-        <Button 
+        <Button
           onClick={() => setSheetOpen(true)}
           className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
         >
@@ -134,7 +141,7 @@ const Costos = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
           <CardHeader>
-            <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
+            <CardTitle className="text-foreground">Resumen de Costos {activeCampaignId ? currentCampaign : ""}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
@@ -165,7 +172,7 @@ const Costos = () => {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={(entry) => `${entry.name}: $${entry.value.toLocaleString()}`}
+                    label={(entry) => `${categoriaLabels[entry.name] || entry.name}: $${entry.value.toLocaleString()}`}
                   >
                     {costoPorCategoria.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={categoriaColors[entry.name] || "#cccccc"} />
@@ -211,20 +218,20 @@ const Costos = () => {
                 <tbody>
                   {costosFiltered.map((costo) => (
                     <tr key={costo.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                      <td className="p-3 text-sm font-medium text-foreground">{costo.año}</td>
+                      <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
                       <td className="p-3 text-sm">
                         <Badge
                           style={{
-                            backgroundColor: categoriaColors[costo.categoria] || "#cccccc",
+                            backgroundColor: categoriaColors[costo.category] || "#cccccc",
                             color: "white",
                           }}
                         >
-                          {costo.categoria}
+                          {categoriaLabels[costo.category] || costo.category}
                         </Badge>
                       </td>
-                      <td className="p-3 text-sm text-foreground">{costo.descripcion}</td>
+                      <td className="p-3 text-sm text-foreground">{costo.description}</td>
                       <td className="p-3 text-sm text-right font-semibold text-foreground">
-                        ${costo.monto.toLocaleString()}
+                        ${costo.amount.toLocaleString()}
                       </td>
                       <td className="p-3 text-sm text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -275,7 +282,7 @@ const Costos = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar este costo?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el registro de {costoToDelete?.categoria}.
+              Esta acción no se puede deshacer. Se eliminará permanentemente el registro de {categoriaLabels[costoToDelete?.category] || costoToDelete?.category}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
