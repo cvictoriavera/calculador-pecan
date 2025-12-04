@@ -20,32 +20,32 @@ const memoize = <TArgs extends readonly unknown[], TReturn>(
 
 interface CalculationsState {
   // Selectores memoizados
-  getTotalCosts: (campaignId: string) => number;
-  getTotalInvestments: (campaignId: string) => number;
-  getCostByCategory: (campaignId: string) => Record<string, number>;
-  getInvestmentByCategory: (campaignId: string) => Record<string, number>;
-  getProfitabilityRatio: (campaignId: string) => number;
+  getTotalCosts: (year: number) => number;
+  getTotalInvestments: (campaignId: number) => number;
+  getCostByCategory: (year: number) => Record<string, number>;
+  getInvestmentByCategory: (campaignId: number) => Record<string, number>;
+  getProfitabilityRatio: (campaignId: number) => number;
 }
 
 export const useCalculationsStore = create<CalculationsState>((_, get) => ({
-  // Selector para costos totales por campaña
-  getTotalCosts: memoize((campaignId: string): number => {
+  // Selector para costos totales por año
+  getTotalCosts: memoize((year: number): number => {
     const costs = useDataStore.getState().costs
-      .filter(c => c.campaignId === campaignId);
+      .filter(c => c.year === year);
     return costs.reduce((sum, cost) => sum + cost.amount, 0);
   }),
 
   // Selector para inversiones totales por campaña
-  getTotalInvestments: memoize((campaignId: string): number => {
+  getTotalInvestments: memoize((campaignId: number): number => {
     const investments = useDataStore.getState().investments
       .filter(i => i.campaignId === campaignId);
     return investments.reduce((sum, inv) => sum + inv.amount, 0);
   }),
 
   // Selector para costos por categoría
-  getCostByCategory: memoize((campaignId: string): Record<string, number> => {
+  getCostByCategory: memoize((year: number): Record<string, number> => {
     const costs = useDataStore.getState().costs
-      .filter(c => c.campaignId === campaignId);
+      .filter(c => c.year === year);
 
     return costs.reduce((acc, cost) => {
       acc[cost.category] = (acc[cost.category] || 0) + cost.amount;
@@ -54,7 +54,7 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
   }),
 
   // Selector para inversiones por categoría
-  getInvestmentByCategory: memoize((campaignId: string): Record<string, number> => {
+  getInvestmentByCategory: memoize((campaignId: number): Record<string, number> => {
     const investments = useDataStore.getState().investments
       .filter(i => i.campaignId === campaignId);
 
@@ -65,7 +65,7 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
   }),
 
   // Selector para ratio de rentabilidad
-  getProfitabilityRatio: memoize((campaignId: string): number => {
+  getProfitabilityRatio: memoize((campaignId: number): number => {
     const totalCosts = get().getTotalCosts(campaignId);
     const totalInvestments = get().getTotalInvestments(campaignId);
 

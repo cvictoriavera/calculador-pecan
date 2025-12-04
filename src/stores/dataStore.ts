@@ -3,15 +3,15 @@ import { create } from 'zustand';
 
 // Interfaces base
 export interface Project {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   createdAt: Date;
 }
 
 export interface Campaign {
-  id: string;
-  projectId: string;
+  id: number;
+  projectId: number;
   year: number;
   name: string;
   description?: string;
@@ -19,7 +19,7 @@ export interface Campaign {
 
 export interface CostRecord {
   id: string;
-  campaignId?: string;
+  year: number;
   category: string;
   description: string;
   amount: number;
@@ -29,7 +29,7 @@ export interface CostRecord {
 
 export interface InvestmentRecord {
   id: string;
-  campaignId: string;
+  campaignId: number;
   category: string;
   description: string;
   amount: number;
@@ -57,12 +57,12 @@ interface DataState {
 
   // Acciones
   addProject: (project: Project) => void;
-  updateProject: (id: string, updates: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
+  updateProject: (id: number, updates: Partial<Project>) => void;
+  deleteProject: (id: number) => void;
 
   addCampaign: (campaign: Campaign) => void;
-  updateCampaign: (id: string, updates: Partial<Campaign>) => void;
-  deleteCampaign: (id: string) => void;
+  updateCampaign: (id: number, updates: Partial<Campaign>) => void;
+  deleteCampaign: (id: number) => void;
 
   addCost: (cost: CostRecord) => void;
   updateCost: (id: string, updates: Partial<CostRecord>) => void;
@@ -99,7 +99,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     set((state) => ({ projects: [...state.projects, project] }));
   },
 
-  updateProject: (id, updates) => {
+  updateProject: (id: number, updates) => {
     const currentProject = get().projects.find((p: Project) => p.id === id);
     if (!currentProject) {
       throw new Error(`Project with ID ${id} not found`);
@@ -117,7 +117,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     }));
   },
 
-  deleteProject: (id) => {
+  deleteProject: (id: number) => {
     const project = get().projects.find((p: Project) => p.id === id);
     if (!project) {
       throw new Error(`Project with ID ${id} not found`);
@@ -155,7 +155,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     set((state) => ({ campaigns: [...state.campaigns, campaign] }));
   },
 
-  updateCampaign: (id, updates) => {
+  updateCampaign: (id: number, updates) => {
     const currentCampaign = get().campaigns.find((c: Campaign) => c.id === id);
     if (!currentCampaign) {
       throw new Error(`Campaign with ID ${id} not found`);
@@ -176,18 +176,17 @@ export const useDataStore = create<DataState>((set, get) => ({
     }));
   },
 
-  deleteCampaign: (id) => {
+  deleteCampaign: (id: number) => {
     const campaign = get().campaigns.find((c: Campaign) => c.id === id);
     if (!campaign) {
       throw new Error(`Campaign with ID ${id} not found`);
     }
 
-    // Validación: No eliminar si tiene records
-    const hasCosts = get().costs.some((cost: CostRecord) => cost.campaignId === id);
+    // Validación: No eliminar si tiene investments
     const hasInvestments = get().investments.some((inv: InvestmentRecord) => inv.campaignId === id);
 
-    if (hasCosts || hasInvestments) {
-      throw new Error('Cannot delete campaign with existing records');
+    if (hasInvestments) {
+      throw new Error('Cannot delete campaign with existing investment records');
     }
 
     set((state) => ({
@@ -197,12 +196,9 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   // Cost actions
   addCost: (cost) => {
-    // Validación: Campaign existe si se proporciona
-    if (cost.campaignId) {
-      const campaignExists = get().campaigns.some((c: Campaign) => c.id === cost.campaignId);
-      if (!campaignExists) {
-        throw new Error(`Campaign with ID ${cost.campaignId} does not exist`);
-      }
+    // Validación: Año válido
+    if (!cost.year || cost.year < 2000 || cost.year > 2100) {
+      throw new Error('Valid year is required for cost');
     }
 
     // Validación: Monto positivo
@@ -224,12 +220,9 @@ export const useDataStore = create<DataState>((set, get) => ({
       throw new Error(`Cost with ID ${id} not found`);
     }
 
-    // Validación: Campaign existe si se cambia y se proporciona
-    if (updates.campaignId !== undefined && updates.campaignId) {
-      const campaignExists = get().campaigns.some((c: Campaign) => c.id === updates.campaignId);
-      if (!campaignExists) {
-        throw new Error(`Campaign with ID ${updates.campaignId} does not exist`);
-      }
+    // Validación: Año válido si se cambia
+    if (updates.year !== undefined && (updates.year < 2000 || updates.year > 2100)) {
+      throw new Error('Valid year is required for cost');
     }
 
     // Validación: Monto positivo si se cambia

@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
-import { useUiStore, useDataStore, useCalculationsStore } from "@/stores";
+import { useUiStore, useDataStore } from "@/stores";
 import { toast } from "sonner";
 
 const categoriaLabels: Record<string, string> = {
@@ -42,11 +42,10 @@ const categoriaColors: Record<string, string> = {
 
 
 const Costos = () => {
-  const { currentCampaign, activeCampaignId } = useUiStore();
+  const { currentCampaign } = useUiStore();
   const { costs, addCost, updateCost, deleteCost } = useDataStore();
-  const { getTotalCosts } = useCalculationsStore();
 
-  console.log('Costos page - activeCampaignId:', activeCampaignId, 'currentCampaign:', currentCampaign);
+  console.log('Costos page - currentCampaign:', currentCampaign);
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCosto, setEditingCosto] = useState<any>(null);
@@ -85,7 +84,7 @@ const Costos = () => {
     } else {
       addCost({
         id: Date.now().toString(),
-        campaignId: activeCampaignId ? activeCampaignId.toString() : undefined,
+        year: currentCampaign,
         category: categoria,
         description: categoriaLabels[categoria] || categoria,
         amount: formData.total || 0,
@@ -97,13 +96,9 @@ const Costos = () => {
   };
 
 
-  // Filter costs by current campaign
-  const costosFiltered = activeCampaignId
-    ? costs.filter((c) => c.campaignId === activeCampaignId.toString())
-    : costs.filter((c) => !c.campaignId);
-  const totalCostos = activeCampaignId
-    ? getTotalCosts(activeCampaignId.toString())
-    : costosFiltered.reduce((acc, c) => acc + c.amount, 0);
+  // Filter costs by current campaign year
+  const costosFiltered = costs.filter((c) => c.year === currentCampaign);
+  const totalCostos = costosFiltered.reduce((acc, c) => acc + c.amount, 0);
 
   // Prepare data for pie chart
   const costoPorCategoria = costosFiltered.reduce((acc, cost) => {
@@ -122,10 +117,7 @@ const Costos = () => {
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Costos Operativos</h1>
           <p className="text-muted-foreground">
-            {activeCampaignId
-              ? `Registro de gastos operacionales - Campaña ${currentCampaign}`
-              : "Registro de gastos operacionales"
-            }
+            Registro de gastos operacionales - Campaña {currentCampaign}
           </p>
         </div>
         <Button
@@ -141,7 +133,7 @@ const Costos = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
           <CardHeader>
-            <CardTitle className="text-foreground">Resumen de Costos {activeCampaignId ? currentCampaign : ""}</CardTitle>
+            <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
