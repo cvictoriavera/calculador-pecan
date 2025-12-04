@@ -1,23 +1,27 @@
-import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import type { CombustibleData, CombustibleSubtotales } from "@/lib/calculations";
 import {
   calcularSubtotalesCombustible,
   calcularTotalCombustible,
   formatCurrency,
 } from "@/lib/calculations";
+import {
+  combustibleFormSchema,
+  type CombustibleFormData,
+} from "@/lib/validationSchemas";
 
 interface CombustibleFormProps {
-  onSave: (data: any) => void;
+  onSave: (data: CombustibleFormData) => void;
   onCancel: () => void;
-  initialData?: any;
+  initialData?: Partial<CombustibleFormData>;
 }
 
-const defaultData: CombustibleData = {
+const defaultData = {
   valorVehiculo: 0,
   c1_1_gasoilTractor: { cantidad: 0, precio: 0 },
   c1_2_mantenimientoTractor: { cantidad: 0 },
@@ -31,42 +35,56 @@ const defaultData: CombustibleData = {
 };
 
 export default function CombustibleForm({ onSave, onCancel, initialData }: CombustibleFormProps) {
-  const [data, setData] = useState<CombustibleData>(defaultData);
-  const [subtotales, setSubtotales] = useState<CombustibleSubtotales>({
-    c1_1: 0, c1_2: 0, c1_3: 0, c2_1: 0, c2_2: 0, c2_3: 0, c2_4: 0, c3: 0, c4: 0,
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<CombustibleFormData>({
+    resolver: zodResolver(combustibleFormSchema),
+    defaultValues: {
+      tipo: "combustible",
+      data: initialData?.data || defaultData,
+      subtotales: {
+        c1_1: 0, c1_2: 0, c1_3: 0, c2_1: 0, c2_2: 0, c2_3: 0, c2_4: 0, c3: 0, c4: 0,
+      },
+      total: 0,
+    },
   });
 
-  useEffect(() => {
-    if (initialData?.data) {
-      setData(initialData.data);
-    }
-  }, [initialData]);
-
-  useEffect(() => {
-    setSubtotales(calcularSubtotalesCombustible(data));
-  }, [data]);
-
+  const watchedData = watch("data");
+  const subtotales = calcularSubtotalesCombustible(watchedData || defaultData);
   const totalGeneral = calcularTotalCombustible(subtotales);
 
-  const handleSubmit = () => {
+  const onSubmit = (data: CombustibleFormData) => {
     onSave({
-      tipo: "combustible",
-      data,
+      ...data,
       subtotales,
       total: totalGeneral,
     });
   };
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Valor del vehículo */}
       <div>
         <Label>Valor del vehículo</Label>
-        <CurrencyInput
-          value={data.valorVehiculo || ""}
-          onChange={(v) => setData({ ...data, valorVehiculo: v })}
-          placeholder="0"
+        <Controller
+          name="data.valorVehiculo"
+          control={control}
+          render={({ field }) => (
+            <CurrencyInput
+              value={field.value || ""}
+              onChange={field.onChange}
+              placeholder="0"
+            />
+          )}
         />
+        {errors.data?.valorVehiculo && (
+          <p className="text-xs text-destructive mt-1">
+            {errors.data.valorVehiculo.message}
+          </p>
+        )}
       </div>
 
       {/* C1. Tractores */}
@@ -81,30 +99,29 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs">Cantidad (L)</Label>
-                <Input
-                  type="number"
-                  value={data.c1_1_gasoilTractor.cantidad || ""}
-                  onChange={(e) =>
-                    setData({
-                      ...data,
-                      c1_1_gasoilTractor: {
-                        ...data.c1_1_gasoilTractor,
-                        cantidad: parseFloat(e.target.value) || 0,
-                      },
-                    })
-                  }
+                <Controller
+                  name="data.c1_1_gasoilTractor.cantidad"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      type="number"
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  )}
                 />
               </div>
               <div>
                 <Label className="text-xs">Precio</Label>
-                <CurrencyInput
-                  value={data.c1_1_gasoilTractor.precio || ""}
-                  onChange={(v) =>
-                    setData({
-                      ...data,
-                      c1_1_gasoilTractor: { ...data.c1_1_gasoilTractor, precio: v },
-                    })
-                  }
+                <Controller
+                  name="data.c1_1_gasoilTractor.precio"
+                  control={control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -118,15 +135,16 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <Label className="text-xs font-semibold">Mantenimiento tractores agrícolas</Label>
             <div>
               <Label className="text-xs">Cantidad (%)</Label>
-              <Input
-                type="number"
-                value={data.c1_2_mantenimientoTractor.cantidad || ""}
-                onChange={(e) =>
-                  setData({
-                    ...data,
-                    c1_2_mantenimientoTractor: { cantidad: parseFloat(e.target.value) || 0 },
-                  })
-                }
+              <Controller
+                name="data.c1_2_mantenimientoTractor.cantidad"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="number"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                )}
               />
             </div>
             <p className="text-right text-sm font-semibold text-primary">
@@ -139,15 +157,16 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <Label className="text-xs font-semibold">Lubricantes</Label>
             <div>
               <Label className="text-xs">Cantidad (%)</Label>
-              <Input
-                type="number"
-                value={data.c1_3_lubricantes.cantidad || ""}
-                onChange={(e) =>
-                  setData({
-                    ...data,
-                    c1_3_lubricantes: { cantidad: parseFloat(e.target.value) || 0 },
-                  })
-                }
+              <Controller
+                name="data.c1_3_lubricantes.cantidad"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="number"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                )}
               />
             </div>
             <p className="text-right text-sm font-semibold text-primary">
@@ -169,30 +188,29 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs">Cantidad (L)</Label>
-                <Input
-                  type="number"
-                  value={data.c2_1_nafta.cantidad || ""}
-                  onChange={(e) =>
-                    setData({
-                      ...data,
-                      c2_1_nafta: {
-                        ...data.c2_1_nafta,
-                        cantidad: parseFloat(e.target.value) || 0,
-                      },
-                    })
-                  }
+                <Controller
+                  name="data.c2_1_nafta.cantidad"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      type="number"
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  )}
                 />
               </div>
               <div>
                 <Label className="text-xs">Precio</Label>
-                <CurrencyInput
-                  value={data.c2_1_nafta.precio || ""}
-                  onChange={(v) =>
-                    setData({
-                      ...data,
-                      c2_1_nafta: { ...data.c2_1_nafta, precio: v },
-                    })
-                  }
+                <Controller
+                  name="data.c2_1_nafta.precio"
+                  control={control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -206,15 +224,16 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <Label className="text-xs font-semibold">Impuestos</Label>
             <div>
               <Label className="text-xs">Cantidad (% del valor vehículo)</Label>
-              <Input
-                type="number"
-                value={data.c2_2_impuestos.cantidad || ""}
-                onChange={(e) =>
-                  setData({
-                    ...data,
-                    c2_2_impuestos: { cantidad: parseFloat(e.target.value) || 0 },
-                  })
-                }
+              <Controller
+                name="data.c2_2_impuestos.cantidad"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="number"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                )}
               />
             </div>
             <p className="text-right text-sm font-semibold text-primary">
@@ -227,15 +246,16 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <Label className="text-xs font-semibold">Seguro</Label>
             <div>
               <Label className="text-xs">Cantidad (% del valor vehículo)</Label>
-              <Input
-                type="number"
-                value={data.c2_3_seguro.cantidad || ""}
-                onChange={(e) =>
-                  setData({
-                    ...data,
-                    c2_3_seguro: { cantidad: parseFloat(e.target.value) || 0 },
-                  })
-                }
+              <Controller
+                name="data.c2_3_seguro.cantidad"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="number"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                )}
               />
             </div>
             <p className="text-right text-sm font-semibold text-primary">
@@ -248,15 +268,16 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <Label className="text-xs font-semibold">Mantenimiento vehículos</Label>
             <div>
               <Label className="text-xs">Cantidad (% del valor vehículo)</Label>
-              <Input
-                type="number"
-                value={data.c2_4_mantenimientoVehiculo.cantidad || ""}
-                onChange={(e) =>
-                  setData({
-                    ...data,
-                    c2_4_mantenimientoVehiculo: { cantidad: parseFloat(e.target.value) || 0 },
-                  })
-                }
+              <Controller
+                name="data.c2_4_mantenimientoVehiculo.cantidad"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="number"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                )}
               />
             </div>
             <p className="text-right text-sm font-semibold text-primary">
@@ -278,30 +299,29 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs">Cantidad (L)</Label>
-                <Input
-                  type="number"
-                  value={data.c3_gasoilRiego.cantidad || ""}
-                  onChange={(e) =>
-                    setData({
-                      ...data,
-                      c3_gasoilRiego: {
-                        ...data.c3_gasoilRiego,
-                        cantidad: parseFloat(e.target.value) || 0,
-                      },
-                    })
-                  }
+                <Controller
+                  name="data.c3_gasoilRiego.cantidad"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      type="number"
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  )}
                 />
               </div>
               <div>
                 <Label className="text-xs">Precio</Label>
-                <CurrencyInput
-                  value={data.c3_gasoilRiego.precio || ""}
-                  onChange={(v) =>
-                    setData({
-                      ...data,
-                      c3_gasoilRiego: { ...data.c3_gasoilRiego, precio: v },
-                    })
-                  }
+                <Controller
+                  name="data.c3_gasoilRiego.precio"
+                  control={control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -316,30 +336,29 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs">Cantidad</Label>
-                <Input
-                  type="number"
-                  value={data.c4_otros.cantidad || ""}
-                  onChange={(e) =>
-                    setData({
-                      ...data,
-                      c4_otros: {
-                        ...data.c4_otros,
-                        cantidad: parseFloat(e.target.value) || 0,
-                      },
-                    })
-                  }
+                <Controller
+                  name="data.c4_otros.cantidad"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      type="number"
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  )}
                 />
               </div>
               <div>
                 <Label className="text-xs">Precio</Label>
-                <CurrencyInput
-                  value={data.c4_otros.precio || ""}
-                  onChange={(v) =>
-                    setData({
-                      ...data,
-                      c4_otros: { ...data.c4_otros, precio: v },
-                    })
-                  }
+                <Controller
+                  name="data.c4_otros.precio"
+                  control={control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -359,13 +378,13 @@ export default function CombustibleForm({ onSave, onCancel, initialData }: Combu
       </div>
 
       <div className="flex gap-3 pt-4">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} className="flex-1">
+        <Button type="submit" className="flex-1">
           Guardar
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

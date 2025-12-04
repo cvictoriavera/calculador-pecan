@@ -1,68 +1,77 @@
-import { useState, useEffect } from "react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import type { MantenimientoItem } from "@/lib/calculations";
 import {
   calcularTotalMantenimientos,
   formatCurrency,
 } from "@/lib/calculations";
+import {
+  mantenimientosFormSchema,
+  type MantenimientosFormData,
+} from "@/lib/validationSchemas";
 
 interface MantenimientosFormProps {
-  onSave: (data: any) => void;
+  onSave: (data: MantenimientosFormData) => void;
   onCancel: () => void;
-  initialData?: any;
+  initialData?: Partial<MantenimientosFormData>;
 }
 
 export default function MantenimientosForm({ onSave, onCancel, initialData }: MantenimientosFormProps) {
-  const [items, setItems] = useState<MantenimientoItem[]>([]);
-
-  useEffect(() => {
-    if (initialData?.items) {
-      setItems(initialData.items);
-    }
-  }, [initialData]);
-
-  const addItem = () => {
-    setItems([
-      ...items,
-      {
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<MantenimientosFormData>({
+    resolver: zodResolver(mantenimientosFormSchema),
+    defaultValues: {
+      tipo: "mantenimientos",
+      items: initialData?.items || [{
         id: Date.now().toString(),
         nombreHerramienta: "",
         precioReparacion: 0,
-      },
-    ]);
-  };
+      }],
+      total: 0,
+    },
+  });
 
-  const updateItem = (id: string, field: keyof MantenimientoItem, value: any) => {
-    setItems(items.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
-  };
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items",
+  });
 
-  const removeItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
-  };
+  const watchedItems = watch("items");
+  const totalGeneral = calcularTotalMantenimientos(watchedItems || []);
 
-  const totalGeneral = calcularTotalMantenimientos(items);
-
-  const handleSubmit = () => {
+  const onSubmit = (data: MantenimientosFormData) => {
     onSave({
-      tipo: "mantenimientos",
-      items,
+      ...data,
       total: totalGeneral,
     });
   };
 
+  const addItem = () => {
+    append({
+      id: Date.now().toString(),
+      nombreHerramienta: "",
+      precioReparacion: 0,
+    });
+  };
+
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <p className="text-sm text-muted-foreground">
         Registra las herramientas reparadas y su costo de reparación.
       </p>
 
-      {items.map((item) => (
+      {fields.map((field, index) => (
         <div
-          key={item.id}
+          key={field.id}
           className="p-4 border border-border rounded-lg space-y-3 bg-secondary/30"
         >
           <div className="flex justify-between items-start gap-3">
@@ -70,25 +79,41 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
               <div>
                 <Label className="text-xs">Nombre de la herramienta</Label>
                 <Input
-                  value={item.nombreHerramienta}
-                  onChange={(e) => updateItem(item.id, "nombreHerramienta", e.target.value)}
+                  {...register(`items.${index}.nombreHerramienta`)}
                   placeholder="Ej: Podadora eléctrica"
                 />
+                {errors.items?.[index]?.nombreHerramienta && (
+                  <p className="text-xs text-destructive">
+                    {errors.items[index]?.nombreHerramienta?.message}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-xs">Precio reparación</Label>
-                <CurrencyInput
-                  value={item.precioReparacion || ""}
-                  onChange={(v) => updateItem(item.id, "precioReparacion", v)}
-                  placeholder="0"
+                <Controller
+                  name={`items.${index}.precioReparacion`}
+                  control={control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="0"
+                    />
+                  )}
                 />
+                {errors.items?.[index]?.precioReparacion && (
+                  <p className="text-xs text-destructive">
+                    {errors.items[index]?.precioReparacion?.message}
+                  </p>
+                )}
               </div>
             </div>
             <Button
+              type="button"
               variant="ghost"
               size="icon"
               className="text-destructive hover:text-destructive"
-              onClick={() => removeItem(item.id)}
+              onClick={() => remove(index)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -96,12 +121,12 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
         </div>
       ))}
 
-      <Button variant="outline" className="w-full" onClick={addItem}>
+      <Button type="button" variant="outline" className="w-full" onClick={addItem}>
         <Plus className="h-4 w-4 mr-2" />
         Agregar Herramienta
       </Button>
 
-      {items.length > 0 && (
+      {fields.length > 0 && (
         <div className="p-4 bg-primary/10 rounded-lg">
           <div className="flex justify-between items-center">
             <span className="font-medium">Total Mantenimientos:</span>
@@ -111,13 +136,13 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
       )}
 
       <div className="flex gap-3 pt-4">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} className="flex-1" disabled={items.length === 0}>
+        <Button type="submit" className="flex-1" disabled={fields.length === 0}>
           Guardar
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

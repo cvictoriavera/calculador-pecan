@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +13,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2 } from "lucide-react";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import type { StaffItem } from "@/lib/calculations";
 import {
   calcularCostoStaff,
   calcularTotalGastosGenerales,
   calcularTotalStaff,
   formatCurrency,
 } from "@/lib/calculations";
+import {
+  gastosAdminFormSchema,
+  type GastosAdminFormData,
+} from "@/lib/validationSchemas";
 
 const gastosGenerales = [
   { key: "contador", label: "Contador" },
@@ -45,60 +49,53 @@ const rolesAdmin = [
 ];
 
 interface GastosAdminFormProps {
-  onSave: (data: any) => void;
+  onSave: (data: GastosAdminFormData) => void;
   onCancel: () => void;
-  initialData?: any;
+  initialData?: Partial<GastosAdminFormData>;
 }
 
 export default function GastosAdminForm({ onSave, onCancel, initialData }: GastosAdminFormProps) {
-  const [valoresGenerales, setValoresGenerales] = useState<Record<string, number>>({});
-  const [staffItems, setStaffItems] = useState<StaffItem[]>([]);
+  const {
+    control,
+    handleSubmit,
+    watch,
+  } = useForm<GastosAdminFormData>({
+    resolver: zodResolver(gastosAdminFormSchema),
+    defaultValues: {
+      tipo: "gastos-admin",
+      gastosGenerales: initialData?.gastosGenerales || {},
+      staff: initialData?.staff || [],
+      totalGenerales: 0,
+      totalStaff: 0,
+      total: 0,
+    },
+  });
 
-  useEffect(() => {
-    if (initialData) {
-      if (initialData.gastosGenerales) {
-        setValoresGenerales(initialData.gastosGenerales);
-      }
-      if (initialData.staff) {
-        setStaffItems(initialData.staff);
-      }
-    }
-  }, [initialData]);
+  const { fields: staffFields, append: appendStaff, remove: removeStaff } = useFieldArray({
+    control,
+    name: "staff",
+  });
 
-  const updateValorGeneral = (key: string, value: number) => {
-    setValoresGenerales({ ...valoresGenerales, [key]: value });
-  };
+  const watchedGastosGenerales = watch("gastosGenerales");
+  const watchedStaff = watch("staff");
 
-  const addStaff = () => {
-    setStaffItems([
-      ...staffItems,
-      {
-        id: Date.now().toString(),
-        rol: "",
-        remuneracion: 0,
-        cargasSociales: 0,
-        nroProfesionales: 1,
-      },
-    ]);
-  };
-
-  const updateStaff = (id: string, field: keyof StaffItem, value: any) => {
-    setStaffItems(staffItems.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
-  };
-
-  const removeStaff = (id: string) => {
-    setStaffItems(staffItems.filter((item) => item.id !== id));
-  };
-
-  const totalGenerales = calcularTotalGastosGenerales(valoresGenerales);
-  const totalStaffCalc = calcularTotalStaff(staffItems);
+  const totalGenerales = calcularTotalGastosGenerales(watchedGastosGenerales || {});
+  const totalStaffCalc = calcularTotalStaff(watchedStaff || []);
   const totalGeneral = totalGenerales + totalStaffCalc;
 
-  const handleSubmit = () => {
+  const addStaff = () => {
+    appendStaff({
+      id: Date.now().toString(),
+      rol: "",
+      remuneracion: 0,
+      cargasSociales: 0,
+      nroProfesionales: 1,
+    });
+  };
+
+  const onSubmit = (data: GastosAdminFormData) => {
     onSave({
-      tipo: "gastos-admin",
-      gastosGenerales: valoresGenerales,
-      staff: staffItems,
+      ...data,
       totalGenerales,
       totalStaff: totalStaffCalc,
       total: totalGeneral,
@@ -106,7 +103,7 @@ export default function GastosAdminForm({ onSave, onCancel, initialData }: Gasto
   };
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Tabs defaultValue="generales" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="generales">Gastos Generales</TabsTrigger>
@@ -118,10 +115,16 @@ export default function GastosAdminForm({ onSave, onCancel, initialData }: Gasto
             {gastosGenerales.map((item) => (
               <div key={item.key} className="space-y-1">
                 <Label className="text-xs">{item.label}</Label>
-                <CurrencyInput
-                  value={valoresGenerales[item.key] || ""}
-                  onChange={(v) => updateValorGeneral(item.key, v)}
-                  placeholder="0"
+                <Controller
+                  name={`gastosGenerales.${item.key}`}
+                  control={control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="0"
+                    />
+                  )}
                 />
               </div>
             ))}
@@ -135,32 +138,39 @@ export default function GastosAdminForm({ onSave, onCancel, initialData }: Gasto
         </TabsContent>
 
         <TabsContent value="staff" className="space-y-4 mt-4">
-          {staffItems.map((item) => (
+          {staffFields.map((field, index) => (
             <div
-              key={item.id}
+              key={field.id}
               className="p-4 border border-border rounded-lg space-y-3 bg-secondary/30"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <Label className="text-xs">Rol</Label>
-                  <Select value={item.rol} onValueChange={(v) => updateStaff(item.id, "rol", v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar rol..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rolesAdmin.map((rol) => (
-                        <SelectItem key={rol} value={rol}>
-                          {rol}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name={`staff.${index}.rol`}
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar rol..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {rolesAdmin.map((rol) => (
+                            <SelectItem key={rol} value={rol}>
+                              {rol}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   className="text-destructive hover:text-destructive ml-2"
-                  onClick={() => removeStaff(item.id)}
+                  onClick={() => removeStaff(index)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -169,43 +179,63 @@ export default function GastosAdminForm({ onSave, onCancel, initialData }: Gasto
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label className="text-xs">Remuneración</Label>
-                  <CurrencyInput
-                    value={item.remuneracion || ""}
-                    onChange={(v) => updateStaff(item.id, "remuneracion", v)}
-                    placeholder="0"
+                  <Controller
+                    name={`staff.${index}.remuneracion`}
+                    control={control}
+                    render={({ field }) => (
+                      <CurrencyInput
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="0"
+                      />
+                    )}
                   />
                 </div>
                 <div>
                   <Label className="text-xs">Cs Sociales</Label>
-                  <CurrencyInput
-                    value={item.cargasSociales || ""}
-                    onChange={(v) => updateStaff(item.id, "cargasSociales", v)}
-                    placeholder="0"
+                  <Controller
+                    name={`staff.${index}.cargasSociales`}
+                    control={control}
+                    render={({ field }) => (
+                      <CurrencyInput
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="0"
+                      />
+                    )}
                   />
                 </div>
                 <div>
                   <Label className="text-xs">Nro. Profesionales</Label>
-                  <Input
-                    type="number"
-                    value={item.nroProfesionales || ""}
-                    onChange={(e) =>
-                      updateStaff(item.id, "nroProfesionales", parseInt(e.target.value) || 1)
-                    }
-                    placeholder="1"
-                    min={1}
+                  <Controller
+                    name={`staff.${index}.nroProfesionales`}
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        placeholder="1"
+                        min={1}
+                      />
+                    )}
                   />
                 </div>
               </div>
 
               <div className="flex justify-end pt-2 border-t border-border">
                 <span className="font-semibold text-primary">
-                  Costo: {formatCurrency(calcularCostoStaff(item.remuneracion, item.cargasSociales, item.nroProfesionales), true)}
+                  Costo: {formatCurrency(calcularCostoStaff(
+                    watchedStaff?.[index]?.remuneracion || 0,
+                    watchedStaff?.[index]?.cargasSociales || 0,
+                    watchedStaff?.[index]?.nroProfesionales || 1
+                  ), true)}
                 </span>
               </div>
             </div>
           ))}
 
-          <Button variant="outline" className="w-full" onClick={addStaff}>
+          <Button type="button" variant="outline" className="w-full" onClick={addStaff}>
             <Plus className="h-4 w-4 mr-2" />
             Agregar Staff
           </Button>
@@ -227,13 +257,13 @@ export default function GastosAdminForm({ onSave, onCancel, initialData }: Gasto
       </div>
 
       <div className="flex gap-3 pt-4">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} className="flex-1" disabled={totalGeneral <= 0}>
+        <Button type="submit" className="flex-1" disabled={totalGeneral <= 0}>
           Guardar
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

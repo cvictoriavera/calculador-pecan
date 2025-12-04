@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,7 +18,6 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
-import type { InsumoItem } from "@/lib/calculations";
 import {
   calcularTotalProductoInsumo,
   calcularCostoLineaInsumo,
@@ -25,6 +25,10 @@ import {
   calcularTotalGeneralInsumos,
   formatCurrency,
 } from "@/lib/calculations";
+import {
+  insumosFormSchema,
+  type InsumosFormData,
+} from "@/lib/validationSchemas";
 
 const tiposInsumo = {
   "fertilizantes-suelo": {
@@ -60,22 +64,48 @@ const tiposInsumo = {
 };
 
 interface InsumosFormProps {
-  onSave: (data: any) => void;
+  onSave: (data: InsumosFormData) => void;
   onCancel: () => void;
-  initialData?: any;
+  initialData?: Partial<InsumosFormData>;
 }
 
 export default function InsumosForm({ onSave, onCancel, initialData }: InsumosFormProps) {
-  const [items, setItems] = useState<InsumoItem[]>([]);
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+  } = useForm<InsumosFormData>({
+    resolver: zodResolver(insumosFormSchema),
+    defaultValues: {
+      tipo: "insumos",
+      items: initialData?.items || [],
+      total: 0,
+    },
+  });
 
-  useEffect(() => {
-    if (initialData?.items) {
-      setItems(initialData.items);
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items",
+  });
+
+  const watchedItems = watch("items");
+
+  // Función para recalcular totalProducto cuando cambian los campos
+  const recalculateTotalProducto = (index: number) => {
+    const item = watchedItems?.[index];
+    if (item && !tiposInsumo[item.tipo as keyof typeof tiposInsumo]?.esFertilizanteSuelo) {
+      const totalProducto = calcularTotalProductoInsumo(
+        item.dosisMl || 0,
+        item.volumenAplicaciones || 0,
+        item.cantAplicaciones || 0
+      );
+      setValue(`items.${index}.totalProducto`, totalProducto);
     }
-  }, [initialData]);
+  };
 
   const addItem = (tipo: string) => {
-    const newItem: InsumoItem = {
+    append({
       id: Date.now().toString(),
       tipo,
       producto: "",
@@ -84,49 +114,22 @@ export default function InsumosForm({ onSave, onCancel, initialData }: InsumosFo
       volumenAplicaciones: 0,
       cantAplicaciones: 0,
       totalProducto: 0,
-    };
-    setItems([...items, newItem]);
+    });
   };
 
-  const updateItem = (id: string, field: keyof InsumoItem, value: any) => {
-    setItems(
-      items.map((item) => {
-        if (item.id !== id) return item;
-
-        const updated = { ...item, [field]: value };
-        const tipoInfo = tiposInsumo[updated.tipo as keyof typeof tiposInsumo];
-
-        if (!tipoInfo?.esFertilizanteSuelo) {
-          updated.totalProducto = calcularTotalProductoInsumo(
-            updated.dosisMl,
-            updated.volumenAplicaciones,
-            updated.cantAplicaciones
-          );
-        }
-
-        return updated;
-      })
-    );
-  };
-
-  const removeItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
-  };
-
-  const handleSubmit = () => {
+  const onSubmit = (data: InsumosFormData) => {
     onSave({
-      tipo: "insumos",
-      items,
-      total: calcularTotalGeneralInsumos(items),
+      ...data,
+      total: calcularTotalGeneralInsumos(data.items),
     });
   };
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Accordion type="multiple" className="w-full">
         {Object.entries(tiposInsumo).map(([key, tipo]) => {
-          const itemsDelTipo = items.filter((item) => item.tipo === key);
-          const totalTipo = calcularTotalPorTipoInsumo(items, key);
+          const itemsDelTipo = watchedItems?.filter((item) => item.tipo === key) || [];
+          const totalTipo = calcularTotalPorTipoInsumo(watchedItems || [], key);
 
           return (
             <AccordionItem key={key} value={key}>
@@ -142,132 +145,162 @@ export default function InsumosForm({ onSave, onCancel, initialData }: InsumosFo
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-4 pt-2">
-                  {itemsDelTipo.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-4 border border-border rounded-lg space-y-3 bg-secondary/30"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs">Producto</Label>
-                            <Select
-                              value={item.producto}
-                              onValueChange={(v) => updateItem(item.id, "producto", v)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {tipo.opciones.map((op) => (
-                                  <SelectItem key={op} value={op}>
-                                    {op}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                  {itemsDelTipo.map((item) => {
+                    const globalIndex = watchedItems?.findIndex(i => i.id === item.id) ?? 0;
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-4 border border-border rounded-lg space-y-3 bg-secondary/30"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Producto</Label>
+                              <Controller
+                                name={`items.${globalIndex}.producto`}
+                                control={control}
+                                render={({ field }) => (
+                                  <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Seleccionar..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {tipo.opciones.map((op) => (
+                                        <SelectItem key={op} value={op}>
+                                          {op}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Precio por unidad</Label>
+                              <Controller
+                                name={`items.${globalIndex}.precioUnidad`}
+                                control={control}
+                                render={({ field }) => (
+                                  <CurrencyInput
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                    placeholder="0"
+                                  />
+                                )}
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <Label className="text-xs">Precio por unidad</Label>
-                            <CurrencyInput
-                              value={item.precioUnidad || ""}
-                              onChange={(v) => updateItem(item.id, "precioUnidad", v)}
-                              placeholder="0"
-                            />
-                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => remove(globalIndex)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => removeItem(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
 
-                      {!tipo.esFertilizanteSuelo ? (
-                        <>
-                          <div className="grid grid-cols-3 gap-3">
+                        {!tipo.esFertilizanteSuelo ? (
+                          <>
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <Label className="text-xs">Dosis (ml)</Label>
+                                <Controller
+                                  name={`items.${globalIndex}.dosisMl`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="number"
+                                      value={field.value || ""}
+                                      onChange={(e) => {
+                                        field.onChange(parseFloat(e.target.value) || 0);
+                                        recalculateTotalProducto(globalIndex);
+                                      }}
+                                      placeholder="0"
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Vol. aplicaciones</Label>
+                                <Controller
+                                  name={`items.${globalIndex}.volumenAplicaciones`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="number"
+                                      value={field.value || ""}
+                                      onChange={(e) => {
+                                        field.onChange(parseFloat(e.target.value) || 0);
+                                        recalculateTotalProducto(globalIndex);
+                                      }}
+                                      placeholder="0"
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Cant. aplicaciones</Label>
+                                <Controller
+                                  name={`items.${globalIndex}.cantAplicaciones`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="number"
+                                      value={field.value || ""}
+                                      onChange={(e) => {
+                                        field.onChange(parseFloat(e.target.value) || 0);
+                                        recalculateTotalProducto(globalIndex);
+                                      }}
+                                      placeholder="0"
+                                    />
+                                  )}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t border-border">
+                              <span className="text-sm text-muted-foreground">
+                                Total producto: {item.totalProducto?.toFixed(2) || 0} L
+                              </span>
+                              <span className="font-semibold text-primary">
+                                Costo: {formatCurrency(calcularCostoLineaInsumo(item.precioUnidad || 0, item.totalProducto || 0), true)}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
                             <div>
-                              <Label className="text-xs">Dosis (ml)</Label>
-                              <Input
-                                type="number"
-                                value={item.dosisMl || ""}
-                                onChange={(e) =>
-                                  updateItem(item.id, "dosisMl", parseFloat(e.target.value) || 0)
-                                }
-                                placeholder="0"
+                              <Label className="text-xs">Total producto utilizado</Label>
+                              <Controller
+                                name={`items.${globalIndex}.totalProducto`}
+                                control={control}
+                                render={({ field }) => (
+                                  <Input
+                                    type="number"
+                                    value={field.value || ""}
+                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                    placeholder="0"
+                                  />
+                                )}
                               />
                             </div>
-                            <div>
-                              <Label className="text-xs">Vol. aplicaciones</Label>
-                              <Input
-                                type="number"
-                                value={item.volumenAplicaciones || ""}
-                                onChange={(e) =>
-                                  updateItem(
-                                    item.id,
-                                    "volumenAplicaciones",
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
-                                placeholder="0"
-                              />
+                            <div className="flex justify-end pt-2 border-t border-border">
+                              <span className="font-semibold text-primary">
+                                Costo: {formatCurrency(calcularCostoLineaInsumo(item.precioUnidad || 0, item.totalProducto || 0), true)}
+                              </span>
                             </div>
-                            <div>
-                              <Label className="text-xs">Cant. aplicaciones</Label>
-                              <Input
-                                type="number"
-                                value={item.cantAplicaciones || ""}
-                                onChange={(e) =>
-                                  updateItem(
-                                    item.id,
-                                    "cantAplicaciones",
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
-                                placeholder="0"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex justify-between items-center pt-2 border-t border-border">
-                            <span className="text-sm text-muted-foreground">
-                              Total producto: {item.totalProducto.toFixed(2)} L
-                            </span>
-                            <span className="font-semibold text-primary">
-                              Costo: {formatCurrency(calcularCostoLineaInsumo(item.precioUnidad, item.totalProducto), true)}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div>
-                            <Label className="text-xs">Total producto utilizado</Label>
-                            <Input
-                              type="number"
-                              value={item.totalProducto || ""}
-                              onChange={(e) =>
-                                updateItem(
-                                  item.id,
-                                  "totalProducto",
-                                  parseFloat(e.target.value) || 0
-                                )
-                              }
-                              placeholder="0"
-                            />
-                          </div>
-                          <div className="flex justify-end pt-2 border-t border-border">
-                            <span className="font-semibold text-primary">
-                              Costo: {formatCurrency(calcularCostoLineaInsumo(item.precioUnidad, item.totalProducto), true)}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     className="w-full"
@@ -283,25 +316,25 @@ export default function InsumosForm({ onSave, onCancel, initialData }: InsumosFo
         })}
       </Accordion>
 
-      {items.length > 0 && (
+      {fields.length > 0 && (
         <div className="p-4 bg-primary/10 rounded-lg">
           <div className="flex justify-between items-center">
             <span className="font-medium">Total Insumos:</span>
             <span className="text-xl font-bold text-primary">
-              {formatCurrency(calcularTotalGeneralInsumos(items), true)}
+              {formatCurrency(calcularTotalGeneralInsumos(watchedItems || []), true)}
             </span>
           </div>
         </div>
       )}
 
       <div className="flex gap-3 pt-4">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} className="flex-1" disabled={items.length === 0}>
+        <Button type="submit" className="flex-1" disabled={fields.length === 0}>
           Guardar
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

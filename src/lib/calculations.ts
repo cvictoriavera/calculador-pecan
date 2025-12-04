@@ -6,18 +6,18 @@ export interface InsumoItem {
   tipo: string;
   producto: string;
   precioUnidad: number;
-  dosisMl: number;
-  volumenAplicaciones: number;
-  cantAplicaciones: number;
+  dosisMl?: number;
+  volumenAplicaciones?: number;
+  cantAplicaciones?: number;
   totalProducto: number;
 }
 
 export const calcularTotalProductoInsumo = (
-  dosisMl: number,
-  volumenAplicaciones: number,
-  cantAplicaciones: number
+  dosisMl: number | undefined,
+  volumenAplicaciones: number | undefined,
+  cantAplicaciones: number | undefined
 ): number => {
-  return (dosisMl * volumenAplicaciones * cantAplicaciones) / 1000;
+  return ((dosisMl || 0) * (volumenAplicaciones || 0) * (cantAplicaciones || 0)) / 1000;
 };
 
 export const calcularCostoLineaInsumo = (precioUnidad: number, totalProducto: number): number => {

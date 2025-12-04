@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { calcularTotalCosecha, formatCurrency } from "@/lib/calculations";
+import {
+  cosechaFormSchema,
+  type CosechaFormData,
+} from "@/lib/validationSchemas";
 
 const itemsCosecha = [
   { key: "cosecha_maquinaria", label: "Cosecha maquinaria" },
@@ -15,43 +20,50 @@ const itemsCosecha = [
 ];
 
 interface CosechaFormProps {
-  onSave: (data: any) => void;
+  onSave: (data: CosechaFormData) => void;
   onCancel: () => void;
-  initialData?: any;
+  initialData?: Partial<CosechaFormData>;
 }
 
 export default function CosechaForm({ onSave, onCancel, initialData }: CosechaFormProps) {
-  const [valores, setValores] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    if (initialData?.items) {
-      setValores(initialData.items);
-    }
-  }, [initialData]);
-
-  const updateValor = (key: string, value: number) => {
-    setValores({ ...valores, [key]: value });
-  };
-
-  const totalGeneral = calcularTotalCosecha(valores);
-
-  const handleSubmit = () => {
-    onSave({
+  const {
+    control,
+    handleSubmit,
+    watch,
+  } = useForm<CosechaFormData>({
+    resolver: zodResolver(cosechaFormSchema),
+    defaultValues: {
       tipo: "cosecha",
-      items: valores,
+      valores: initialData?.valores || {},
+      total: 0,
+    },
+  });
+
+  const watchedValores = watch("valores");
+  const totalGeneral = calcularTotalCosecha(watchedValores || {});
+
+  const onSubmit = (data: CosechaFormData) => {
+    onSave({
+      ...data,
       total: totalGeneral,
     });
   };
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {itemsCosecha.map((item) => (
         <div key={item.key} className="space-y-1">
           <Label className="text-sm">{item.label}</Label>
-          <CurrencyInput
-            value={valores[item.key] || ""}
-            onChange={(v) => updateValor(item.key, v)}
-            placeholder="0"
+          <Controller
+            name={`valores.${item.key}`}
+            control={control}
+            render={({ field }) => (
+              <CurrencyInput
+                value={field.value || ""}
+                onChange={field.onChange}
+                placeholder="0"
+              />
+            )}
           />
         </div>
       ))}
@@ -64,13 +76,13 @@ export default function CosechaForm({ onSave, onCancel, initialData }: CosechaFo
       </div>
 
       <div className="flex gap-3 pt-4">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} className="flex-1" disabled={totalGeneral <= 0}>
+        <Button type="submit" className="flex-1" disabled={totalGeneral <= 0}>
           Guardar
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
