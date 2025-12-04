@@ -17,9 +17,9 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
-  const { isOnboardingComplete, isLoading } = useApp();
+  const { isOnboardingComplete, isLoading, currentProjectId } = useApp();
 
-  console.log('ProtectedRoutes: isLoading:', isLoading, 'isOnboardingComplete:', isOnboardingComplete);
+  console.log('ProtectedRoutes: isLoading:', isLoading, 'isOnboardingComplete:', isOnboardingComplete, 'currentProjectId:', currentProjectId);
 
   if (isLoading) {
     return (

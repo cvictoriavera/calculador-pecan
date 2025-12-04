@@ -137,6 +137,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkExistingProjects = async () => {
       console.log('Checking for existing projects...');
+      console.log('Initial currentProjectId from localStorage:', localStorage.getItem("currentProjectId"));
+      console.log('Initial isOnboardingComplete:', !!currentProjectId);
       try {
         const projects = await getProjects();
         console.log('Projects fetched:', projects);
@@ -183,6 +185,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         } else {
           console.log('No existing projects found');
+          console.log('currentProjectId before clearing:', currentProjectId);
+          // Clear currentProjectId if no projects found
+          setCurrentProjectId(null);
+          setProjectName("");
+          localStorage.removeItem("currentProjectId");
+          localStorage.removeItem("projectName");
+          console.log('Cleared currentProjectId and projectName');
         }
       } catch (error) {
         console.error('Error checking existing projects:', error);

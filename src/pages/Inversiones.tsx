@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, DollarSign, TrendingDown, Pencil, Trash2 } from "lucide-react";
+import { Plus, DollarSign, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -141,7 +141,7 @@ const Inversiones = () => {
       </Card>
 
       {/* Investments Table */}
-      {inversiones.length > 0 ? (
+      {inversionesFiltered.length > 0 ? (
         <Card className="border-border/50 shadow-md">
           <CardHeader>
             <CardTitle className="text-foreground">Registro de Inversiones</CardTitle>
@@ -203,19 +203,10 @@ const Inversiones = () => {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-border/50 shadow-md">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <TrendingDown className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">No hay inversiones registradas</h3>
-            <p className="text-muted-foreground mb-6 text-center max-w-md">
-              No hay inversiones registradas para la campaña {currentCampaign}. Comienza registrando tus inversiones de capital.
-            </p>
-            <Button onClick={handleOpenSheet} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-              <Plus className="h-5 w-5" />
-              Registrar Primera Inversión
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12 text-muted-foreground">
+          <p>No hay inversiones registradas para esta campaña.</p>
+          <p className="text-sm mt-1">Haz clic en "Nueva Inversión" para comenzar.</p>
+        </div>
       )}
 
       <AddInversionSheet
