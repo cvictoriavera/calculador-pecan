@@ -145,6 +145,23 @@ export const energiaFormSchema = z.object({
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),
 });
 
+// ============= PRODUCCION =============
+export const produccionPorMonteSchema = z.object({
+  monteId: z.string().min(1, "Monte requerido"),
+  nombre: z.string().min(1, "Nombre requerido"),
+  hectareas: z.number().min(0.01, "Hectáreas deben ser mayor a 0"),
+  edad: z.number().min(0, "Edad debe ser mayor o igual a 0"),
+  kgRecolectados: z.number().min(0, "Kg recolectados deben ser mayor o igual a 0"),
+});
+
+export const registrarProduccionFormSchema = z.object({
+  precioPromedio: z.number().min(0.01, "Precio promedio debe ser mayor a 0"),
+  metodo: z.enum(["detallado", "total"]),
+  pesoTotal: z.number().min(0, "Peso total debe ser mayor o igual a 0").optional(),
+  montesSeleccionados: z.array(z.string()).optional(),
+  produccionPorMonte: z.array(produccionPorMonteSchema).min(1, "Debe haber al menos un registro de producción"),
+});
+
 // Tipos inferidos
 export type InsumoItemForm = z.infer<typeof insumoItemSchema>;
 export type InsumosFormData = z.infer<typeof insumosFormSchema>;
@@ -155,3 +172,5 @@ export type MantenimientosFormData = z.infer<typeof mantenimientosFormSchema>;
 export type CostosOportunidadFormData = z.infer<typeof costosOportunidadFormSchema>;
 export type CosechaFormData = z.infer<typeof cosechaFormSchema>;
 export type EnergiaFormData = z.infer<typeof energiaFormSchema>;
+export type ProduccionPorMonteData = z.infer<typeof produccionPorMonteSchema>;
+export type RegistrarProduccionFormData = z.infer<typeof registrarProduccionFormSchema>;

@@ -97,7 +97,7 @@ const Onboarding = () => {
               </Label>
               <Input
                 id="projectName"
-                placeholder="Finca Los Grandes Chibis"
+                placeholder="Finca Los Arroyos"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 className="text-lg py-6"

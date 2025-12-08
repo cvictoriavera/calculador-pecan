@@ -15,14 +15,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
 import { formatCurrency } from "@/lib/calculations";
-import { useUiStore } from "@/stores";
+import { useUiStore, useDataStore } from "@/stores";
+import { toast } from "sonner";
 
 interface InversionRegistro {
-  id: number;
-  año: number;
-  categoria: string;
-  descripcion: string;
-  monto: number;
+  id: string;
+  year: number;
+  category: string;
+  description: string;
+  amount: number;
+  date: Date;
   data?: any;
 }
 
@@ -44,21 +46,16 @@ const categoriaColors: Record<string, string> = {
 
 const Inversiones = () => {
   const { currentCampaign } = useUiStore();
-  const [inversiones, setInversiones] = useState<InversionRegistro[]>([
-    { id: 1, año: 2025, categoria: "Maquinaria", descripcion: "Shaker nuevo", monto: 8000 },
-    { id: 2, año: 2024, categoria: "Riego", descripcion: "Sistema de riego por goteo", monto: 10000 },
-    { id: 3, año: 2023, categoria: "Maquinaria", descripcion: "Tractor John Deere", monto: 15000 },
-    { id: 4, año: 2022, categoria: "Implantación", descripcion: "Nuevos árboles Lote Oeste", monto: 20000 },
-    { id: 5, año: 2021, categoria: "Maquinaria", descripcion: "Acoplado para cosecha", monto: 30000 },
-  ]);
+  const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
 
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingInversion, setEditingInversion] = useState<InversionRegistro | null>(null);
-  const [inversionToDelete, setInversionToDelete] = useState<InversionRegistro | null>(null);
+  const [editingInversion, setEditingInversion] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [inversionToDelete, setInversionToDelete] = useState<any>(null);
 
-  // Filter investments by current campaign
-  const inversionesFiltered = inversiones.filter((inv) => inv.año === currentCampaign);
-  const totalInversionesCampaña = inversionesFiltered.reduce((acc, inv) => acc + inv.monto, 0);
+  // Filter investments by current campaign year
+  const inversionesFiltered = investments.filter((inv) => inv.year === currentCampaign);
+  const totalInversionesCampaña = inversionesFiltered.reduce((acc, inv) => acc + inv.amount, 0);
 
 
   const handleSaveInversion = (categoria: string, data: any) => {
@@ -67,24 +64,25 @@ const Inversiones = () => {
     const monto = data.total || data.precio || 0;
 
     if (editingInversion) {
-      setInversiones(
-        inversiones.map((inv) =>
-          inv.id === editingInversion.id
-            ? { ...inv, categoria: categoriaLabel, descripcion, monto, data }
-            : inv
-        )
-      );
+      updateInvestment(editingInversion.id, {
+        category: categoria,
+        description: descripcion,
+        amount: monto,
+        data,
+      });
+      toast.success("Inversión actualizada correctamente");
       setEditingInversion(null);
     } else {
-      const newInversion: InversionRegistro = {
-        id: Date.now(),
-        año: currentCampaign,
-        categoria: categoriaLabel,
-        descripcion,
-        monto,
+      addInvestment({
+        id: Date.now().toString(),
+        year: currentCampaign,
+        category: categoria,
+        description: descripcion,
+        amount: monto,
+        date: new Date(),
         data,
-      };
-      setInversiones([newInversion, ...inversiones]);
+      });
+      toast.success("Inversión registrada correctamente");
     }
   };
 
@@ -93,15 +91,18 @@ const Inversiones = () => {
     setSheetOpen(true);
   };
 
-  const handleDeleteInversion = (inversion: InversionRegistro) => {
+  const handleDeleteInversion = (inversion: any) => {
     setInversionToDelete(inversion);
+    setDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
     if (inversionToDelete) {
-      setInversiones(inversiones.filter((inv) => inv.id !== inversionToDelete.id));
-      setInversionToDelete(null);
+      deleteInvestment(inversionToDelete.id);
+      toast.success("Inversión eliminada correctamente");
     }
+    setDeleteDialogOpen(false);
+    setInversionToDelete(null);
   };
 
   const handleOpenSheet = () => {
@@ -161,19 +162,19 @@ const Inversiones = () => {
                 <tbody>
                   {inversionesFiltered.map((inversion) => (
                     <tr key={inversion.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                      <td className="p-3 text-sm font-medium text-foreground">{inversion.año}</td>
+                      <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
                       <td className="p-3 text-sm">
                         <Badge
                           className={`${
-                            categoriaColors[inversion.categoria] || "bg-muted"
+                            categoriaColors[inversion.category] || "bg-muted"
                           } text-white hover:opacity-90`}
                         >
-                          {inversion.categoria}
+                          {categoriaLabels[inversion.category] || inversion.category}
                         </Badge>
                       </td>
-                      <td className="p-3 text-sm text-foreground">{inversion.descripcion}</td>
+                      <td className="p-3 text-sm text-foreground">{inversion.description}</td>
                       <td className="p-3 text-sm text-right font-semibold text-foreground">
-                        {formatCurrency(inversion.monto, true)}
+                        {formatCurrency(inversion.amount, true)}
                       </td>
                       <td className="p-3 text-sm text-center">
                         <div className="flex justify-center gap-2">
@@ -211,22 +212,25 @@ const Inversiones = () => {
 
       <AddInversionSheet
         open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) setEditingInversion(null);
+        }}
         onSave={handleSaveInversion}
         editingInversion={editingInversion}
       />
 
-      <AlertDialog open={!!inversionToDelete} onOpenChange={() => setInversionToDelete(null)}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar inversión?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar esta inversión?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente la inversión "{inversionToDelete?.descripcion}".
+              Esta acción no se puede deshacer. Se eliminará permanentemente el registro de {categoriaLabels[inversionToDelete?.category] || inversionToDelete?.category}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

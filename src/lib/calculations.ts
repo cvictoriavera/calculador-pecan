@@ -182,3 +182,42 @@ export const calcularSubtotalMaquinaria = (cantidad: number, precio: number): nu
 export const calcularTotalMaquinaria = (items: MaquinariaItem[]): number => {
   return items.reduce((acc, item) => acc + calcularSubtotalMaquinaria(item.cantidad, item.precio), 0);
 };
+
+// ============= PRODUCCION =============
+export interface ProductionRecord {
+  id: string;
+  year: number;
+  monteId: string;
+  kgHarvested: number;
+  date: Date;
+}
+
+export interface ProductionCampaign {
+  id: string;
+  year: number;
+  averagePrice: number;
+  totalProduction: number;
+  totalRevenue: number;
+  date: Date;
+}
+
+export const calcularTotalProduccion = (productions: ProductionRecord[], year?: number): number => {
+  const filtered = year ? productions.filter(p => p.year === year) : productions;
+  return filtered.reduce((acc, p) => acc + p.kgHarvested, 0);
+};
+
+export const calcularProductividad = (productions: ProductionRecord[], monteId: string, year: number, hectareas: number): number => {
+  const production = productions.find(p => p.monteId === monteId && p.year === year);
+  if (!production || hectareas === 0) return 0;
+  return production.kgHarvested / hectareas;
+};
+
+export const calcularTotalFacturacion = (productions: ProductionRecord[], averagePrice: number, year?: number): number => {
+  const totalKg = calcularTotalProduccion(productions, year);
+  return totalKg * averagePrice;
+};
+
+export const calcularProduccionPorMonte = (productions: ProductionRecord[], monteId: string, year?: number): number => {
+  const filtered = productions.filter(p => p.monteId === monteId && (year ? p.year === year : true));
+  return filtered.reduce((acc, p) => acc + p.kgHarvested, 0);
+};

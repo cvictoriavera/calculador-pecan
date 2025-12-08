@@ -21,10 +21,16 @@ const memoize = <TArgs extends readonly unknown[], TReturn>(
 interface CalculationsState {
   // Selectores memoizados
   getTotalCosts: (year: number) => number;
-  getTotalInvestments: (campaignId: number) => number;
+  getTotalInvestments: (year: number) => number;
   getCostByCategory: (year: number) => Record<string, number>;
-  getInvestmentByCategory: (campaignId: number) => Record<string, number>;
-  getProfitabilityRatio: (campaignId: number) => number;
+  getInvestmentByCategory: (year: number) => Record<string, number>;
+  getProfitabilityRatio: (year: number) => number;
+
+  // Production selectors
+  getTotalProduction: (year: number) => number;
+  getProductionByMonte: (year: number) => Record<string, number>;
+  getProductionCampaign: (year: number) => { averagePrice: number; totalProduction: number; totalRevenue: number } | null;
+  hasProductionForYear: (year: number) => boolean;
 }
 
 export const useCalculationsStore = create<CalculationsState>((_, get) => ({
@@ -35,10 +41,10 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
     return costs.reduce((sum, cost) => sum + cost.amount, 0);
   }),
 
-  // Selector para inversiones totales por campaña
-  getTotalInvestments: memoize((campaignId: number): number => {
+  // Selector para inversiones totales por año
+  getTotalInvestments: memoize((year: number): number => {
     const investments = useDataStore.getState().investments
-      .filter(i => i.campaignId === campaignId);
+      .filter(i => i.year === year);
     return investments.reduce((sum, inv) => sum + inv.amount, 0);
   }),
 
@@ -54,9 +60,9 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
   }),
 
   // Selector para inversiones por categoría
-  getInvestmentByCategory: memoize((campaignId: number): Record<string, number> => {
+  getInvestmentByCategory: memoize((year: number): Record<string, number> => {
     const investments = useDataStore.getState().investments
-      .filter(i => i.campaignId === campaignId);
+      .filter(i => i.year === year);
 
     return investments.reduce((acc, inv) => {
       acc[inv.category] = (acc[inv.category] || 0) + inv.amount;
@@ -65,11 +71,44 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
   }),
 
   // Selector para ratio de rentabilidad
-  getProfitabilityRatio: memoize((campaignId: number): number => {
-    const totalCosts = get().getTotalCosts(campaignId);
-    const totalInvestments = get().getTotalInvestments(campaignId);
+  getProfitabilityRatio: memoize((year: number): number => {
+    const totalCosts = get().getTotalCosts(year);
+    const totalInvestments = get().getTotalInvestments(year);
 
     if (totalInvestments === 0) return 0;
     return (totalCosts - totalInvestments) / totalInvestments;
   }),
+
+  // Production selectors
+  getTotalProduction: (year: number): number => {
+    const productions = useDataStore.getState().productions
+      .filter(p => p.year === year);
+    return productions.reduce((sum, p) => sum + p.kgHarvested, 0);
+  },
+
+  getProductionByMonte: (year: number): Record<string, number> => {
+    const productions = useDataStore.getState().productions
+      .filter(p => p.year === year);
+
+    return productions.reduce((acc, p) => {
+      acc[p.monteId] = (acc[p.monteId] || 0) + p.kgHarvested;
+      return acc;
+    }, {} as Record<string, number>);
+  },
+
+  getProductionCampaign: (year: number) => {
+    const campaign = useDataStore.getState().productionCampaigns
+      .find(pc => pc.year === year);
+    return campaign ? {
+      averagePrice: campaign.averagePrice,
+      totalProduction: campaign.totalProduction,
+      totalRevenue: campaign.totalRevenue
+    } : null;
+  },
+
+  hasProductionForYear: (year: number): boolean => {
+    const productions = useDataStore.getState().productions
+      .filter(p => p.year === year);
+    return productions.length > 0;
+  },
 }));

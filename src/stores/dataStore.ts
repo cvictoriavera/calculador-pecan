@@ -1,5 +1,6 @@
 // Data Store - Datos principales de la aplicación
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 // Interfaces base
 export interface Project {
@@ -29,12 +30,29 @@ export interface CostRecord {
 
 export interface InvestmentRecord {
   id: string;
-  campaignId: number;
+  year: number;
   category: string;
   description: string;
   amount: number;
   date: Date;
   data?: any;
+}
+
+export interface ProductionRecord {
+  id: string;
+  year: number;
+  monteId: string;
+  kgHarvested: number;
+  date: Date;
+}
+
+export interface ProductionCampaign {
+  id: string;
+  year: number;
+  averagePrice: number;
+  totalProduction: number;
+  totalRevenue: number;
+  date: Date;
 }
 
 export interface DataBackup {
@@ -45,6 +63,8 @@ export interface DataBackup {
     campaigns: Campaign[];
     costs: CostRecord[];
     investments: InvestmentRecord[];
+    productions: ProductionRecord[];
+    productionCampaigns: ProductionCampaign[];
   };
 }
 
@@ -54,6 +74,8 @@ interface DataState {
   campaigns: Campaign[];
   costs: CostRecord[];
   investments: InvestmentRecord[];
+  productions: ProductionRecord[];
+  productionCampaigns: ProductionCampaign[];
 
   // Acciones
   addProject: (project: Project) => void;
@@ -72,18 +94,30 @@ interface DataState {
   updateInvestment: (id: string, updates: Partial<InvestmentRecord>) => void;
   deleteInvestment: (id: string) => void;
 
+  addProduction: (production: ProductionRecord) => void;
+  updateProduction: (id: string, updates: Partial<ProductionRecord>) => void;
+  deleteProduction: (id: string) => void;
+
+  addProductionCampaign: (productionCampaign: ProductionCampaign) => void;
+  updateProductionCampaign: (id: string, updates: Partial<ProductionCampaign>) => void;
+  deleteProductionCampaign: (id: string) => void;
+
   // Backup/Restore
   createBackup: () => DataBackup;
   restoreFromBackup: (backup: DataBackup) => void;
   clearAllData: () => void;
 }
 
-export const useDataStore = create<DataState>((set, get) => ({
+export const useDataStore = create<DataState>()(
+  persist(
+    (set, get) => ({
   // Estado inicial
   projects: [],
   campaigns: [],
   costs: [],
   investments: [],
+  productions: [],
+  productionCampaigns: [],
 
   // Project actions
   addProject: (project) => {
@@ -182,12 +216,8 @@ export const useDataStore = create<DataState>((set, get) => ({
       throw new Error(`Campaign with ID ${id} not found`);
     }
 
-    // Validación: No eliminar si tiene investments
-    const hasInvestments = get().investments.some((inv: InvestmentRecord) => inv.campaignId === id);
-
-    if (hasInvestments) {
-      throw new Error('Cannot delete campaign with existing investment records');
-    }
+    // Nota: Las inversiones ahora se asocian por año, no por campaignId,
+    // por lo que no necesitamos validar inversiones al eliminar campañas
 
     set((state) => ({
       campaigns: state.campaigns.filter((c: Campaign) => c.id !== id),
@@ -250,10 +280,9 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   // Investment actions
   addInvestment: (investment) => {
-    // Validación: Campaign existe
-    const campaignExists = get().campaigns.some((c: Campaign) => c.id === investment.campaignId);
-    if (!campaignExists) {
-      throw new Error(`Campaign with ID ${investment.campaignId} does not exist`);
+    // Validación: Año válido
+    if (!investment.year || investment.year < 2000 || investment.year > 2100) {
+      throw new Error('Valid year is required for investment');
     }
 
     // Validación: Monto positivo
@@ -275,12 +304,9 @@ export const useDataStore = create<DataState>((set, get) => ({
       throw new Error(`Investment with ID ${id} not found`);
     }
 
-    // Validación: Campaign existe si se cambia
-    if (updates.campaignId) {
-      const campaignExists = get().campaigns.some((c: Campaign) => c.id === updates.campaignId);
-      if (!campaignExists) {
-        throw new Error(`Campaign with ID ${updates.campaignId} does not exist`);
-      }
+    // Validación: Año válido si se cambia
+    if (updates.year !== undefined && (updates.year < 2000 || updates.year > 2100)) {
+      throw new Error('Valid year is required for investment');
     }
 
     // Validación: Monto positivo si se cambia
@@ -306,6 +332,116 @@ export const useDataStore = create<DataState>((set, get) => ({
     }));
   },
 
+  // Production actions
+  addProduction: (production) => {
+    // Validación: Año válido
+    if (!production.year || production.year < 2000 || production.year > 2100) {
+      throw new Error('Valid year is required for production');
+    }
+
+    // Validación: Kg positivo
+    if (production.kgHarvested < 0) {
+      throw new Error('Production kg must be non-negative');
+    }
+
+    // Validación: ID único
+    if (get().productions.some((p: ProductionRecord) => p.id === production.id)) {
+      throw new Error(`Production with ID ${production.id} already exists`);
+    }
+
+    set((state) => ({ productions: [...state.productions, production] }));
+  },
+
+  updateProduction: (id, updates) => {
+    const currentProduction = get().productions.find((p: ProductionRecord) => p.id === id);
+    if (!currentProduction) {
+      throw new Error(`Production with ID ${id} not found`);
+    }
+
+    // Validación: Año válido si se cambia
+    if (updates.year !== undefined && (updates.year < 2000 || updates.year > 2100)) {
+      throw new Error('Valid year is required for production');
+    }
+
+    // Validación: Kg positivo si se cambia
+    if (updates.kgHarvested !== undefined && updates.kgHarvested < 0) {
+      throw new Error('Production kg must be non-negative');
+    }
+
+    set((state) => ({
+      productions: state.productions.map((p: ProductionRecord) =>
+        p.id === id ? { ...p, ...updates } : p
+      ),
+    }));
+  },
+
+  deleteProduction: (id) => {
+    const production = get().productions.find((p: ProductionRecord) => p.id === id);
+    if (!production) {
+      throw new Error(`Production with ID ${id} not found`);
+    }
+
+    set((state) => ({
+      productions: state.productions.filter((p: ProductionRecord) => p.id !== id),
+    }));
+  },
+
+  // Production Campaign actions
+  addProductionCampaign: (productionCampaign) => {
+    // Validación: Año válido
+    if (!productionCampaign.year || productionCampaign.year < 2000 || productionCampaign.year > 2100) {
+      throw new Error('Valid year is required for production campaign');
+    }
+
+    // Validación: Valores positivos
+    if (productionCampaign.averagePrice < 0 || productionCampaign.totalProduction < 0 || productionCampaign.totalRevenue < 0) {
+      throw new Error('Production campaign values must be non-negative');
+    }
+
+    // Validación: ID único
+    if (get().productionCampaigns.some((pc: ProductionCampaign) => pc.id === productionCampaign.id)) {
+      throw new Error(`Production campaign with ID ${productionCampaign.id} already exists`);
+    }
+
+    set((state) => ({ productionCampaigns: [...state.productionCampaigns, productionCampaign] }));
+  },
+
+  updateProductionCampaign: (id, updates) => {
+    const currentProductionCampaign = get().productionCampaigns.find((pc: ProductionCampaign) => pc.id === id);
+    if (!currentProductionCampaign) {
+      throw new Error(`Production campaign with ID ${id} not found`);
+    }
+
+    // Validación: Año válido si se cambia
+    if (updates.year !== undefined && (updates.year < 2000 || updates.year > 2100)) {
+      throw new Error('Valid year is required for production campaign');
+    }
+
+    // Validación: Valores positivos si se cambian
+    if ((updates.averagePrice !== undefined && updates.averagePrice < 0) ||
+        (updates.totalProduction !== undefined && updates.totalProduction < 0) ||
+        (updates.totalRevenue !== undefined && updates.totalRevenue < 0)) {
+      throw new Error('Production campaign values must be non-negative');
+    }
+
+    set((state) => ({
+      productionCampaigns: state.productionCampaigns.map((pc: ProductionCampaign) =>
+        pc.id === id ? { ...pc, ...updates } : pc
+      ),
+    }));
+  },
+
+  deleteProductionCampaign: (id) => {
+    const productionCampaign = get().productionCampaigns.find((pc: ProductionCampaign) => pc.id === id);
+    if (!productionCampaign) {
+      throw new Error(`Production campaign with ID ${id} not found`);
+    }
+
+    set((state) => ({
+      productionCampaigns: state.productionCampaigns.filter((pc: ProductionCampaign) => pc.id !== id),
+    }));
+  },
+
   // Backup/Restore functionality
   createBackup: () => {
     const state = get();
@@ -317,6 +453,8 @@ export const useDataStore = create<DataState>((set, get) => ({
         campaigns: state.campaigns,
         costs: state.costs,
         investments: state.investments,
+        productions: state.productions,
+        productionCampaigns: state.productionCampaigns,
       },
     };
     return backup;
@@ -329,7 +467,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
 
     // Validación de estructura
-    const requiredKeys: (keyof DataBackup['data'])[] = ['projects', 'campaigns', 'costs', 'investments'];
+    const requiredKeys: (keyof DataBackup['data'])[] = ['projects', 'campaigns', 'costs', 'investments', 'productions', 'productionCampaigns'];
     for (const key of requiredKeys) {
       if (!Array.isArray(backup.data[key])) {
         throw new Error(`Invalid backup: ${key} must be an array`);
@@ -342,6 +480,8 @@ export const useDataStore = create<DataState>((set, get) => ({
       campaigns: backup.data.campaigns,
       costs: backup.data.costs,
       investments: backup.data.investments,
+      productions: backup.data.productions,
+      productionCampaigns: backup.data.productionCampaigns,
     }));
   },
 
@@ -351,6 +491,14 @@ export const useDataStore = create<DataState>((set, get) => ({
       campaigns: [],
       costs: [],
       investments: [],
+      productions: [],
+      productionCampaigns: [],
     }));
   },
-}));
+    }),
+    {
+      name: 'calculador-data-store',
+      version: 1,
+    }
+  )
+);

@@ -8,6 +8,7 @@ import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Montes from "./pages/Montes";
 import Campanas from "./pages/Campanas";
+import Produccion from "./pages/Produccion";
 import Inversiones from "./pages/Inversiones";
 import Costos from "./pages/Costos";
 import Config from "./pages/Config";
@@ -60,6 +61,14 @@ function ProtectedRoutes() {
             element={
               <Layout>
                 <Campanas />
+              </Layout>
+            }
+          />
+          <Route
+            path="/produccion"
+            element={
+              <Layout>
+                <Produccion />
               </Layout>
             }
           />

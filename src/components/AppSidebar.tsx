@@ -1,4 +1,4 @@
-import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp } from "lucide-react";
+import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -16,6 +16,7 @@ const menuItems = [
   { title: "Inicio", url: "/", icon: Home },
   { title: "Mis Montes", url: "/montes", icon: Sprout },
   { title: "Campañas", url: "/campanas", icon: CalendarRange },
+  { title: "Producción", url: "/produccion", icon: Package }, 
   { title: "Inversiones", url: "/inversiones", icon: DollarSign },
   { title: "Costos Operativos", url: "/costos", icon: TrendingUp },
   { title: "Configuración", url: "/config", icon: Settings },
