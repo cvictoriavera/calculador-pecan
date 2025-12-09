@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.1';
+    private static $db_version = '1.2';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -32,7 +32,7 @@ class CCP_Database_Manager {
      */
     public static function reset_version() {
         delete_option(self::$db_version_key);
-        error_log('CCP: Database version reset to force table recreation');
+        // error_log('CCP: Database version reset to force table recreation'); // Commented out to prevent activation output
     }
 
     /**
@@ -57,11 +57,12 @@ class CCP_Database_Manager {
 
         $version = get_option(self::$db_version_key, 'NOT SET');
 
-        error_log('CCP Database Status:');
-        error_log('Version: ' . $version);
-        foreach ($status as $table => $state) {
-            error_log("$table: $state");
-        }
+        // Commented out to prevent activation output
+        // error_log('CCP Database Status:');
+        // error_log('Version: ' . $version);
+        // foreach ($status as $table => $state) {
+        //     error_log("$table: $state");
+        // }
 
         return [
             'version' => $version,
@@ -75,21 +76,23 @@ class CCP_Database_Manager {
      */
     public static function create_tables() {
         global $wpdb;
-        error_log('CCP DB: Starting create_tables');
+        // error_log('CCP DB: Starting create_tables'); // Commented out to prevent activation output
         $installed_version = get_option(self::$db_version_key);
-        error_log('CCP DB: Installed version: ' . $installed_version . ', Current version: ' . self::$db_version);
+        // error_log('CCP DB: Installed version: ' . $installed_version . ', Current version: ' . self::$db_version); // Commented out to prevent activation output
 
         // Verificar si las tablas existen
         $table_name_annual_records = $wpdb->prefix . 'pecan_annual_records';
         $table_name_project_data = $wpdb->prefix . 'pecan_project_data';
         $annual_records_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_annual_records));
         $project_data_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_project_data));
-        error_log('CCP DB: annual_records exists: ' . ($annual_records_exists ? 'yes' : 'no'));
-        error_log('CCP DB: project_data exists: ' . ($project_data_exists ? 'yes' : 'no'));
+        // error_log('CCP DB: annual_records exists: ' . ($annual_records_exists ? 'yes' : 'no')); // Commented out to prevent activation output
+        // error_log('CCP DB: project_data exists: ' . ($project_data_exists ? 'yes' : 'no')); // Commented out to prevent activation output
 
         // Crear tablas si no existen o si la versión ha cambiado
         if (!$annual_records_exists || $installed_version != self::$db_version) {
-            error_log('CCP DB: Creating tables');
+            // Ejecutar migraciones específicas de versión
+            self::run_migrations($installed_version);
+            // error_log('CCP DB: Creating tables'); // Commented out to prevent activation output
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             $charset_collate = $wpdb->get_charset_collate();
 
@@ -103,7 +106,6 @@ class CCP_Database_Manager {
             }
 
             // Tabla de Proyectos
-            error_log('CCP DB: Creating projects table');
             $table_name_projects = $wpdb->prefix . 'pecan_projects';
             $sql_projects = "CREATE TABLE $table_name_projects (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -128,7 +130,6 @@ class CCP_Database_Manager {
             error_log('CCP DB: Projects table created');
 
             // Tabla de Campañas
-            error_log('CCP DB: Creating campaigns table');
             $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
             $sql_campaigns = "CREATE TABLE $table_name_campaigns (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -146,6 +147,10 @@ class CCP_Database_Manager {
 
                 notes TEXT NULL,
 
+                -- Campos de producción agregados en v1.2
+                average_price DECIMAL(10,2) DEFAULT 0.00,
+                total_production DECIMAL(15,2) DEFAULT 0.00,
+
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -157,12 +162,11 @@ class CCP_Database_Manager {
                 FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE
             ) $charset_collate;";
             dbDelta($sql_campaigns);
-            error_log('CCP DB: Campaigns table created');
+            // error_log('CCP DB: Campaigns table created/updated'); // Commented out to prevent activation output
 
             // Tabla de Montes
-            error_log('CCP DB: Creating montes table');
+            // error_log('CCP DB: Creating montes table'); // Commented out to prevent activation output
             $table_name_montes = $wpdb->prefix . 'pecan_montes';
-            $wpdb->query("DROP TABLE IF EXISTS $table_name_montes");
             $sql_montes = "CREATE TABLE $table_name_montes (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
@@ -191,10 +195,10 @@ class CCP_Database_Manager {
                 FOREIGN KEY (campaign_retired_id) REFERENCES $table_name_campaigns(id) ON DELETE SET NULL
             ) $charset_collate;";
             dbDelta($sql_montes);
-            error_log('CCP DB: Montes table created');
+            // error_log('CCP DB: Montes table created'); // Commented out to prevent activation output
 
             // Tabla de Registros Anuales (Nueva estructura híbrida)
-            error_log('CCP DB: Creating annual_records table');
+            // error_log('CCP DB: Creating annual_records table'); // Commented out to prevent activation output
             $table_name_annual_records = $wpdb->prefix . 'pecan_annual_records';
             $sql_data = "CREATE TABLE $table_name_annual_records (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -225,20 +229,62 @@ class CCP_Database_Manager {
                 FOREIGN KEY (monte_id) REFERENCES $table_name_montes(id) ON DELETE CASCADE
             ) $charset_collate;";
             dbDelta($sql_data);
-            error_log('CCP DB: Annual_records table created');
+            // error_log('CCP DB: Annual_records table created'); // Commented out to prevent activation output
 
             // Migrar datos existentes si es necesario
-            error_log('CCP DB: Starting migration');
+            // error_log('CCP DB: Starting migration'); // Commented out to prevent activation output
             self::migrate_existing_data();
-            error_log('CCP DB: Migration completed');
+            // error_log('CCP DB: Migration completed'); // Commented out to prevent activation output
 
             // Actualizar la versión de la BD en la base de datos.
             update_option(self::$db_version_key, self::$db_version);
-            error_log('CCP DB: Database version updated to ' . self::$db_version);
+            // error_log('CCP DB: Database version updated to ' . self::$db_version); // Commented out to prevent activation output
         } else {
-            error_log('CCP DB: Tables already exist and version is current, skipping creation');
+            // error_log('CCP DB: Tables already exist and version is current, skipping creation'); // Commented out to prevent activation output
         }
-        error_log('CCP DB: create_tables completed');
+        // error_log('CCP DB: create_tables completed'); // Commented out to prevent activation output
+    }
+
+    /**
+     * Ejecutar migraciones específicas de versión.
+     * Se ejecuta cuando se actualiza la versión de la BD.
+     *
+     * @param string $from_version Versión anterior de la BD.
+     */
+    private static function run_migrations($from_version) {
+        global $wpdb;
+
+        // error_log('CCP DB: Running migrations from version ' . $from_version . ' to ' . self::$db_version); // Commented out to prevent activation output
+
+        // Migración v1.1 -> v1.2: Agregar columnas de producción a campaigns
+        if (version_compare($from_version, '1.2', '<')) {
+            $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
+
+            // Verificar si la tabla existe
+            $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_campaigns));
+
+            if ($table_exists) {
+                // error_log('CCP DB: Adding production columns to campaigns table'); // Commented out to prevent activation output
+
+                // Agregar columna average_price si no existe
+                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name_campaigns LIKE 'average_price'");
+                if (empty($column_exists)) {
+                    $wpdb->query("ALTER TABLE $table_name_campaigns ADD COLUMN average_price DECIMAL(10,2) DEFAULT 0.00 AFTER notes");
+                    // error_log('CCP DB: Added average_price column'); // Commented out to prevent activation output
+                }
+
+                // Agregar columna total_production si no existe
+                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name_campaigns LIKE 'total_production'");
+                if (empty($column_exists)) {
+                    $wpdb->query("ALTER TABLE $table_name_campaigns ADD COLUMN total_production DECIMAL(15,2) DEFAULT 0.00 AFTER average_price");
+                    // error_log('CCP DB: Added total_production column'); // Commented out to prevent activation output
+                }
+
+                // error_log('CCP DB: Production columns migration completed'); // Commented out to prevent activation output
+            }
+        }
+
+        // error_log('CCP DB: Migrations completed'); // Commented out to prevent activation output
     }
 
     /**
@@ -305,11 +351,11 @@ class CCP_Database_Manager {
             }
         }
 
-        // Log de migración
-        error_log('CCP Database Migration Log:');
-        foreach ($migration_log as $log) {
-            error_log($log);
-        }
+        // Log de migración (comentado para evitar salida durante activación)
+        // error_log('CCP Database Migration Log:');
+        // foreach ($migration_log as $log) {
+        //     error_log($log);
+        // }
 
         // Opcional: Marcar que la migración se completó
         update_option('ccp_migration_completed', '4.0');

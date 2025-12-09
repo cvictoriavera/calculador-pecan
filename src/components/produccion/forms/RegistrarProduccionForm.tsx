@@ -54,6 +54,8 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
   const [step, setStep] = useState(1);
   const [showJovenes, setShowJovenes] = useState(false);
 
+ 
+
   const {
     control,
     handleSubmit,
@@ -100,6 +102,7 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
 
   const montesProductivos = montesDisponibles.filter((m) => m.edad >= 7);
   const montesJovenes = montesDisponibles.filter((m) => m.edad < 7);
+
 
   // Calculate totals from watched values
   const totalKg = watchedProduccionPorMonte?.reduce((acc, p) => acc + (p?.kgRecolectados || 0), 0) || 0;

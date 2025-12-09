@@ -1,0 +1,142 @@
+hasProduction: false
+index-BozwKpJo.js?ver=1.0.0:1 productions for current: []
+index-BozwKpJo.js?ver=1.0.0:1 productionCampaigns for current: []
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonymous) @ vendor-BAIZoBQf.js:53
+sd @ vendor-BAIZoBQf.js:8
+_s @ vendor-BAIZoBQf.js:8
+A5 @ vendor-BAIZoBQf.js:8
+va @ vendor-BAIZoBQf.js:8
+$A @ vendor-BAIZoBQf.js:8
+mo @ vendor-BAIZoBQf.js:6
+(anonymous) @ vendor-BAIZoBQf.js:8Understand this warning
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 Form onFormSubmit called with data: {precioPromedio: 3.98, metodo: 'total', pesoTotal: 2989, montesSeleccionados: Array(2), produccionPorMonte: Array(3)}
+index-BozwKpJo.js?ver=1.0.0:1 handleSaveProduccion called with data: {precioPromedio: 3.98, metodo: 'total', pesoTotal: 2989, montesSeleccionados: Array(2), produccionPorMonte: Array(3)}
+index-BozwKpJo.js?ver=1.0.0:1 currentCampaignId: 11
+index-BozwKpJo.js?ver=1.0.0:1 totalKg: 2989
+index-BozwKpJo.js?ver=1.0.0:1 Updating campaign with: {average_price: 3.98, total_production: 2989}
+index-BozwKpJo.js?ver=1.0.0:1 📡 Fetching: http://testcappecan.com/wp-json/ccp/v1/campaigns/11
+index-BozwKpJo.js?ver=1.0.0:1 hasProduction: false
+index-BozwKpJo.js?ver=1.0.0:1 productions for current: []
+index-BozwKpJo.js?ver=1.0.0:1 productionCampaigns for current: []
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 Update campaign result: {id: '11', project_id: '1', campaign_name: 'Campaña 2025', year: '2025', start_date: '2025-01-01', …}
+installHook.js:1 Error saving production: Error: Production campaign with ID campaign-2025 already exists
+    at addProductionCampaign (index-BozwKpJo.js?ver=1.0.0:1:41433)
+    at C (index-BozwKpJo.js?ver=1.0.0:1:100201)
+overrideMethod @ installHook.js:1
+C @ index-BozwKpJo.js?ver=1.0.0:1
+await in C
+L @ index-BozwKpJo.js?ver=1.0.0:1
+(anonymous) @ vendor-BAIZoBQf.js:123
+await in (anonymous)
+oi @ vendor-BAIZoBQf.js:5
+K4 @ vendor-BAIZoBQf.js:5
+G4 @ vendor-BAIZoBQf.js:5
+dP @ vendor-BAIZoBQf.js:5
+pP @ vendor-BAIZoBQf.js:5
+(anonymous) @ vendor-BAIZoBQf.js:5
+yy @ vendor-BAIZoBQf.js:8
+Dr @ vendor-BAIZoBQf.js:5
+ym @ vendor-BAIZoBQf.js:5
+Jv @ vendor-BAIZoBQf.js:5
+cz @ vendor-BAIZoBQf.js:5Understand this error
+index-BozwKpJo.js?ver=1.0.0:1 hasProduction: true
+index-BozwKpJo.js?ver=1.0.0:1 productions for current: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 productionCampaigns for current: []
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 AppContext - current montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 AppContext - montesLoading: false
+index-BozwKpJo.js?ver=1.0.0:1 ProtectedRoutes: isLoading: false isOnboardingComplete: true currentProjectId: 1
+index-BozwKpJo.js?ver=1.0.0:1 hasProduction: true
+index-BozwKpJo.js?ver=1.0.0:1 productions for current: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 productionCampaigns for current: []
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 No campaign found for year: 2025 available campaigns: (11) ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025']
+index-BozwKpJo.js?ver=1.0.0:1 Looking for campaign with year: 2025 type: number
+index-BozwKpJo.js?ver=1.0.0:1 Available campaigns years: (11) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 Current campaign year: 2025 found: {id: '11', project_id: '1', campaign_name: 'Campaña 2025', year: '2025', start_date: '2025-01-01', …}
+index-BozwKpJo.js?ver=1.0.0:1 Set currentCampaignId: 11
+index-BozwKpJo.js?ver=1.0.0:1 hasProduction: true
+index-BozwKpJo.js?ver=1.0.0:1 productions for current: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 productionCampaigns for current: []
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 RegistrarProduccionForm - currentCampaign: 2025
+index-BozwKpJo.js?ver=1.0.0:1 montesDisponibles: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesProductivos: (2) [{…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 montesJovenes: [{…}]
+index-BozwKpJo.js?ver=1.0.0:1 AppContext - current montes: (3) [{…}, {…}, {…}]
+index-BozwKpJo.js?ver=1.0.0:1 AppContext - montesLoading: false

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2 } from "lucide-react";
@@ -20,7 +20,7 @@ import {
 } from "recharts";
 
 const Produccion = () => {
-  const { currentCampaign, campaigns } = useApp();
+  const { currentCampaign, campaigns, currentCampaignId, updateCampaign, montes } = useApp();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
 
@@ -31,38 +31,68 @@ const Produccion = () => {
   // Store actions
   const addProduction = useDataStore((state) => state.addProduction);
   const addProductionCampaign = useDataStore((state) => state.addProductionCampaign);
+  const updateProductionCampaign = useDataStore((state) => state.updateProductionCampaign);
   const deleteProduction = useDataStore((state) => state.deleteProduction);
   const deleteProductionCampaign = useDataStore((state) => state.deleteProductionCampaign);
 
-  const handleSaveProduccion = (data: any) => {
-    // Remove existing records for current campaign
-    productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
-    productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
+  const handleSaveProduccion = async (data: any) => {
+    try {
+     
+      // Calculate total production
+      const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
+    
 
-    // Add new production records
-    const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
-    const facturacion = totalKg * data.precioPromedio;
+      // Update campaign in database
+      if (currentCampaignId) {
+       
+        const result = await updateCampaign(currentCampaignId, {
+          average_price: data.precioPromedio,
+          total_production: totalKg,
+        });
+        console.log('Update campaign result:', result);
+      } else {
+        console.log('No currentCampaignId, skipping update');
+      }
 
-    data.produccionPorMonte.forEach((p: any) => {
-      addProduction({
-        id: `${currentCampaign}-${p.monteId}`,
-        year: currentCampaign,
-        monteId: p.monteId,
-        kgHarvested: p.kgRecolectados,
-        date: new Date(),
+      // Update local Zustand stores
+      // Remove existing records for current campaign
+      productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
+
+      // Add new production records
+      data.produccionPorMonte.forEach((p: any) => {
+        addProduction({
+          id: `${currentCampaign}-${p.monteId}`,
+          year: currentCampaign,
+          monteId: p.monteId,
+          kgHarvested: p.kgRecolectados,
+          date: new Date(),
+        });
       });
-    });
 
-    addProductionCampaign({
-      id: `campaign-${currentCampaign}`,
-      year: currentCampaign,
-      averagePrice: data.precioPromedio,
-      totalProduction: totalKg,
-      totalRevenue: facturacion,
-      date: new Date(),
-    });
+      // Update or add production campaign
+      const existingCampaign = productionCampaigns.find(pc => pc.year === currentCampaign);
+      if (existingCampaign) {
+        updateProductionCampaign(existingCampaign.id, {
+          averagePrice: data.precioPromedio,
+          totalProduction: totalKg,
+          date: new Date(),
+        });
+      } else {
+        addProductionCampaign({
+          id: `campaign-${currentCampaign}`,
+          year: currentCampaign,
+          averagePrice: data.precioPromedio,
+          totalProduction: totalKg,
+          date: new Date(),
+        });
+      }
 
-    setEditingData(null);
+      setEditingData(null);
+      setWizardOpen(false);
+    } catch (error) {
+      console.error('Error saving production:', error);
+      // TODO: Show error message to user
+    }
   };
 
   // Prepare chart data
@@ -72,15 +102,15 @@ const Produccion = () => {
       return {
         year: year.year.toString(),
         produccion: campana?.totalProduction || 0,
-        facturacion: campana?.totalRevenue || 0,
+        facturacion: (campana?.totalProduction || 0) * (campana?.averagePrice || 0),
       };
     })
     .sort((a, b) => parseInt(a.year) - parseInt(b.year));
 
   // Current campaign stats
-  const currentCampanaData = productionCampaigns.find(pc => pc.year === currentCampaign);
+  const currentCampanaData = productionCampaigns.find(pc => Number(pc.year) === currentCampaign);
   const totalProduccion = currentCampanaData?.totalProduction || 0;
-  const totalFacturacion = currentCampanaData?.totalRevenue || 0;
+  const totalFacturacion = (currentCampanaData?.totalProduction || 0) * (currentCampanaData?.averagePrice || 0);
   const precioPromedio = currentCampanaData?.averagePrice || 0;
 
   // Production data for evolution component
@@ -92,8 +122,40 @@ const Produccion = () => {
       kgRecolectados: p.kgHarvested,
     }));
 
-  // Check if has production for current campaign
-  const hasProduction = productions.some(p => p.year === currentCampaign);
+  // Load production data from campaigns when campaigns change
+  useEffect(() => {
+    campaigns.forEach(camp => {
+      const existing = productionCampaigns.find(pc => pc.year === camp.year);
+      if (camp.average_price !== undefined && camp.total_production !== undefined) {
+        const newAveragePrice = parseFloat(camp.average_price);
+        const newTotalProduction = parseFloat(camp.total_production);
+        const newDate = new Date(camp.updated_at || camp.created_at);
+        if (existing) {
+          // Only update if values changed
+          if (existing.averagePrice !== newAveragePrice || existing.totalProduction !== newTotalProduction) {
+            updateProductionCampaign(existing.id, {
+              averagePrice: newAveragePrice,
+              totalProduction: newTotalProduction,
+              date: newDate,
+            });
+          }
+        } else {
+          addProductionCampaign({
+            id: `campaign-${camp.year}`,
+            year: camp.year,
+            averagePrice: newAveragePrice,
+            totalProduction: newTotalProduction,
+            date: newDate,
+          });
+        }
+      }
+    });
+  }, [campaigns, productionCampaigns, addProductionCampaign, updateProductionCampaign]);
+
+  // Check if has production for current campaign (from database)
+  const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
+  const hasProduction = currentCamp && currentCamp.average_price !== undefined && currentCamp.total_production !== undefined &&
+                        (parseFloat(currentCamp.average_price) > 0 || parseFloat(currentCamp.total_production) > 0);
 
   return (
     <div className="space-y-6">
@@ -115,12 +177,19 @@ const Produccion = () => {
                     acc[p.monteId] = (acc[p.monteId] || 0) + p.kgHarvested;
                     return acc;
                   }, {} as Record<string, number>);
-                const produccionPorMonte = Object.entries(prodByMonte).map(([monteId, kg]) => ({
-                  monteId,
-                  nombre: "", // Need to get from montes
-                  hectareas: 0, // Need to get from montes
-                  edad: 0, // Need to get from montes
-                  kgRecolectados: kg,
+                // Get montes in the same order as in the form
+                const montesDisponibles = montes
+                  .filter((m) => m.añoPlantacion <= currentCampaign)
+                  .map((m) => ({
+                    ...m,
+                    edad: currentCampaign - m.añoPlantacion,
+                  }));
+                const produccionPorMonte = montesDisponibles.map(monte => ({
+                  monteId: monte.id,
+                  nombre: monte.nombre,
+                  hectareas: monte.hectareas,
+                  edad: monte.edad,
+                  kgRecolectados: prodByMonte[monte.id] || 0,
                 }));
                 setEditingData({
                   precioPromedio: campana?.averagePrice || 0,
@@ -136,16 +205,29 @@ const Produccion = () => {
               Editar Producción
             </Button>
             <Button
-              onClick={() => {
-                // Delete production for current campaign
-                productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
-                productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
+              onClick={async () => {
+                try {
+                  // Update campaign in database to remove production data
+                  if (currentCampaignId) {
+                    await updateCampaign(currentCampaignId, {
+                      average_price: 0,
+                      total_production: 0,
+                    });
+                  }
+
+                  // Delete from local Zustand stores
+                  productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
+                  productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
+                } catch (error) {
+                  console.error('Error deleting production:', error);
+                  // TODO: Show error message to user
+                }
               }}
               variant="destructive"
               className="gap-2"
             >
               <Trash2 className="h-5 w-5" />
-              Eliminar Producción
+              
             </Button>
           </div>
         ) : (
@@ -208,9 +290,31 @@ const Produccion = () => {
         </Card>
         </div>
       )}
-
-      {/* Combo Chart - Production & Revenue Evolution - Only show when has production */}
-      {hasProduction && (
+{/* Empty State */}
+      {!hasProduction && (
+        <Card className="border-border/50 shadow-md border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Package className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">
+              Sin registro de producción
+            </h3>
+            <p className="text-muted-foreground mb-6 text-center max-w-md">
+              Aún no has registrado la cosecha para la campaña {currentCampaign}. Usa el asistente
+              de cierre para cargar los datos de producción.
+            </p>
+            <Button
+              onClick={() => setWizardOpen(true)}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+            >
+              <Plus className="h-5 w-5" />
+              Registrar Cosecha
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Combo Chart - Production & Revenue Evolution */}
+      {campaigns.length > 0 && (
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="text-foreground">Evolución de Producción y Facturación</CardTitle>
@@ -267,33 +371,12 @@ const Produccion = () => {
         </Card>
       )}
 
-      {/* Production Evolution Matrix - Only show when has production */}
-      {hasProduction && (
+      {/* Production Evolution Matrix */}
+      {montes.length > 0 && campaigns.length > 0 && (
         <EvolucionProductiva produccionData={produccionData} />
       )}
 
-      {/* Empty State */}
-      {!hasProduction && (
-        <Card className="border-border/50 shadow-md border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Package className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              Sin registro de producción
-            </h3>
-            <p className="text-muted-foreground mb-6 text-center max-w-md">
-              Aún no has registrado la cosecha para la campaña {currentCampaign}. Usa el asistente
-              de cierre para cargar los datos de producción.
-            </p>
-            <Button
-              onClick={() => setWizardOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-            >
-              <Plus className="h-5 w-5" />
-              Registrar Cosecha
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      
 
       {/* Wizard Modal */}
       <RegistrarProduccionForm

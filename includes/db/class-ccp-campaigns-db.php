@@ -151,16 +151,18 @@ class CCP_Campaigns_DB {
 		$result = $this->wpdb->insert(
 			$this->table_campaigns,
 			array(
-				'project_id'    => absint( $data['project_id'] ),
-				'campaign_name' => sanitize_text_field( $data['campaign_name'] ),
-				'year'          => absint( $data['year'] ),
-				'start_date'    => sanitize_text_field( $data['start_date'] ),
-				'end_date'      => isset( $data['end_date'] ) ? sanitize_text_field( $data['end_date'] ) : null,
-				'status'        => isset( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'open',
-				'is_current'    => isset( $data['is_current'] ) ? absint( $data['is_current'] ) : 0,
-				'notes'         => isset( $data['notes'] ) ? sanitize_textarea_field( $data['notes'] ) : null,
-				'created_at'    => current_time( 'mysql', 1 ),
-				'updated_at'    => current_time( 'mysql', 1 ),
+				'project_id'      => absint( $data['project_id'] ),
+				'campaign_name'   => sanitize_text_field( $data['campaign_name'] ),
+				'year'            => absint( $data['year'] ),
+				'start_date'      => sanitize_text_field( $data['start_date'] ),
+				'end_date'        => isset( $data['end_date'] ) ? sanitize_text_field( $data['end_date'] ) : null,
+				'status'          => isset( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'open',
+				'is_current'      => isset( $data['is_current'] ) ? absint( $data['is_current'] ) : 0,
+				'notes'           => isset( $data['notes'] ) ? sanitize_textarea_field( $data['notes'] ) : null,
+				'average_price'   => isset( $data['average_price'] ) ? floatval( $data['average_price'] ) : 0.00,
+				'total_production' => isset( $data['total_production'] ) ? floatval( $data['total_production'] ) : 0.00,
+				'created_at'      => current_time( 'mysql', 1 ),
+				'updated_at'      => current_time( 'mysql', 1 ),
 			),
 			array(
 				'%d', // project_id
@@ -171,6 +173,8 @@ class CCP_Campaigns_DB {
 				'%s', // status
 				'%d', // is_current
 				'%s', // notes
+				'%f', // average_price
+				'%f', // total_production
 				'%s', // created_at
 				'%s', // updated_at
 			)
@@ -192,8 +196,82 @@ class CCP_Campaigns_DB {
 	 * @return bool True on success, false on failure.
 	 */
 	public function update( $campaign_id, $data, $user_id ) {
-		// Stub: Implementation to be added later.
-		return false;
+		if ( ! is_numeric( $campaign_id ) || ! is_numeric( $user_id ) || empty( $data ) ) {
+			return false;
+		}
+
+		// Verify the user owns the campaign.
+		$existing_campaign = $this->get_by_id( $campaign_id, $user_id );
+		if ( ! $existing_campaign ) {
+			return false;
+		}
+
+		$update_data = array();
+		$update_format = array();
+
+		// Build update data array dynamically.
+		if ( isset( $data['campaign_name'] ) ) {
+			$update_data['campaign_name'] = sanitize_text_field( $data['campaign_name'] );
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['year'] ) ) {
+			$update_data['year'] = absint( $data['year'] );
+			$update_format[] = '%d';
+		}
+
+		if ( isset( $data['start_date'] ) ) {
+			$update_data['start_date'] = sanitize_text_field( $data['start_date'] );
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['end_date'] ) ) {
+			$update_data['end_date'] = sanitize_text_field( $data['end_date'] );
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['status'] ) ) {
+			$update_data['status'] = sanitize_text_field( $data['status'] );
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['is_current'] ) ) {
+			$update_data['is_current'] = absint( $data['is_current'] );
+			$update_format[] = '%d';
+		}
+
+		if ( isset( $data['notes'] ) ) {
+			$update_data['notes'] = sanitize_textarea_field( $data['notes'] );
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['average_price'] ) ) {
+			$update_data['average_price'] = floatval( $data['average_price'] );
+			$update_format[] = '%f';
+		}
+
+		if ( isset( $data['total_production'] ) ) {
+			$update_data['total_production'] = floatval( $data['total_production'] );
+			$update_format[] = '%f';
+		}
+
+		// Always update the updated_at timestamp.
+		$update_data['updated_at'] = current_time( 'mysql', 1 );
+		$update_format[] = '%s';
+
+		if ( empty( $update_data ) ) {
+			return false; // Nothing to update.
+		}
+
+		$result = $this->wpdb->update(
+			$this->table_campaigns,
+			$update_data,
+			array( 'id' => absint( $campaign_id ) ),
+			$update_format,
+			array( '%d' )
+		);
+
+		return false !== $result;
 	}
 
 	/**

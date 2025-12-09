@@ -21,28 +21,20 @@ export function Layout({ children }: LayoutProps) {
     if (campaigns.length > 0) {
       const campaign = campaigns.find(c => c.year === currentCampaign);
       if (campaign) {
-        console.log('Syncing activeCampaignId to:', campaign.id, 'for year:', currentCampaign);
         setActiveCampaign(campaign.id);
-      } else {
-        console.log('No campaign found for year:', currentCampaign, 'available campaigns:', campaigns.map(c => c.year));
       }
     }
   }, [campaigns, currentCampaign, setActiveCampaign]);
 
   // Sincronizar currentCampaign con el store
   const handleCampaignChange = (year: number) => {
-    console.log('Changing campaign to year:', year);
     setCurrentCampaign(year);
     setStoreCurrentCampaign(year);
 
     // Encontrar la campaña correspondiente y actualizar activeCampaignId
     const campaign = campaigns.find(c => c.year === year);
-    console.log('Found campaign:', campaign);
     if (campaign) {
-      console.log('Setting activeCampaignId to:', campaign.id);
       setActiveCampaign(campaign.id);
-    } else {
-      console.log('No campaign found for year:', year);
     }
   };
   

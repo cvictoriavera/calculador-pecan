@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { createCampaign, getCampaignsByProject } from "@/services/campaignService";
+import { createCampaign, getCampaignsByProject, updateCampaign } from "@/services/campaignService";
 import { getProjects } from "@/services/projectService";
 import { getMontesByProject, createMonte, updateMonte as updateMonteAPI, deleteMonte } from "@/services/monteService";
 
@@ -22,6 +22,9 @@ interface Campaign {
   end_date: string | null;
   status: 'open' | 'closed' | 'archived';
   is_current: number;
+  notes?: string;
+  average_price?: string;
+  total_production?: string;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +46,7 @@ interface AppContextType {
   addMonte: (monte: Omit<Monte, "id">) => void;
   updateMonte: (id: string, monte: Omit<Monte, "id">) => void;
   deleteMonte: (id: string) => void;
+  updateCampaign: (campaignId: number, data: any) => Promise<any>;
   isOnboardingComplete: boolean;
   isLoading: boolean;
   completeOnboarding: (name: string, year: number, projectId: number) => Promise<void>;
@@ -107,21 +111,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       setCampaignsLoading(true);
       try {
-        console.log('Loading campaigns for project:', currentProjectId);
+    
         const data = await getCampaignsByProject(currentProjectId);
-        console.log('Campaigns data:', data);
+       
         const campaignsData = Array.isArray(data) ? data : [];
         setCampaigns(campaignsData);
 
         // Set current campaign ID
-        const currentCamp = campaignsData.find(c => c.year === currentCampaign);
-        console.log('Current campaign year:', currentCampaign, 'found:', currentCamp);
-        if (currentCamp) {
-          setCurrentCampaignId(currentCamp.id);
-          console.log('Set currentCampaignId:', currentCamp.id);
-        } else {
-          console.log('No campaign found for current year');
-        }
+        updateCurrentCampaignId(campaignsData);
       } catch (error) {
         console.error('Error loading campaigns:', error);
         setCampaigns([]);
@@ -133,38 +130,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadCampaigns();
   }, [currentProjectId]);
 
+  // Update current campaign ID when currentCampaign changes
+  const updateCurrentCampaignId = (campaignsData: Campaign[]) => {
+   
+    const currentCamp = campaignsData.find(c => Number(c.year) === currentCampaign);
+   
+    if (currentCamp) {
+      setCurrentCampaignId(currentCamp.id);
+      
+    } else {
+     
+      // Create the missing campaign
+      createCampaign({
+        project_id: currentProjectId!,
+        campaign_name: `Campaña ${currentCampaign}`,
+        year: currentCampaign,
+        start_date: `${currentCampaign}-01-01`,
+        end_date: `${currentCampaign}-12-31`,
+        status: 'open',
+        is_current: 1,
+      }).then(newCampaign => {
+       
+        const updatedCampaigns = [...campaignsData, newCampaign];
+        setCampaigns(updatedCampaigns);
+        setCurrentCampaignId(newCampaign.id);
+      }).catch(error => {
+        console.error('Error creating campaign:', error);
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (campaigns.length > 0) {
+      updateCurrentCampaignId(campaigns);
+    }
+  }, [currentCampaign, campaigns]);
+
   // Check for existing projects on mount
   useEffect(() => {
     const checkExistingProjects = async () => {
-      console.log('Checking for existing projects...');
-      console.log('Initial currentProjectId from localStorage:', localStorage.getItem("currentProjectId"));
-      console.log('Initial isOnboardingComplete:', !!currentProjectId);
+    
       try {
         const projects = await getProjects();
-        console.log('Projects fetched:', projects);
         if (projects && projects.length > 0) {
-          console.log('Found existing projects, loading first one');
           // Load the first project
           const project = projects[0];
           setCurrentProjectId(project.id);
           setProjectName(project.project_name);
-          console.log('Set project:', project.project_name, project.id);
 
           // Fetch campaigns to get initial year
           const campaignsData = await getCampaignsByProject(project.id);
-          console.log('Campaigns fetched:', campaignsData);
           if (campaignsData && campaignsData.length > 0) {
             const years = campaignsData.map(c => c.year);
             const minYear = Math.min(...years);
             setInitialYear(minYear);
-            console.log('Set initial year:', minYear);
           }
 
           // Load montes
           setMontesLoading(true);
           try {
             const montesData = await getMontesByProject(project.id);
-            console.log('Montes fetched:', montesData);
             if (montesData && Array.isArray(montesData)) {
               // Transform DB data to frontend format
               const transformedMontes = montesData.map(monte => ({
@@ -176,7 +201,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 variedad: monte.variedad,
               }));
               setMontes(transformedMontes);
-              console.log('Set montes:', transformedMontes);
+            } else {
+            
+              setMontes([]);
             }
           } catch (error) {
             console.error('Error loading montes:', error);
@@ -184,19 +211,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setMontesLoading(false);
           }
         } else {
-          console.log('No existing projects found');
-          console.log('currentProjectId before clearing:', currentProjectId);
+          
           // Clear currentProjectId if no projects found
           setCurrentProjectId(null);
           setProjectName("");
           localStorage.removeItem("currentProjectId");
           localStorage.removeItem("projectName");
-          console.log('Cleared currentProjectId and projectName');
         }
       } catch (error) {
         console.error('Error checking existing projects:', error);
       } finally {
-        console.log('Setting loading to false');
         setIsLoading(false);
       }
     };
@@ -255,7 +279,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } as Parameters<typeof createMonte>[0];
 
       const createdMonte = await createMonte(monteData);
-      console.log('Monte created:', createdMonte);
 
       // Transform to frontend format
       const newMonte: Monte = {
@@ -285,7 +308,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       };
 
       const updatedMonte = await updateMonteAPI(parseInt(id), updateData);
-      console.log('Monte updated:', updatedMonte);
 
       // Transform and update local state
       const transformed: Monte = {
@@ -309,7 +331,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteMonteContext = async (id: string) => {
     try {
       await deleteMonte(parseInt(id));
-      console.log('Monte deleted:', id);
 
       // Remove from local state
       setMontes(montes.filter(monte => monte.id !== id));
@@ -318,6 +339,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw error;
     }
   };
+
+  const updateCampaignInContext = async (campaignId: number, data: any) => {
+    try {
+      const updated = await updateCampaign(campaignId, data);
+      setCampaigns(campaigns.map(c => c.id === campaignId ? updated : c));
+      return updated;
+    } catch (error) {
+      console.error('Error updating campaign in context:', error);
+      throw error;
+    }
+  };
+
+
 
   return (
     <AppContext.Provider
@@ -338,6 +372,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addMonte,
         updateMonte,
         deleteMonte: deleteMonteContext,
+        updateCampaign: updateCampaignInContext,
         isOnboardingComplete,
         isLoading,
         completeOnboarding,

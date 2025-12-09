@@ -18,9 +18,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
-  const { isOnboardingComplete, isLoading, currentProjectId } = useApp();
-
-  console.log('ProtectedRoutes: isLoading:', isLoading, 'isOnboardingComplete:', isOnboardingComplete, 'currentProjectId:', currentProjectId);
+  const { isOnboardingComplete, isLoading } = useApp();
 
   if (isLoading) {
     return (
@@ -34,7 +32,6 @@ function ProtectedRoutes() {
   }
 
   if (!isOnboardingComplete) {
-    console.log('Redirecting to onboarding');
     return <Navigate to="/onboarding" replace />;
   }
 

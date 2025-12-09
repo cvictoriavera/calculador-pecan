@@ -197,7 +197,6 @@ export interface ProductionCampaign {
   year: number;
   averagePrice: number;
   totalProduction: number;
-  totalRevenue: number;
   date: Date;
 }
 

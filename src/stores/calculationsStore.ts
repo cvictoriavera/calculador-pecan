@@ -29,7 +29,7 @@ interface CalculationsState {
   // Production selectors
   getTotalProduction: (year: number) => number;
   getProductionByMonte: (year: number) => Record<string, number>;
-  getProductionCampaign: (year: number) => { averagePrice: number; totalProduction: number; totalRevenue: number } | null;
+  getProductionCampaign: (year: number) => { averagePrice: number; totalProduction: number } | null;
   hasProductionForYear: (year: number) => boolean;
 }
 
@@ -101,8 +101,7 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
       .find(pc => pc.year === year);
     return campaign ? {
       averagePrice: campaign.averagePrice,
-      totalProduction: campaign.totalProduction,
-      totalRevenue: campaign.totalRevenue
+      totalProduction: campaign.totalProduction
     } : null;
   },
 

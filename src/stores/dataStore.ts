@@ -51,7 +51,6 @@ export interface ProductionCampaign {
   year: number;
   averagePrice: number;
   totalProduction: number;
-  totalRevenue: number;
   date: Date;
 }
 
@@ -394,7 +393,7 @@ export const useDataStore = create<DataState>()(
     }
 
     // Validación: Valores positivos
-    if (productionCampaign.averagePrice < 0 || productionCampaign.totalProduction < 0 || productionCampaign.totalRevenue < 0) {
+    if (productionCampaign.averagePrice < 0 || productionCampaign.totalProduction < 0) {
       throw new Error('Production campaign values must be non-negative');
     }
 
@@ -419,8 +418,7 @@ export const useDataStore = create<DataState>()(
 
     // Validación: Valores positivos si se cambian
     if ((updates.averagePrice !== undefined && updates.averagePrice < 0) ||
-        (updates.totalProduction !== undefined && updates.totalProduction < 0) ||
-        (updates.totalRevenue !== undefined && updates.totalRevenue < 0)) {
+        (updates.totalProduction !== undefined && updates.totalProduction < 0)) {
       throw new Error('Production campaign values must be non-negative');
     }
 

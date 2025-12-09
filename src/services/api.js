@@ -2,11 +2,7 @@
  * @file Centralized API request handler for the React application.
  */
 
-// 🔍 DEBUG: Verificar qué variable está llegando desde WordPress
-console.log('--- API DEBUG START ---');
-console.log('window.wpApiSettings:', window.wpApiSettings);
-console.log('window.pecanSettings:', window.pecanSettings); // Probablemente esta es la que existe
-console.log('--- API DEBUG END ---');
+
 
 // 1. CORRECCIÓN DE NOMBRE:
 // En el paso anterior configuramos PHP para enviar 'pecanSettings'.
@@ -26,9 +22,6 @@ const apiNonce = settings?.nonce ?? '';
 export const apiRequest = async (endpoint, options = {}) => {
     const url = `${apiRoot}${endpoint}`;
 
-    // 🔍 LOG CLAVE: Aquí verás la URL final que se intenta llamar.
-    // Si ves "ccp/v1/projects" sin "http...", es que apiRoot está vacío.
-    console.log(`📡 Fetching: ${url}`); 
 
     const defaultHeaders = {
         'Content-Type': 'application/json',
