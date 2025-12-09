@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -88,17 +89,17 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
         <CardTitle className="text-foreground">Evolución Productiva</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse min-w-max">
+        <ScrollArea className="max-w-full">
+          <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-border">
-                <th className="sticky left-0 z-20 bg-card text-left p-3 text-sm font-semibold text-muted-foreground min-w-[200px] border-r border-border">
+                <th className="sticky left-0 z-20 bg-card text-left p-2 sm:p-3 text-sm font-semibold text-muted-foreground border-r border-border">
                   Monte
                 </th>
                 {sortedCampaigns.map((year) => (
                   <th
                     key={year.id}
-                    className="text-center p-3 text-sm font-semibold text-muted-foreground min-w-[100px]"
+                    className="text-center p-2 sm:p-3 text-sm font-semibold text-muted-foreground"
                   >
                     {year.year}
                   </th>
@@ -117,7 +118,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                       className="border-b border-border/50 hover:bg-secondary/30 cursor-pointer"
                       onClick={() => toggleMonte(monte.id)}
                     >
-                      <td className="sticky left-0 z-10 bg-card p-3 border-r border-border">
+                      <td className="sticky left-0 z-10 bg-card p-2 sm:p-3 border-r border-border">
                         <div className="flex items-center gap-2">
                           {isExpanded ? (
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -138,7 +139,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                           <td
                             key={year.id}
                             className={cn(
-                              "text-center p-3 text-sm",
+                              "text-center p-2 sm:p-3 text-sm",
                               !existed && "bg-muted/30"
                             )}
                           >
@@ -163,7 +164,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                       <>
                         {/* Edad Row */}
                         <tr className="bg-secondary/20 border-b border-border/30">
-                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-2 text-sm text-muted-foreground border-r border-border">
+                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-1 sm:p-2 text-sm text-muted-foreground border-r border-border">
                             Edad
                           </td>
                           {sortedCampaigns.map((year) => {
@@ -174,7 +175,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                               <td
                                 key={year.id}
                                 className={cn(
-                                  "text-center p-2 text-sm",
+                                  "text-center p-1 sm:p-2 text-sm",
                                   !existed && "bg-muted/30"
                                 )}
                               >
@@ -192,7 +193,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
                         {/* Producción Row */}
                         <tr className="bg-secondary/20 border-b border-border/30">
-                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-2 text-sm text-muted-foreground border-r border-border">
+                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-1 sm:p-2 text-sm text-muted-foreground border-r border-border">
                             Producción (Kg)
                           </td>
                           {sortedCampaigns.map((year) => {
@@ -203,7 +204,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                               <td
                                 key={year.id}
                                 className={cn(
-                                  "text-center p-2 text-sm",
+                                  "text-center p-1 sm:p-2 text-sm",
                                   !existed && "bg-muted/30"
                                 )}
                               >
@@ -225,7 +226,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
                         {/* Productividad Row */}
                         <tr className="bg-secondary/20 border-b border-border/50">
-                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-2 text-sm text-muted-foreground border-r border-border">
+                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-1 sm:p-2 text-sm text-muted-foreground border-r border-border">
                             Productividad (Kg/Ha)
                           </td>
                           {sortedCampaigns.map((year) => {
@@ -266,7 +267,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollArea>
 
         {montes.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">

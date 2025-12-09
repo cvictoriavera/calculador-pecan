@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.3';
+    private static $db_version = '1.3.1';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.

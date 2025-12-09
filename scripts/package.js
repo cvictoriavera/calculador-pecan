@@ -6,10 +6,15 @@ import archiver from 'archiver';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Leer package.json para obtener nombre y versión
+// Leer package.json para obtener nombre
 const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
 const pluginName = packageJson.name;
-const pluginVersion = packageJson.version;
+
+// Leer la versión desde el archivo principal del plugin
+const pluginFilePath = path.join(__dirname, '..', 'calculador-pecan.php');
+const pluginFileContent = fs.readFileSync(pluginFilePath, 'utf8');
+const versionMatch = pluginFileContent.match(/Version:\s*([^\s]+)/);
+const pluginVersion = versionMatch ? versionMatch[1] : 'unknown';
 
 // Nombre del archivo zip
 const zipFileName = `${pluginName}-${pluginVersion}.zip`;
