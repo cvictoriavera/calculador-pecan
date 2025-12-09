@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.4.0';
+    private static $db_version = '1.4.1';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -58,13 +58,6 @@ class CCP_Database_Manager {
 
         $version = get_option(self::$db_version_key, 'NOT SET');
 
-        // Commented out to prevent activation output
-        // error_log('CCP Database Status:');
-        // error_log('Version: ' . $version);
-        // foreach ($status as $table => $state) {
-        //     error_log("$table: $state");
-        // }
-
         return [
             'version' => $version,
             'tables' => $status
@@ -77,34 +70,23 @@ class CCP_Database_Manager {
      */
     public static function create_tables() {
         global $wpdb;
-        // error_log('CCP DB: Starting create_tables'); // Commented out to prevent activation output
-        $installed_version = get_option(self::$db_version_key);
-        // error_log('CCP DB: Installed version: ' . $installed_version . ', Current version: ' . self::$db_version); // Commented out to prevent activation output
 
+        $installed_version = get_option(self::$db_version_key);
+     
         // Verificar si las tablas existen
         $table_name_annual_records = $wpdb->prefix . 'pecan_annual_records';
         $table_name_project_data = $wpdb->prefix . 'pecan_project_data';
         $annual_records_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_annual_records));
         $project_data_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_project_data));
-        // error_log('CCP DB: annual_records exists: ' . ($annual_records_exists ? 'yes' : 'no')); // Commented out to prevent activation output
-        // error_log('CCP DB: project_data exists: ' . ($project_data_exists ? 'yes' : 'no')); // Commented out to prevent activation output
+       
 
         // Crear tablas si no existen o si la versión ha cambiado
         if (!$annual_records_exists || $installed_version != self::$db_version) {
             // Ejecutar migraciones específicas de versión
             self::run_migrations($installed_version);
-            // error_log('CCP DB: Creating tables'); // Commented out to prevent activation output
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             $charset_collate = $wpdb->get_charset_collate();
 
-            // Para cambios mayores de esquema (versión 4.0), renombrar tabla project_data a annual_records
-            if (version_compare($installed_version, '4.0', '<') && $project_data_exists && !$annual_records_exists) {
-                $wpdb->query("RENAME TABLE $table_name_project_data TO $table_name_annual_records");
-            } elseif (version_compare($installed_version, '3.0', '<')) {
-                // Para versiones anteriores, crear tabla
-                $table_name_data = $wpdb->prefix . 'pecan_annual_records';
-                $wpdb->query("DROP TABLE IF EXISTS $table_name_data");
-            }
 
             // Tabla de Proyectos
             $table_name_projects = $wpdb->prefix . 'pecan_projects';
