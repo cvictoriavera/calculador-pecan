@@ -151,18 +151,20 @@ class CCP_Campaigns_DB {
 		$result = $this->wpdb->insert(
 			$this->table_campaigns,
 			array(
-				'project_id'      => absint( $data['project_id'] ),
-				'campaign_name'   => sanitize_text_field( $data['campaign_name'] ),
-				'year'            => absint( $data['year'] ),
-				'start_date'      => sanitize_text_field( $data['start_date'] ),
-				'end_date'        => isset( $data['end_date'] ) ? sanitize_text_field( $data['end_date'] ) : null,
-				'status'          => isset( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'open',
-				'is_current'      => isset( $data['is_current'] ) ? absint( $data['is_current'] ) : 0,
-				'notes'           => isset( $data['notes'] ) ? sanitize_textarea_field( $data['notes'] ) : null,
-				'average_price'   => isset( $data['average_price'] ) ? floatval( $data['average_price'] ) : 0.00,
-				'total_production' => isset( $data['total_production'] ) ? floatval( $data['total_production'] ) : 0.00,
-				'created_at'      => current_time( 'mysql', 1 ),
-				'updated_at'      => current_time( 'mysql', 1 ),
+				'project_id'            => absint( $data['project_id'] ),
+				'campaign_name'         => sanitize_text_field( $data['campaign_name'] ),
+				'year'                  => absint( $data['year'] ),
+				'start_date'            => sanitize_text_field( $data['start_date'] ),
+				'end_date'              => isset( $data['end_date'] ) ? sanitize_text_field( $data['end_date'] ) : null,
+				'status'                => isset( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'open',
+				'is_current'            => isset( $data['is_current'] ) ? absint( $data['is_current'] ) : 0,
+				'notes'                 => isset( $data['notes'] ) ? sanitize_textarea_field( $data['notes'] ) : null,
+				'average_price'         => isset( $data['average_price'] ) ? floatval( $data['average_price'] ) : 0.00,
+				'total_production'      => isset( $data['total_production'] ) ? floatval( $data['total_production'] ) : 0.00,
+				'montes_contribuyentes' => isset( $data['montes_contribuyentes'] ) ? sanitize_text_field( $data['montes_contribuyentes'] ) : null,
+				'montes_production'     => isset( $data['montes_production'] ) ? sanitize_text_field( $data['montes_production'] ) : null,
+				'created_at'            => current_time( 'mysql', 1 ),
+				'updated_at'            => current_time( 'mysql', 1 ),
 			),
 			array(
 				'%d', // project_id
@@ -175,6 +177,8 @@ class CCP_Campaigns_DB {
 				'%s', // notes
 				'%f', // average_price
 				'%f', // total_production
+				'%s', // montes_contribuyentes
+				'%s', // montes_production
 				'%s', // created_at
 				'%s', // updated_at
 			)
@@ -253,6 +257,16 @@ class CCP_Campaigns_DB {
 		if ( isset( $data['total_production'] ) ) {
 			$update_data['total_production'] = floatval( $data['total_production'] );
 			$update_format[] = '%f';
+		}
+
+		if ( isset( $data['montes_contribuyentes'] ) ) {
+			$update_data['montes_contribuyentes'] = sanitize_text_field( $data['montes_contribuyentes'] );
+			$update_format[] = '%s';
+		}
+
+		if ( isset( $data['montes_production'] ) ) {
+			$update_data['montes_production'] = sanitize_text_field( $data['montes_production'] );
+			$update_format[] = '%s';
 		}
 
 		// Always update the updated_at timestamp.

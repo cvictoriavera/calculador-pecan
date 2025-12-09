@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useApp } from "@/contexts/AppContext";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,11 +10,11 @@ interface ProduccionRecord {
 }
 
 interface EvolucionProductivaProps {
-  produccionData: ProduccionRecord[];
+  campaigns: any[];
+  montes: any[];
 }
 
-export function EvolucionProductiva({ produccionData }: EvolucionProductivaProps) {
-  const { montes, campaigns } = useApp();
+export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaProps) {
   const [expandedMontes, setExpandedMontes] = useState<string[]>([]);
 
   const toggleMonte = (monteId: string) => {
@@ -25,6 +24,42 @@ export function EvolucionProductiva({ produccionData }: EvolucionProductivaProps
         : [...prev, monteId]
     );
   };
+
+  // Compute produccionData from campaigns
+  const produccionData = useMemo(() => {
+    const data: ProduccionRecord[] = [];
+    campaigns.forEach(camp => {
+      if (camp.montes_production) {
+        const prod = JSON.parse(camp.montes_production);
+        Object.entries(prod).forEach(([monteId, kg]) => {
+          data.push({
+            campanaYear: camp.year,
+            monteId,
+            kgRecolectados: kg as number,
+          });
+        });
+      } else if (camp.montes_contribuyentes) {
+        const contrib = JSON.parse(camp.montes_contribuyentes);
+        const totalProd = camp.total_production;
+        const totalArea = contrib.reduce((sum: number, id: string) => {
+          const monte = montes.find(m => m.id == id);
+          return sum + (monte ? monte.hectareas : 0);
+        }, 0);
+        contrib.forEach((id: string) => {
+          const monte = montes.find(m => m.id == id);
+          if (monte && totalArea > 0) {
+            const kg = totalProd * (monte.hectareas / totalArea);
+            data.push({
+              campanaYear: camp.year,
+              monteId: id,
+              kgRecolectados: kg,
+            });
+          }
+        });
+      }
+    });
+    return data;
+  }, [campaigns, montes]);
 
   // Sort campaigns chronologically
   const sortedCampaigns = useMemo(() => [...campaigns].sort((a, b) => a.year - b.year), [campaigns]);

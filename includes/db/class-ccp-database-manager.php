@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.2';
+    private static $db_version = '1.3';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -281,6 +281,34 @@ class CCP_Database_Manager {
                 }
 
                 // error_log('CCP DB: Production columns migration completed'); // Commented out to prevent activation output
+            }
+        }
+
+        // Migración v1.2 -> v1.3: Agregar columnas de montes a campaigns
+        if (version_compare($from_version, '1.3', '<')) {
+            $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
+
+            // Verificar si la tabla existe
+            $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_campaigns));
+
+            if ($table_exists) {
+                // error_log('CCP DB: Adding montes columns to campaigns table'); // Commented out to prevent activation output
+
+                // Agregar columna montes_contribuyentes si no existe
+                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name_campaigns LIKE 'montes_contribuyentes'");
+                if (empty($column_exists)) {
+                    $wpdb->query("ALTER TABLE $table_name_campaigns ADD COLUMN montes_contribuyentes LONGTEXT AFTER total_production");
+                    // error_log('CCP DB: Added montes_contribuyentes column'); // Commented out to prevent activation output
+                }
+
+                // Agregar columna montes_production si no existe
+                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name_campaigns LIKE 'montes_production'");
+                if (empty($column_exists)) {
+                    $wpdb->query("ALTER TABLE $table_name_campaigns ADD COLUMN montes_production LONGTEXT AFTER montes_contribuyentes");
+                    // error_log('CCP DB: Added montes_production column'); // Commented out to prevent activation output
+                }
+
+                // error_log('CCP DB: Montes columns migration completed'); // Commented out to prevent activation output
             }
         }
 

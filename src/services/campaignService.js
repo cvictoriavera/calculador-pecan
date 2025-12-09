@@ -54,6 +54,8 @@ export const createCampaign = (campaignData) => {
  * @param {string} [campaignData.notes] - Notes for the campaign.
  * @param {number} [campaignData.average_price] - Average price for production.
  * @param {number} [campaignData.total_production] - Total production.
+ * @param {string} [campaignData.montes_contribuyentes] - JSON string of contributing montes IDs.
+ * @param {string} [campaignData.montes_production] - JSON string of production per monte.
  * @returns {Promise<object>} A promise that resolves to the updated campaign object.
  */
 export const updateCampaign = (campaignId, campaignData) => {

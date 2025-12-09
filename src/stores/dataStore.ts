@@ -397,12 +397,17 @@ export const useDataStore = create<DataState>()(
       throw new Error('Production campaign values must be non-negative');
     }
 
-    // Validación: ID único
-    if (get().productionCampaigns.some((pc: ProductionCampaign) => pc.id === productionCampaign.id)) {
-      throw new Error(`Production campaign with ID ${productionCampaign.id} already exists`);
+    // Si ya existe, actualizar en lugar de agregar
+    const existing = get().productionCampaigns.find((pc: ProductionCampaign) => pc.id === productionCampaign.id);
+    if (existing) {
+      set((state) => ({
+        productionCampaigns: state.productionCampaigns.map((pc: ProductionCampaign) =>
+          pc.id === productionCampaign.id ? { ...pc, ...productionCampaign } : pc
+        ),
+      }));
+    } else {
+      set((state) => ({ productionCampaigns: [...state.productionCampaigns, productionCampaign] }));
     }
-
-    set((state) => ({ productionCampaigns: [...state.productionCampaigns, productionCampaign] }));
   },
 
   updateProductionCampaign: (id, updates) => {

@@ -69,7 +69,24 @@ const Produccion = () => {
         });
       });
 
-      // Update or add production campaign
+      // Prepare montes data
+      const montesContribuyentes = (data as any).produccionPorMonte.filter((p: any) => p.kgRecolectados > 0).map((p: any) => p.monteId);
+      const montesProduction = (data as any).metodo === 'detallado' ? (data as any).produccionPorMonte.reduce((acc: any, p: any) => {
+        if (p.kgRecolectados > 0) acc[p.monteId] = p.kgRecolectados;
+        return acc;
+      }, {}) : null;
+
+      // Update campaign in database
+      if (currentCampaignId) {
+        await updateCampaign(currentCampaignId, {
+          average_price: data.precioPromedio,
+          total_production: totalKg,
+          montes_contribuyentes: JSON.stringify(montesContribuyentes),
+          montes_production: montesProduction ? JSON.stringify(montesProduction) : null,
+        });
+      }
+
+      // Update local productionCampaigns
       const existingCampaign = productionCampaigns.find(pc => pc.year === currentCampaign);
       if (existingCampaign) {
         updateProductionCampaign(existingCampaign.id, {
@@ -113,14 +130,6 @@ const Produccion = () => {
   const totalFacturacion = (currentCampanaData?.totalProduction || 0) * (currentCampanaData?.averagePrice || 0);
   const precioPromedio = currentCampanaData?.averagePrice || 0;
 
-  // Production data for evolution component
-  const produccionData = productions
-    .filter((p) => p.year === currentCampaign)
-    .map((p) => ({
-      campanaYear: p.year,
-      monteId: p.monteId,
-      kgRecolectados: p.kgHarvested,
-    }));
 
   // Load production data from campaigns when campaigns change
   useEffect(() => {
@@ -373,7 +382,7 @@ const Produccion = () => {
 
       {/* Production Evolution Matrix */}
       {montes.length > 0 && campaigns.length > 0 && (
-        <EvolucionProductiva produccionData={produccionData} />
+        <EvolucionProductiva campaigns={campaigns} montes={montes} />
       )}
 
       

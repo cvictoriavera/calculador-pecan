@@ -161,16 +161,18 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 		$user_id = get_current_user_id();
 
 		$data = array(
-			'project_id'       => (int) $request->get_param( 'project_id' ),
-			'campaign_name'    => sanitize_text_field( $request->get_param( 'campaign_name' ) ),
-			'year'             => (int) $request->get_param( 'year' ),
-			'start_date'       => sanitize_text_field( $request->get_param( 'start_date' ) ),
-			'end_date'         => $request->get_param( 'end_date' ) ? sanitize_text_field( $request->get_param( 'end_date' ) ) : null,
-			'status'           => $request->get_param( 'status' ) ? sanitize_text_field( $request->get_param( 'status' ) ) : 'open',
-			'is_current'       => $request->get_param( 'is_current' ) ? (int) $request->get_param( 'is_current' ) : 0,
-			'notes'            => $request->get_param( 'notes' ) ? sanitize_textarea_field( $request->get_param( 'notes' ) ) : null,
-			'average_price'    => $request->get_param( 'average_price' ) ? floatval( $request->get_param( 'average_price' ) ) : 0.00,
-			'total_production' => $request->get_param( 'total_production' ) ? floatval( $request->get_param( 'total_production' ) ) : 0.00,
+			'project_id'             => (int) $request->get_param( 'project_id' ),
+			'campaign_name'          => sanitize_text_field( $request->get_param( 'campaign_name' ) ),
+			'year'                   => (int) $request->get_param( 'year' ),
+			'start_date'             => sanitize_text_field( $request->get_param( 'start_date' ) ),
+			'end_date'               => $request->get_param( 'end_date' ) ? sanitize_text_field( $request->get_param( 'end_date' ) ) : null,
+			'status'                 => $request->get_param( 'status' ) ? sanitize_text_field( $request->get_param( 'status' ) ) : 'open',
+			'is_current'             => $request->get_param( 'is_current' ) ? (int) $request->get_param( 'is_current' ) : 0,
+			'notes'                  => $request->get_param( 'notes' ) ? sanitize_textarea_field( $request->get_param( 'notes' ) ) : null,
+			'average_price'          => $request->get_param( 'average_price' ) ? floatval( $request->get_param( 'average_price' ) ) : 0.00,
+			'total_production'       => $request->get_param( 'total_production' ) ? floatval( $request->get_param( 'total_production' ) ) : 0.00,
+			'montes_contribuyentes'  => $request->get_param( 'montes_contribuyentes' ) ? sanitize_text_field( $request->get_param( 'montes_contribuyentes' ) ) : null,
+			'montes_production'      => $request->get_param( 'montes_production' ) ? sanitize_text_field( $request->get_param( 'montes_production' ) ) : null,
 		);
 
 		$campaign_id = $this->campaigns_db->create( $data, $user_id );
@@ -203,6 +205,7 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 		$campaign_id = (int) $request['id'];
 
 		$data = array();
+		$json_params = $request->get_json_params();
 
 		// Build data array from request parameters.
 		if ( $request->has_param( 'campaign_name' ) ) {
@@ -239,6 +242,15 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 
 		if ( $request->has_param( 'total_production' ) ) {
 			$data['total_production'] = floatval( $request->get_param( 'total_production' ) );
+		}
+
+		// New fields from JSON body
+		if ( isset( $json_params['montes_contribuyentes'] ) ) {
+			$data['montes_contribuyentes'] = sanitize_text_field( $json_params['montes_contribuyentes'] );
+		}
+
+		if ( isset( $json_params['montes_production'] ) ) {
+			$data['montes_production'] = sanitize_text_field( $json_params['montes_production'] );
 		}
 
 		$result = $this->campaigns_db->update( $campaign_id, $data, $user_id );
