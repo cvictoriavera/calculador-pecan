@@ -14,7 +14,9 @@ export function Layout({ children }: LayoutProps) {
   const { campaigns, currentCampaign, setCurrentCampaign, montes } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
 
-  const totalArea = montes.reduce((acc, m) => acc + m.hectareas, 0);
+  const totalArea = montes
+    .filter(m => m.añoPlantacion <= currentCampaign)
+    .reduce((acc, m) => acc + m.hectareas, 0);
 
   // Sincronizar activeCampaignId con currentCampaign
   useEffect(() => {
