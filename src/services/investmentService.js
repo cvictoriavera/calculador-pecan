@@ -1,0 +1,89 @@
+/**
+ * @file Service functions for interacting with the investments API.
+ */
+
+import { apiRequest } from './api';
+
+const BASE_ENDPOINT = 'ccp/v1/investments';
+
+/**
+ * Fetches all investments for a given project.
+ *
+ * @param {number} projectId - The ID of the project.
+ * @returns {Promise<Array>} A promise that resolves to an array of investment objects.
+ */
+export const getInvestmentsByProject = (projectId) => {
+	if (!projectId) {
+		return Promise.reject(new Error('Project ID is required.'));
+	}
+	return apiRequest(`${BASE_ENDPOINT}/${projectId}`);
+};
+
+/**
+ * Fetches investments for a specific campaign.
+ *
+ * @param {number} projectId - The ID of the project.
+ * @param {number} campaignId - The ID of the campaign.
+ * @returns {Promise<Array>} A promise that resolves to an array of investment objects.
+ */
+export const getInvestmentsByCampaign = (projectId, campaignId) => {
+	if (!projectId || !campaignId) {
+		return Promise.reject(new Error('Project ID and Campaign ID are required.'));
+	}
+	return apiRequest(`${BASE_ENDPOINT}/${projectId}/${campaignId}`);
+};
+
+/**
+ * Creates a new investment.
+ *
+ * @param {object} investmentData - The data for the new investment.
+ * @param {number} investmentData.project_id - The ID of the project.
+ * @param {number} [investmentData.campaign_id] - The ID of the campaign.
+ * @param {string} investmentData.category - The category of the investment.
+ * @param {string} investmentData.description - The description of the investment.
+ * @param {number} [investmentData.total_value] - The total value of the investment.
+ * @param {object} [investmentData.details] - Additional details as JSON object.
+ * @returns {Promise<object>} A promise that resolves to the created investment object.
+ */
+export const createInvestment = (investmentData) => {
+	return apiRequest(BASE_ENDPOINT, {
+		method: 'POST',
+		body: JSON.stringify(investmentData),
+	});
+};
+
+/**
+ * Updates an existing investment.
+ *
+ * @param {number} investmentId - The ID of the investment to update.
+ * @param {object} investmentData - The data to update.
+ * @param {string} [investmentData.category] - The category of the investment.
+ * @param {string} [investmentData.description] - The description of the investment.
+ * @param {number} [investmentData.total_value] - The total value of the investment.
+ * @param {object} [investmentData.details] - Additional details as JSON object.
+ * @returns {Promise<object>} A promise that resolves to the update result.
+ */
+export const updateInvestment = (investmentId, investmentData) => {
+	if (!investmentId) {
+		return Promise.reject(new Error('Investment ID is required.'));
+	}
+	return apiRequest(`${BASE_ENDPOINT}/${investmentId}`, {
+		method: 'PUT',
+		body: JSON.stringify(investmentData),
+	});
+};
+
+/**
+ * Deletes an investment.
+ *
+ * @param {number} investmentId - The ID of the investment to delete.
+ * @returns {Promise<object>} A promise that resolves to the delete result.
+ */
+export const deleteInvestment = (investmentId) => {
+	if (!investmentId) {
+		return Promise.reject(new Error('Investment ID is required.'));
+	}
+	return apiRequest(`${BASE_ENDPOINT}/${investmentId}`, {
+		method: 'DELETE',
+	});
+};

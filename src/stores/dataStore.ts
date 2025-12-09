@@ -277,8 +277,8 @@ export const useDataStore = create<DataState>()(
     }));
   },
 
-  // Investment actions
-  addInvestment: (investment) => {
+  // Investment actions - Now using API
+  addInvestment: async (investment) => {
     // Validación: Año válido
     if (!investment.year || investment.year < 2000 || investment.year > 2100) {
       throw new Error('Valid year is required for investment');
@@ -294,10 +294,21 @@ export const useDataStore = create<DataState>()(
       throw new Error('Investment category is required');
     }
 
+    // For now, still add to local state for compatibility
+    // TODO: Remove local state when fully migrated to API
     set((state) => ({ investments: [...state.investments, investment] }));
+
+    // TODO: Call API to save to database
+    // const result = await createInvestment({
+    //   project_id: currentProjectId,
+    //   category: investment.category,
+    //   description: investment.description,
+    //   total_value: investment.amount,
+    //   details: investment.data,
+    // });
   },
 
-  updateInvestment: (id, updates) => {
+  updateInvestment: async (id, updates) => {
     const currentInvestment = get().investments.find((i: InvestmentRecord) => i.id === id);
     if (!currentInvestment) {
       throw new Error(`Investment with ID ${id} not found`);
@@ -313,22 +324,28 @@ export const useDataStore = create<DataState>()(
       throw new Error('Investment amount must be positive');
     }
 
+    // For now, still update local state
     set((state) => ({
       investments: state.investments.map((i: InvestmentRecord) =>
         i.id === id ? { ...i, ...updates } : i
       ),
     }));
+
+    // TODO: Call API to update in database
   },
 
-  deleteInvestment: (id) => {
+  deleteInvestment: async (id) => {
     const investment = get().investments.find((i: InvestmentRecord) => i.id === id);
     if (!investment) {
       throw new Error(`Investment with ID ${id} not found`);
     }
 
+    // For now, still remove from local state
     set((state) => ({
       investments: state.investments.filter((i: InvestmentRecord) => i.id !== id),
     }));
+
+    // TODO: Call API to delete from database
   },
 
   // Production actions

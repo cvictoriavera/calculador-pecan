@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.3.1';
+    private static $db_version = '1.4.0';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -46,7 +46,8 @@ class CCP_Database_Manager {
             $wpdb->prefix . 'pecan_projects' => 'Proyectos',
             $wpdb->prefix . 'pecan_campaigns' => 'Campañas',
             $wpdb->prefix . 'pecan_montes' => 'Montes',
-            $wpdb->prefix . 'pecan_annual_records' => 'Registros Anuales'
+            $wpdb->prefix . 'pecan_annual_records' => 'Registros Anuales',
+            $wpdb->prefix . 'pecan_investments' => 'Inversiones'
         ];
 
         $status = [];
@@ -230,6 +231,34 @@ class CCP_Database_Manager {
             ) $charset_collate;";
             dbDelta($sql_data);
             // error_log('CCP DB: Annual_records table created'); // Commented out to prevent activation output
+
+            // Tabla de Inversiones
+            // error_log('CCP DB: Creating investments table'); // Commented out to prevent activation output
+            $table_name_investments = $wpdb->prefix . 'pecan_investments';
+            $sql_investments = "CREATE TABLE $table_name_investments (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+                project_id BIGINT UNSIGNED NOT NULL,
+                campaign_id BIGINT UNSIGNED NULL,
+
+                category VARCHAR(100) NOT NULL,
+                description TEXT NOT NULL,
+                total_value DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+
+                details LONGTEXT NULL,
+
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+                INDEX idx_project_id (project_id),
+                INDEX idx_campaign_id (campaign_id),
+                INDEX idx_category (category),
+
+                FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (campaign_id) REFERENCES $table_name_campaigns(id) ON DELETE CASCADE
+            ) $charset_collate;";
+            dbDelta($sql_investments);
+            // error_log('CCP DB: Investments table created'); // Commented out to prevent activation output
 
             // Migrar datos existentes si es necesario
             // error_log('CCP DB: Starting migration'); // Commented out to prevent activation output

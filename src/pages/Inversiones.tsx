@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, DollarSign, Pencil, Trash2 } from "lucide-react";
@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
 import { formatCurrency } from "@/lib/calculations";
-import { useUiStore, useDataStore } from "@/stores";
+import { useDataStore } from "@/stores";
+import { useApp } from "@/contexts/AppContext";
+import { getInvestmentsByCampaign, createInvestment, updateInvestment as updateInvestmentApi, deleteInvestment as deleteInvestmentApi } from "@/services/investmentService";
 import { toast } from "sonner";
 
 interface InversionRegistro {
@@ -37,15 +39,15 @@ const categoriaLabels: Record<string, string> = {
 };
 
 const categoriaColors: Record<string, string> = {
-  Tierra: "bg-cocoa",
-  Mejoras: "bg-camel",
-  Implantación: "bg-primary",
-  Riego: "bg-accent",
-  Maquinaria: "bg-warning",
+  tierra: "bg-green-600",
+  mejoras: "bg-blue-600",
+  implantacion: "bg-purple-600",
+  riego: "bg-cyan-600",
+  maquinaria: "bg-orange-600",
 };
 
 const Inversiones = () => {
-  const { currentCampaign } = useUiStore();
+  const { currentProjectId, campaigns, currentCampaign } = useApp();
   const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -57,32 +59,108 @@ const Inversiones = () => {
   const inversionesFiltered = investments.filter((inv) => inv.year === currentCampaign);
   const totalInversionesCampaña = inversionesFiltered.reduce((acc, inv) => acc + inv.amount, 0);
 
+  // Load investments from database when project or campaign changes
+  useEffect(() => {
+    const loadInvestments = async () => {
+      if (currentProjectId) {
+        // Find the current campaign
+        const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
+        if (currentCamp) {
+          try {
+            const dbInvestments = await getInvestmentsByCampaign(currentProjectId, currentCamp.id);
 
-  const handleSaveInversion = (categoria: string, data: any) => {
+            // Create investments with correct year
+            const newInvestments = dbInvestments.map(inv => ({
+              id: inv.id.toString(),
+              year: currentCampaign, // Use the current campaign year
+              category: inv.category,
+              description: inv.description,
+              amount: Number(inv.total_value) || 0,
+              date: new Date(inv.created_at),
+              data: inv.details,
+            }));
+
+          // Update the store directly using Zustand's setState
+          useDataStore.setState({ investments: newInvestments });
+        } catch (error) {
+          console.error("Error loading investments:", error);
+          // Clear investments on error
+          useDataStore.setState({ investments: [] });
+        }
+        } else {
+          // Clear investments if no campaign found
+          useDataStore.setState({ investments: [] });
+        }
+      } else {
+        // Clear investments if no project
+        useDataStore.setState({ investments: [] });
+      }
+    };
+
+    loadInvestments();
+  }, [currentProjectId, campaigns, currentCampaign]);
+
+
+  const handleSaveInversion = async (categoria: string, data: any) => {
+    if (!currentProjectId) {
+      toast.error("No hay proyecto activo");
+      return;
+    }
+
+    // Find the current campaign
+    const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
+    if (!currentCamp) {
+      toast.error("No se pudo encontrar la campaña actual");
+      return;
+    }
+
     const categoriaLabel = categoriaLabels[categoria];
     const descripcion = data.descripcion || data.items?.map((i: any) => i.tipo).join(", ") || categoriaLabel;
     const monto = data.total || data.precio || 0;
 
-    if (editingInversion) {
-      updateInvestment(editingInversion.id, {
-        category: categoria,
-        description: descripcion,
-        amount: monto,
-        data,
-      });
-      toast.success("Inversión actualizada correctamente");
-      setEditingInversion(null);
-    } else {
-      addInvestment({
-        id: Date.now().toString(),
-        year: currentCampaign,
-        category: categoria,
-        description: descripcion,
-        amount: monto,
-        date: new Date(),
-        data,
-      });
-      toast.success("Inversión registrada correctamente");
+    try {
+      if (editingInversion) {
+        // Update existing investment
+        await updateInvestmentApi(parseInt(editingInversion.id), {
+          category: categoria,
+          description: descripcion,
+          total_value: monto,
+          details: data,
+        });
+        // Update local state
+        updateInvestment(editingInversion.id, {
+          category: categoria,
+          description: descripcion,
+          amount: monto,
+          data,
+        });
+        toast.success("Inversión actualizada correctamente");
+        setEditingInversion(null);
+      } else {
+        // Create new investment
+        const result = await createInvestment({
+          project_id: currentProjectId,
+          campaign_id: currentCamp.id,
+          category: categoria,
+          description: descripcion,
+          total_value: monto,
+          details: data,
+        });
+        // Add to local state
+        addInvestment({
+          id: result.id.toString(),
+          year: currentCampaign,
+          category: categoria,
+          description: descripcion,
+          amount: monto,
+          date: new Date(),
+          data,
+        });
+        toast.success("Inversión registrada correctamente");
+      }
+    } catch (error) {
+      console.error("Error saving investment:", error);
+      toast.error("Error al guardar la inversión");
     }
   };
 
@@ -96,10 +174,17 @@ const Inversiones = () => {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (inversionToDelete) {
-      deleteInvestment(inversionToDelete.id);
-      toast.success("Inversión eliminada correctamente");
+      try {
+        await deleteInvestmentApi(parseInt(inversionToDelete.id));
+        // Remove from local state
+        deleteInvestment(inversionToDelete.id);
+        toast.success("Inversión eliminada correctamente");
+      } catch (error) {
+        console.error("Error deleting investment:", error);
+        toast.error("Error al eliminar la inversión");
+      }
     }
     setDeleteDialogOpen(false);
     setInversionToDelete(null);
