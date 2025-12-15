@@ -19,6 +19,7 @@ interface MantenimientosFormProps {
   onSave: (data: MantenimientosFormData) => void;
   onCancel: () => void;
   initialData?: Partial<MantenimientosFormData>;
+  existingCosts?: any[];
 }
 
 export default function MantenimientosForm({ onSave, onCancel, initialData }: MantenimientosFormProps) {

@@ -23,6 +23,7 @@ interface CosechaFormProps {
   onSave: (data: CosechaFormData) => void;
   onCancel: () => void;
   initialData?: Partial<CosechaFormData>;
+  existingCosts?: any[];
 }
 
 export default function CosechaForm({ onSave, onCancel, initialData }: CosechaFormProps) {

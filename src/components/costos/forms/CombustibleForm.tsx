@@ -51,42 +51,135 @@ interface FleetVehicle {
 interface CombustibleFormProps {
   onSave: (data: any) => void;
   onCancel: () => void;
+  initialData?: any;
+  existingCosts?: any[];
 }
 
-export default function CombustibleForm({ onSave, onCancel }: CombustibleFormProps) {
-  const [currentStep, setCurrentStep] = useState<'selection' | 'form'>('selection');
-  const [selectedType, setSelectedType] = useState<typeof tiposCombustible[0] | null>(null);
-
-  // Estado para formularios
-  const [machineryData, setMachineryData] = useState({
-    fuel_liters: 0,
-    fuel_price: 0,
-    maint_pct_of_fuel: 20,
-    lubricant_pct_of_maint: 15,
+export default function CombustibleForm({ onSave, onCancel, initialData, existingCosts }: CombustibleFormProps) {
+  const [currentStep, setCurrentStep] = useState<'selection' | 'form'>(() => {
+    // If we have initialData, start directly in form mode
+    return initialData ? 'form' : 'selection';
+  });
+  const [selectedType, setSelectedType] = useState<typeof tiposCombustible[0] | null>(() => {
+    // If we have initialData, find the matching type
+    if (initialData?.type) {
+      return tiposCombustible.find(t => t.label === initialData.type) || null;
+    }
+    return null;
   });
 
-  const [vehiclesData, setVehiclesData] = useState({
-    fleet_list: [] as FleetVehicle[],
-    fuel_liters: 0,
-    fuel_price: 0,
-    tax_pct: 3,
-    insurance_pct: 3,
-    maint_pct: 10,
+  // Estado para formularios - inicializar con initialData si existe
+  const [machineryData, setMachineryData] = useState(() => {
+    if (initialData?.type === "Tractores" && initialData.data) {
+      return {
+        fuel_liters: initialData.data.fuel_liters || 0,
+        fuel_price: initialData.data.fuel_price || 0,
+        maint_pct_of_fuel: initialData.data.maint_pct_of_fuel || 20,
+        lubricant_pct_of_maint: initialData.data.lubricant_pct_of_maint || 15,
+      };
+    }
+    return {
+      fuel_liters: 0,
+      fuel_price: 0,
+      maint_pct_of_fuel: 20,
+      lubricant_pct_of_maint: 15,
+    };
   });
 
-  const [irrigationData, setIrrigationData] = useState({
-    fuel_liters: 0,
-    fuel_price: 0,
+  const [vehiclesData, setVehiclesData] = useState(() => {
+    if (initialData?.type === "Vehiculos" && initialData.data) {
+      return {
+        fleet_list: initialData.data.fleet_list || [],
+        fuel_liters: initialData.data.fuel_liters || 0,
+        fuel_price: initialData.data.fuel_price || 0,
+        tax_pct: initialData.data.tax_pct || 3,
+        insurance_pct: initialData.data.insurance_pct || 3,
+        maint_pct: initialData.data.maint_pct || 10,
+      };
+    }
+    return {
+      fleet_list: [] as FleetVehicle[],
+      fuel_liters: 0,
+      fuel_price: 0,
+      tax_pct: 3,
+      insurance_pct: 3,
+      maint_pct: 10,
+    };
   });
 
-  const [otherData, setOtherData] = useState({
-    fuel_liters: 0,
-    fuel_price: 0,
+  const [irrigationData, setIrrigationData] = useState(() => {
+    if (initialData?.type === "Riego" && initialData.data) {
+      return {
+        fuel_liters: initialData.data.fuel_liters || 0,
+        fuel_price: initialData.data.fuel_price || 0,
+      };
+    }
+    return {
+      fuel_liters: 0,
+      fuel_price: 0,
+    };
+  });
+
+  const [otherData, setOtherData] = useState(() => {
+    if (initialData?.type === "Otros" && initialData.data) {
+      return {
+        fuel_liters: initialData.data.fuel_liters || 0,
+        fuel_price: initialData.data.fuel_price || 0,
+      };
+    }
+    return {
+      fuel_liters: 0,
+      fuel_price: 0,
+    };
   });
 
   const handleTypeSelect = (tipo: typeof tiposCombustible[0]) => {
     setSelectedType(tipo);
     setCurrentStep('form');
+
+    // Check if there's existing data for this type
+    const existingCost = existingCosts?.find(cost =>
+      cost.category === 'combustible' &&
+      cost.details?.type === tipo.label
+    );
+
+    if (existingCost && existingCost.details?.data) {
+      // Load existing data based on type
+      const existingData = existingCost.details.data;
+
+      switch (tipo.subtype) {
+        case 'machinery':
+          setMachineryData({
+            fuel_liters: existingData.fuel_liters || 0,
+            fuel_price: existingData.fuel_price || 0,
+            maint_pct_of_fuel: existingData.maint_pct_of_fuel || 20,
+            lubricant_pct_of_maint: existingData.lubricant_pct_of_maint || 15,
+          });
+          break;
+        case 'vehicles':
+          setVehiclesData({
+            fleet_list: existingData.fleet_list || [],
+            fuel_liters: existingData.fuel_liters || 0,
+            fuel_price: existingData.fuel_price || 0,
+            tax_pct: existingData.tax_pct || 3,
+            insurance_pct: existingData.insurance_pct || 3,
+            maint_pct: existingData.maint_pct || 10,
+          });
+          break;
+        case 'irrigation':
+          setIrrigationData({
+            fuel_liters: existingData.fuel_liters || 0,
+            fuel_price: existingData.fuel_price || 0,
+          });
+          break;
+        case 'other':
+          setOtherData({
+            fuel_liters: existingData.fuel_liters || 0,
+            fuel_price: existingData.fuel_price || 0,
+          });
+          break;
+      }
+    }
   };
 
   const handleBack = () => {
@@ -111,14 +204,14 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
   const removeVehicle = (id: string) => {
     setVehiclesData(prev => ({
       ...prev,
-      fleet_list: prev.fleet_list.filter(v => v.id !== id)
+      fleet_list: prev.fleet_list.filter((v: FleetVehicle) => v.id !== id)
     }));
   };
 
   const updateVehicle = (id: string, updates: Partial<FleetVehicle>) => {
     setVehiclesData(prev => ({
       ...prev,
-      fleet_list: prev.fleet_list.map(v =>
+      fleet_list: prev.fleet_list.map((v: FleetVehicle) =>
         v.id === id ? { ...v, ...updates } : v
       )
     }));
@@ -138,7 +231,7 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
   };
 
   const calculateVehiclesTotal = () => {
-    const totalFleetValue = vehiclesData.fleet_list.reduce((sum, v) => sum + v.value, 0);
+    const totalFleetValue = vehiclesData.fleet_list.reduce((sum: number, v: FleetVehicle) => sum + v.value, 0);
     const fuelCost = vehiclesData.fuel_liters * vehiclesData.fuel_price;
     const taxCost = totalFleetValue * (vehiclesData.tax_pct / 100);
     const insuranceCost = totalFleetValue * (vehiclesData.insurance_pct / 100);
@@ -166,6 +259,14 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
 
     let costData;
 
+    // Check if this type already exists to determine if we need to update
+    const existingCost = existingCosts?.find(cost =>
+      cost.category === 'combustible' &&
+      cost.details?.type === (selectedType.subtype === 'machinery' ? "Tractores" :
+                             selectedType.subtype === 'vehicles' ? "Vehiculos" :
+                             selectedType.subtype === 'irrigation' ? "Riego" : "Otros")
+    );
+
     switch (selectedType.subtype) {
       case 'machinery': {
         if (machineryData.fuel_liters <= 0) {
@@ -184,7 +285,8 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
             data: machineryData,
             breakdown: machineryBreakdown
           },
-          total_amount: machineryBreakdown.total
+          total_amount: machineryBreakdown.total,
+          existingId: existingCost?.id, // Include existing ID if updating
         };
         break;
       }
@@ -220,7 +322,8 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
             data: vehiclesData,
             breakdown: vehiclesBreakdown
           },
-          total_amount: vehiclesBreakdown.total
+          total_amount: vehiclesBreakdown.total,
+          existingId: existingCost?.id, // Include existing ID if updating
         };
         break;
       }
@@ -242,7 +345,8 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
             data: irrigationData,
             breakdown: { fuel_cost: irrigationTotal }
           },
-          total_amount: irrigationTotal
+          total_amount: irrigationTotal,
+          existingId: existingCost?.id, // Include existing ID if updating
         };
         break;
       }
@@ -264,7 +368,8 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
             data: otherData,
             breakdown: { fuel_cost: otherTotal }
           },
-          total_amount: otherTotal
+          total_amount: otherTotal,
+          existingId: existingCost?.id, // Include existing ID if updating
         };
         break;
       }
@@ -422,7 +527,7 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
               {/* Fleet list */}
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Vehículos en la flota</Label>
-                {vehiclesData.fleet_list.map((vehicle) => (
+                {vehiclesData.fleet_list.map((vehicle: FleetVehicle) => (
                   <div key={vehicle.id} className="flex gap-2 items-center mb-2 p-2 bg-secondary/30 rounded">
                     <Input
                       placeholder="Nombre del vehículo"

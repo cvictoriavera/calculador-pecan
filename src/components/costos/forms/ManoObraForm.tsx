@@ -26,6 +26,8 @@ interface StaffMember {
 interface ManoObraFormProps {
   onSave: (data: any) => void;
   onCancel: () => void;
+  initialData?: any;
+  existingCosts?: any[];
 }
 
 // Opciones disponibles de roles

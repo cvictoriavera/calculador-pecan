@@ -137,25 +137,46 @@ const Costos = () => {
       // Check if this is the new format (object with category, details, total_amount) - direct from forms like InsumosForm
       if (typeof categoriaOrData === 'object' && categoriaOrData.category) {
         const costData = categoriaOrData;
-        await addCost({
-          project_id: currentProjectId,
-          campaign_id: currentCamp.id,
-          category: costData.category,
-          details: costData.details,
-          total_amount: costData.total_amount,
-        });
-        toast.success("Costo registrado correctamente");
+
+        // Check if this is an update to existing record
+        if (costData.existingId) {
+          await updateCost(costData.existingId, {
+            category: costData.category,
+            details: costData.details,
+            total_amount: costData.total_amount,
+          });
+          toast.success("Costo actualizado correctamente");
+        } else {
+          await addCost({
+            project_id: currentProjectId,
+            campaign_id: currentCamp.id,
+            category: costData.category,
+            details: costData.details,
+            total_amount: costData.total_amount,
+          });
+          toast.success("Costo registrado correctamente");
+        }
       }
       // Check if formData is the new format (when called from AddCostoSheet with category string + new format data)
       else if (typeof formData === 'object' && formData.category) {
-        await addCost({
-          project_id: currentProjectId,
-          campaign_id: currentCamp.id,
-          category: formData.category,
-          details: formData.details,
-          total_amount: formData.total_amount,
-        });
-        toast.success("Costo registrado correctamente");
+        // Check if this is an update to existing record
+        if (formData.existingId) {
+          await updateCost(formData.existingId, {
+            category: formData.category,
+            details: formData.details,
+            total_amount: formData.total_amount,
+          });
+          toast.success("Costo actualizado correctamente");
+        } else {
+          await addCost({
+            project_id: currentProjectId,
+            campaign_id: currentCamp.id,
+            category: formData.category,
+            details: formData.details,
+            total_amount: formData.total_amount,
+          });
+          toast.success("Costo registrado correctamente");
+        }
       }
       // Legacy format for editing or other forms
       else if (editingCosto) {
@@ -352,14 +373,15 @@ const Costos = () => {
         </CardContent>
       </Card>
 
-      <AddCostoSheet 
-        open={sheetOpen} 
+      <AddCostoSheet
+        open={sheetOpen}
         onOpenChange={(open) => {
           setSheetOpen(open);
           if (!open) setEditingCosto(null);
-        }} 
+        }}
         onSave={handleUpdateCosto}
         editingCosto={editingCosto}
+        existingCosts={costosFiltered}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

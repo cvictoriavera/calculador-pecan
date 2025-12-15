@@ -83,30 +83,79 @@ interface InsumoItem {
 interface InsumosFormProps {
   onSave: (data: any) => void;
   onCancel: () => void;
+  initialData?: any;
+  existingCosts?: any[];
 }
 
-export default function InsumosForm({ onSave, onCancel }: InsumosFormProps) {
-  const [currentStep, setCurrentStep] = useState<'selection' | 'form'>('selection');
-  const [selectedType, setSelectedType] = useState<typeof tiposInsumo[0] | null>(null);
-  const [items, setItems] = useState<InsumoItem[]>([]);
+export default function InsumosForm({ onSave, onCancel, initialData, existingCosts }: InsumosFormProps) {
+  const [currentStep, setCurrentStep] = useState<'selection' | 'form'>(() => {
+    // If we have initialData, start directly in form mode
+    return initialData ? 'form' : 'selection';
+  });
+  const [selectedType, setSelectedType] = useState<typeof tiposInsumo[0] | null>(() => {
+    // If we have initialData, find the matching type
+    if (initialData?.type) {
+      return tiposInsumo.find(t => t.label === initialData.type) || null;
+    }
+    return null;
+  });
+  const [items, setItems] = useState<InsumoItem[]>(() => {
+    // Initialize with initialData if available
+    if (initialData?.items && Array.isArray(initialData.items)) {
+      return initialData.items.map((item: any, index: number) => ({
+        id: item.id || `item_${index + 1}`,
+        product: item.product || "",
+        unit_price: item.unit_price || 0,
+        quantity_used: item.quantity_used,
+        application_dose_ml: item.application_dose_ml,
+        application_volume_l: item.application_volume_l,
+        application_count: item.application_count,
+        total_product: item.total_product || 0,
+        cost: item.cost || 0,
+      }));
+    }
+    return [];
+  });
 
   const handleTypeSelect = (tipo: typeof tiposInsumo[0]) => {
     setSelectedType(tipo);
     setCurrentStep('form');
 
-    // Initialize with one empty item
-    const newItem: InsumoItem = {
-      id: `item_1`,
-      product: "",
-      unit_price: 0,
-      quantity_used: tipo.esFertilizanteSuelo ? 0 : undefined,
-      application_dose_ml: tipo.esFertilizanteSuelo ? undefined : 0,
-      application_volume_l: tipo.esFertilizanteSuelo ? undefined : 0,
-      application_count: tipo.esFertilizanteSuelo ? undefined : 0,
-      total_product: 0,
-      cost: 0,
-    };
-    setItems([newItem]);
+    // Check if there's existing data for this type
+    const existingCost = existingCosts?.find(cost =>
+      cost.category === 'insumos' &&
+      cost.details?.type === tipo.label
+    );
+
+    if (existingCost && existingCost.details?.items) {
+      // Load existing items
+      const existingItems = existingCost.details.items.map((item: any, index: number) => ({
+        id: item.id || `item_${index + 1}`,
+        product: item.product || "",
+        unit_price: item.unit_price || 0,
+        quantity_used: item.quantity_used,
+        application_dose_ml: item.application_dose_ml,
+        application_volume_l: item.application_volume_l,
+        application_count: item.application_count,
+        total_product: item.total_product || 0,
+        cost: item.cost || 0,
+      }));
+      setItems(existingItems);
+    } else {
+      // Initialize with one empty item
+      const newItem: InsumoItem = {
+        id: `item_1`,
+        product: "",
+        unit_price: 0,
+        quantity_used: tipo.esFertilizanteSuelo ? 0 : undefined,
+        application_dose_ml: tipo.esFertilizanteSuelo ? undefined : 0,
+        application_volume_l: tipo.esFertilizanteSuelo ? undefined : 0,
+        application_count: tipo.esFertilizanteSuelo ? undefined : 0,
+        total_product: 0,
+        cost: 0,
+      };
+      setItems([newItem]);
+    }
   };
 
   const handleBack = () => {
@@ -207,6 +256,12 @@ export default function InsumosForm({ onSave, onCancel }: InsumosFormProps) {
 
     const totalCost = items.reduce((sum, item) => sum + item.cost, 0);
 
+    // Check if this type already exists to determine if we need to update
+    const existingCost = existingCosts?.find(cost =>
+      cost.category === 'insumos' &&
+      cost.details?.type === selectedType.label
+    );
+
     const costData = {
       category: "insumos",
       details: {
@@ -229,6 +284,7 @@ export default function InsumosForm({ onSave, onCancel }: InsumosFormProps) {
         }
       },
       total_amount: totalCost,
+      existingId: existingCost?.id, // Include existing ID if updating
     };
 
     onSave(costData);

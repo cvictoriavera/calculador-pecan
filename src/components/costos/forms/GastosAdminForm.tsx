@@ -74,9 +74,11 @@ interface StaffAdminItem {
 interface GastosAdminFormProps {
   onSave: (data: any) => void;
   onCancel: () => void;
+  initialData?: any;
+  existingCosts?: any[];
 }
 
-export default function GastosAdminForm({ onSave, onCancel }: GastosAdminFormProps) {
+export default function GastosAdminForm({ onSave, onCancel, existingCosts }: GastosAdminFormProps) {
   const [currentStep, setCurrentStep] = useState<'selection' | 'form'>('selection');
   const [selectedType, setSelectedType] = useState<typeof tiposGastosAdmin[0] | null>(null);
 
@@ -90,23 +92,52 @@ export default function GastosAdminForm({ onSave, onCancel }: GastosAdminFormPro
     setSelectedType(tipo);
     setCurrentStep('form');
 
-    // Initialize with one empty item based on selected type
-    if (tipo.id === "gastos-generales") {
-      setGastosGeneralesItems([{
-        id: `gasto_1`,
-        tipo: "",
-        monto: 0,
-      }]);
-      setStaffItems([]);
-    } else if (tipo.id === "staff-administrativo") {
-      setStaffItems([{
-        id: `staff_1`,
-        rol: "",
-        remuneracion: 0,
-        cargasSociales: 30,
-        nroProfesionales: 1,
-      }]);
-      setGastosGeneralesItems([]);
+    // Check if there's existing data for this type
+    const existingCost = existingCosts?.find(cost =>
+      cost.category === 'gastos-admin' &&
+      cost.details?.type === tipo.label
+    );
+
+    if (existingCost && existingCost.details?.data) {
+      // Load existing data
+      const existingData = existingCost.details.data;
+
+      if (tipo.id === "gastos-generales" && existingData.items) {
+        setGastosGeneralesItems(existingData.items.map((item: any, index: number) => ({
+          id: item.id || `gasto_${index + 1}`,
+          tipo: item.tipo || "",
+          monto: item.monto || 0,
+        })));
+        setStaffItems([]);
+      } else if (tipo.id === "staff-administrativo" && existingData.staff) {
+        setStaffItems(existingData.staff.map((item: any, index: number) => ({
+          id: item.id || `staff_${index + 1}`,
+          rol: item.rol || "",
+          remuneracion: item.remuneracion || 0,
+          cargasSociales: item.cargasSociales || 30,
+          nroProfesionales: item.nroProfesionales || 1,
+        })));
+        setGastosGeneralesItems([]);
+      }
+    } else {
+      // Initialize with one empty item based on selected type
+      if (tipo.id === "gastos-generales") {
+        setGastosGeneralesItems([{
+          id: `gasto_1`,
+          tipo: "",
+          monto: 0,
+        }]);
+        setStaffItems([]);
+      } else if (tipo.id === "staff-administrativo") {
+        setStaffItems([{
+          id: `staff_1`,
+          rol: "",
+          remuneracion: 0,
+          cargasSociales: 30,
+          nroProfesionales: 1,
+        }]);
+        setGastosGeneralesItems([]);
+      }
     }
   };
 
@@ -182,6 +213,12 @@ export default function GastosAdminForm({ onSave, onCancel }: GastosAdminFormPro
   const handleSave = () => {
     if (!selectedType) return;
 
+    // Check if this type already exists to determine if we need to update
+    const existingCost = existingCosts?.find(cost =>
+      cost.category === 'gastos-admin' &&
+      cost.details?.type === selectedType.label
+    );
+
     if (selectedType.id === "gastos-generales") {
       if (gastosGeneralesItems.length === 0) return;
 
@@ -210,6 +247,7 @@ export default function GastosAdminForm({ onSave, onCancel }: GastosAdminFormPro
           }
         },
         total_amount: totalGastosGenerales,
+        existingId: existingCost?.id, // Include existing ID if updating
       };
       onSave(costData);
     } else if (selectedType.id === "staff-administrativo") {
@@ -248,6 +286,7 @@ export default function GastosAdminForm({ onSave, onCancel }: GastosAdminFormPro
           }
         },
         total_amount: totalStaff,
+        existingId: existingCost?.id, // Include existing ID if updating
       };
       onSave(costData);
     }

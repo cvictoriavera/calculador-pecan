@@ -14,6 +14,7 @@ interface CostosOportunidadFormProps {
   onSave: (data: CostosOportunidadFormData) => void;
   onCancel: () => void;
   initialData?: Partial<CostosOportunidadFormData>;
+  existingCosts?: any[];
 }
 
 export default function CostosOportunidadForm({ onSave, onCancel, initialData }: CostosOportunidadFormProps) {

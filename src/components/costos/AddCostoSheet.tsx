@@ -50,12 +50,14 @@ const categoriaLabelToId: Record<string, string> = {
 };
 
 interface CostoRegistro {
-  id: string;
-  categoria: string;
-  descripcion: string;
-  monto: number;
-  año: number;
-  data?: any;
+  id: number;
+  project_id: number;
+  campaign_id: number;
+  category: string;
+  details?: any;
+  total_amount: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AddCostoSheetProps {
@@ -63,14 +65,16 @@ interface AddCostoSheetProps {
   onOpenChange: (open: boolean) => void;
   onSave: (categoria: string, data: any) => void;
   editingCosto?: CostoRegistro | null;
+  existingCosts?: CostoRegistro[];
 }
 
-export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto }: AddCostoSheetProps) {
+export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto, existingCosts = [] }: AddCostoSheetProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [existingCostoForCategory, setExistingCostoForCategory] = useState<CostoRegistro | null>(null);
 
   useEffect(() => {
     if (editingCosto && open) {
-      const categoryId = categoriaLabelToId[editingCosto.categoria];
+      const categoryId = categoriaLabelToId[editingCosto.category];
       if (categoryId) {
         setSelectedCategory(categoryId);
       }
@@ -79,7 +83,21 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
 
   const handleClose = () => {
     setSelectedCategory(null);
+    setExistingCostoForCategory(null);
     onOpenChange(false);
+  };
+
+  // Función para manejar la selección de categoría
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+
+    // Para categorías sin subtipos, buscar si ya existe un registro
+    if (!hasSubtypes(categoryId)) {
+      const existing = findExistingCosto(categoryId);
+      setExistingCostoForCategory(existing);
+    } else {
+      setExistingCostoForCategory(null);
+    }
   };
 
   const handleBack = () => {
@@ -87,41 +105,58 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
       handleClose();
     } else {
       setSelectedCategory(null);
+      setExistingCostoForCategory(null);
     }
   };
 
   const handleSave = (data: any) => {
     if (selectedCategory) {
-      onSave(selectedCategory, data);
+      // Si estamos editando un registro existente, incluir el ID para actualizarlo
+      if (existingCostoForCategory) {
+        onSave(selectedCategory, { ...data, existingId: existingCostoForCategory.id });
+      } else {
+        onSave(selectedCategory, data);
+      }
       handleClose();
     }
   };
 
+  // Determinar si una categoría tiene subtipos internos
+  const hasSubtypes = (category: string) => {
+    return ['insumos', 'combustible', 'energia', 'gastos-admin'].includes(category);
+  };
+
+  // Buscar registro existente para una categoría
+  const findExistingCosto = (category: string) => {
+    return existingCosts.find(costo => costo.category === category) || null;
+  };
+
   const getInitialData = () => {
-    if (!editingCosto?.data) return undefined;
-    return editingCosto.data;
+    if (editingCosto?.details) return editingCosto.details;
+    if (existingCostoForCategory?.details) return existingCostoForCategory.details;
+    return undefined;
   };
 
   const renderForm = () => {
     const initialData = getInitialData();
-    
+
     switch (selectedCategory) {
       case "insumos":
-        return <InsumosForm onSave={handleSave} onCancel={handleBack} />;
+        return <InsumosForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       case "combustible":
-        return <CombustibleForm onSave={handleSave} onCancel={handleBack} />;
+        return <CombustibleForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       case "mano-obra":
-        return <ManoObraForm onSave={handleSave} onCancel={handleBack} />;
+        return <ManoObraForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       case "energia":
-        return <EnergiaForm onSave={handleSave} onCancel={handleBack} />;
+        return <EnergiaForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       case "cosecha":
-        return <CosechaForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
+        return <CosechaForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       case "gastos-admin":
-        return <GastosAdminForm onSave={handleSave} onCancel={handleBack} />;
+        return <GastosAdminForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       case "mantenimientos":
-        return <MantenimientosForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
+        return <MantenimientosForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       case "costos-oportunidad":
-        return <CostosOportunidadForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
+        return <CostosOportunidadForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       default:
         return null;
     }
@@ -161,7 +196,7 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
               {categorias.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => !cat.disabled && setSelectedCategory(cat.id)}
+                  onClick={() => !cat.disabled && handleCategorySelect(cat.id)}
                   disabled={cat.disabled}
                   className={`w-full flex items-center gap-4 p-4 rounded-lg border transition-colors text-left ${
                     cat.disabled

@@ -25,9 +25,11 @@ const tiposEnergia = [
 interface EnergiaFormProps {
   onSave: (data: any) => void;
   onCancel: () => void;
+  initialData?: any;
+  existingCosts?: any[];
 }
 
-export default function EnergiaForm({ onSave, onCancel }: EnergiaFormProps) {
+export default function EnergiaForm({ onSave, onCancel, existingCosts }: EnergiaFormProps) {
   const [currentStep, setCurrentStep] = useState<'selection' | 'form'>('selection');
   const [selectedType, setSelectedType] = useState<typeof tiposEnergia[0] | null>(null);
   const [subtotalAnual, setSubtotalAnual] = useState(0);
@@ -35,6 +37,20 @@ export default function EnergiaForm({ onSave, onCancel }: EnergiaFormProps) {
   const handleTypeSelect = (tipo: typeof tiposEnergia[0]) => {
     setSelectedType(tipo);
     setCurrentStep('form');
+
+    // Check if there's existing data for this type
+    const existingCost = existingCosts?.find(cost =>
+      cost.category === 'energia' &&
+      cost.details?.type === tipo.label
+    );
+
+    if (existingCost && existingCost.details?.data) {
+      // Load existing data
+      setSubtotalAnual(existingCost.details.data.subtotalAnual || 0);
+    } else {
+      // Reset to default
+      setSubtotalAnual(0);
+    }
   };
 
   const handleBack = () => {
@@ -53,6 +69,12 @@ export default function EnergiaForm({ onSave, onCancel }: EnergiaFormProps) {
       return;
     }
 
+    // Check if this type already exists to determine if we need to update
+    const existingCost = existingCosts?.find(cost =>
+      cost.category === 'energia' &&
+      cost.details?.type === selectedType.label
+    );
+
     const costData = {
       category: "energia",
       details: {
@@ -62,6 +84,7 @@ export default function EnergiaForm({ onSave, onCancel }: EnergiaFormProps) {
         }
       },
       total_amount: subtotalAnual,
+      existingId: existingCost?.id, // Include existing ID if updating
     };
 
     onSave(costData);
