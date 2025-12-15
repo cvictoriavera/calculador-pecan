@@ -1,6 +1,7 @@
 // Data Store - Datos principales de la aplicación
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getCostsByCampaign, createCost, createCostBatch, updateCost as updateCostApi, deleteCost as deleteCostApi } from '../services/costService';
 
 // Interfaces base
 export interface Project {
@@ -19,13 +20,14 @@ export interface Campaign {
 }
 
 export interface CostRecord {
-  id: string;
-  year: number;
-  category: string;
-  description: string;
-  amount: number;
-  date: Date;
-  data?: any;
+   id: number;
+   project_id: number;
+   campaign_id: number;
+   category: string;
+   details?: any;
+   total_amount: number;
+   created_at: string;
+   updated_at: string;
 }
 
 export interface InvestmentRecord {
@@ -85,9 +87,11 @@ interface DataState {
   updateCampaign: (id: number, updates: Partial<Campaign>) => void;
   deleteCampaign: (id: number) => void;
 
-  addCost: (cost: CostRecord) => void;
-  updateCost: (id: string, updates: Partial<CostRecord>) => void;
-  deleteCost: (id: string) => void;
+  loadCosts: (projectId: number, campaignId: number) => Promise<void>;
+  addCost: (costData: { project_id: number; campaign_id: number; category: string; details?: any; total_amount: number }) => Promise<void>;
+  addCostBatch: (costDataArray: Array<{ project_id: number; campaign_id: number; category: string; details?: any; total_amount: number }>) => Promise<void>;
+  updateCost: (id: number, updates: { category?: string; details?: any; total_amount?: number }) => Promise<void>;
+  deleteCost: (id: number) => Promise<void>;
 
   addInvestment: (investment: InvestmentRecord) => void;
   updateInvestment: (id: string, updates: Partial<InvestmentRecord>) => void;
@@ -223,58 +227,84 @@ export const useDataStore = create<DataState>()(
     }));
   },
 
-  // Cost actions
-  addCost: (cost) => {
-    // Validación: Año válido
-    if (!cost.year || cost.year < 2000 || cost.year > 2100) {
-      throw new Error('Valid year is required for cost');
+  // Cost actions - Using API
+  loadCosts: async (projectId, campaignId) => {
+    try {
+      const costs = await getCostsByCampaign(projectId, campaignId);
+      set({ costs });
+    } catch (error) {
+      console.error('Error loading costs:', error);
+      throw error;
     }
-
-    // Validación: Monto positivo
-    if (cost.amount <= 0) {
-      throw new Error('Cost amount must be positive');
-    }
-
-    // Validación: Categoría requerida
-    if (!cost.category?.trim()) {
-      throw new Error('Cost category is required');
-    }
-
-    set((state) => ({ costs: [...state.costs, cost] }));
   },
 
-  updateCost: (id, updates) => {
-    const currentCost = get().costs.find((c: CostRecord) => c.id === id);
-    if (!currentCost) {
-      throw new Error(`Cost with ID ${id} not found`);
-    }
+  addCost: async (costData) => {
+    try {
+      await createCost({
+        project_id: costData.project_id,
+        campaign_id: costData.campaign_id,
+        category: costData.category,
+        details: costData.details,
+        total_amount: costData.total_amount,
+      });
 
-    // Validación: Año válido si se cambia
-    if (updates.year !== undefined && (updates.year < 2000 || updates.year > 2100)) {
-      throw new Error('Valid year is required for cost');
+      // Reload costs to get updated list
+      const { loadCosts } = get();
+      await loadCosts(costData.project_id, costData.campaign_id);
+    } catch (error) {
+      console.error('Error creating cost:', error);
+      throw error;
     }
-
-    // Validación: Monto positivo si se cambia
-    if (updates.amount !== undefined && updates.amount <= 0) {
-      throw new Error('Cost amount must be positive');
-    }
-
-    set((state) => ({
-      costs: state.costs.map((c: CostRecord) =>
-        c.id === id ? { ...c, ...updates } : c
-      ),
-    }));
   },
 
-  deleteCost: (id) => {
-    const cost = get().costs.find((c: CostRecord) => c.id === id);
-    if (!cost) {
-      throw new Error(`Cost with ID ${id} not found`);
-    }
+  addCostBatch: async (costDataArray) => {
+    try {
+      await createCostBatch(costDataArray);
 
-    set((state) => ({
-      costs: state.costs.filter((c: CostRecord) => c.id !== id),
-    }));
+      // Reload costs to get updated list
+      if (costDataArray.length > 0) {
+        const { loadCosts } = get();
+        const firstCost = costDataArray[0];
+        await loadCosts(firstCost.project_id, firstCost.campaign_id);
+      }
+    } catch (error) {
+      console.error('Error creating cost batch:', error);
+      throw error;
+    }
+  },
+
+  updateCost: async (id, updates) => {
+    try {
+      await updateCostApi(id, {
+        category: updates.category,
+        details: updates.details,
+        total_amount: updates.total_amount,
+      });
+
+      // Reload costs to get updated list
+      const currentCost = get().costs.find(c => c.id === id);
+      if (currentCost) {
+        const { loadCosts } = get();
+        await loadCosts(currentCost.project_id, currentCost.campaign_id);
+      }
+    } catch (error) {
+      console.error('Error updating cost:', error);
+      throw error;
+    }
+  },
+
+  deleteCost: async (id) => {
+    try {
+      await deleteCostApi(id);
+
+      // Remove from local state
+      set((state) => ({
+        costs: state.costs.filter((c: CostRecord) => c.id !== id),
+      }));
+    } catch (error) {
+      console.error('Error deleting cost:', error);
+      throw error;
+    }
   },
 
   // Investment actions - Now using API

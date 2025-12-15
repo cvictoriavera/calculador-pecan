@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.4.1';
+    private static $db_version = '1.4.3';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -36,6 +36,31 @@ class CCP_Database_Manager {
     }
 
     /**
+     * Borra todas las tablas del plugin.
+     * Útil para desarrollo o cuando se necesita reinstalar completamente.
+     */
+    public static function drop_all_tables() {
+        global $wpdb;
+
+        $tables = [
+            $wpdb->prefix . 'pecan_costs',
+            $wpdb->prefix . 'pecan_investments',
+            $wpdb->prefix . 'pecan_annual_records',
+            $wpdb->prefix . 'pecan_montes',
+            $wpdb->prefix . 'pecan_campaigns',
+            $wpdb->prefix . 'pecan_projects'
+        ];
+
+        foreach ($tables as $table) {
+            $wpdb->query("DROP TABLE IF EXISTS $table");
+            // error_log("CCP: Dropped table $table"); // Commented out to prevent activation output
+        }
+
+        // También resetear la versión para forzar recreación
+        self::reset_version();
+    }
+
+    /**
      * Verifica si las tablas existen y están correctamente creadas.
      * Útil para debugging.
      */
@@ -47,7 +72,8 @@ class CCP_Database_Manager {
             $wpdb->prefix . 'pecan_campaigns' => 'Campañas',
             $wpdb->prefix . 'pecan_montes' => 'Montes',
             $wpdb->prefix . 'pecan_annual_records' => 'Registros Anuales',
-            $wpdb->prefix . 'pecan_investments' => 'Inversiones'
+            $wpdb->prefix . 'pecan_investments' => 'Inversiones',
+            $wpdb->prefix . 'pecan_costs' => 'Costos'
         ];
 
         $status = [];
@@ -72,186 +98,199 @@ class CCP_Database_Manager {
         global $wpdb;
 
         $installed_version = get_option(self::$db_version_key);
-     
-        // Verificar si las tablas existen
-        $table_name_annual_records = $wpdb->prefix . 'pecan_annual_records';
-        $table_name_project_data = $wpdb->prefix . 'pecan_project_data';
-        $annual_records_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_annual_records));
-        $project_data_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_project_data));
-       
 
-        // Crear tablas si no existen o si la versión ha cambiado
-        if (!$annual_records_exists || $installed_version != self::$db_version) {
+        // Verificar si TODAS las tablas existen
+        $tables_to_check = [
+            $wpdb->prefix . 'pecan_projects',
+            $wpdb->prefix . 'pecan_campaigns',
+            $wpdb->prefix . 'pecan_montes',
+            $wpdb->prefix . 'pecan_annual_records',
+            $wpdb->prefix . 'pecan_investments',
+            $wpdb->prefix . 'pecan_costs'
+        ];
+
+        $all_tables_exist = true;
+        foreach ($tables_to_check as $table_name) {
+            $exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name));
+            if (!$exists) {
+                $all_tables_exist = false;
+                break;
+            }
+        }
+
+        // Crear tablas faltantes individualmente o si la versión ha cambiado
+        if (!$all_tables_exist || $installed_version != self::$db_version) {
             // Ejecutar migraciones específicas de versión
             self::run_migrations($installed_version);
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             $charset_collate = $wpdb->get_charset_collate();
 
+            // Crear tablas faltantes individualmente
+            $tables_created = [];
 
-            // Tabla de Proyectos
+            // Tabla de Proyectos - solo si no existe
             $table_name_projects = $wpdb->prefix . 'pecan_projects';
-            $sql_projects = "CREATE TABLE $table_name_projects (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_projects))) {
+                $sql_projects = "CREATE TABLE $table_name_projects (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    user_id BIGINT UNSIGNED NOT NULL,
+                    project_name VARCHAR(255) NOT NULL,
+                    description TEXT NULL,
+                    status ENUM('active', 'archived') DEFAULT 'active',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    last_sync DATETIME NULL,
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_user_status (user_id, status),
+                    FOREIGN KEY (user_id) REFERENCES {$wpdb->prefix}users(ID) ON DELETE CASCADE
+                ) $charset_collate;";
+                dbDelta($sql_projects);
+                $tables_created[] = 'projects';
+            }
 
-                user_id BIGINT UNSIGNED NOT NULL,
-                project_name VARCHAR(255) NOT NULL,
-                description TEXT NULL,
-
-                status ENUM('active', 'archived') DEFAULT 'active',
-
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                last_sync DATETIME NULL,
-
-                INDEX idx_user_id (user_id),
-                INDEX idx_user_status (user_id, status),
-
-                FOREIGN KEY (user_id) REFERENCES {$wpdb->prefix}users(ID) ON DELETE CASCADE
-            ) $charset_collate;";
-            dbDelta($sql_projects);
-            error_log('CCP DB: Projects table created');
-
-            // Tabla de Campañas
+            // Tabla de Campañas - solo si no existe
             $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
-            $sql_campaigns = "CREATE TABLE $table_name_campaigns (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_campaigns))) {
+                $sql_campaigns = "CREATE TABLE $table_name_campaigns (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    project_id BIGINT UNSIGNED NOT NULL,
+                    campaign_name VARCHAR(100) NOT NULL,
+                    year INT NOT NULL,
+                    start_date DATE NOT NULL,
+                    end_date DATE NULL,
+                    status ENUM('open', 'closed', 'archived') DEFAULT 'open',
+                    is_current TINYINT(1) DEFAULT 0,
+                    notes TEXT NULL,
+                    average_price DECIMAL(10,2) DEFAULT 0.00,
+                    total_production DECIMAL(15,2) DEFAULT 0.00,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_project_id (project_id),
+                    INDEX idx_project_year (project_id, year),
+                    INDEX idx_project_status (project_id, status),
+                    UNIQUE KEY unique_project_year (project_id, year),
+                    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE
+                ) $charset_collate;";
+                dbDelta($sql_campaigns);
+                $tables_created[] = 'campaigns';
+            }
 
-                project_id BIGINT UNSIGNED NOT NULL,
-
-                campaign_name VARCHAR(100) NOT NULL,
-                year INT NOT NULL,
-
-                start_date DATE NOT NULL,
-                end_date DATE NULL,
-
-                status ENUM('open', 'closed', 'archived') DEFAULT 'open',
-                is_current TINYINT(1) DEFAULT 0,
-
-                notes TEXT NULL,
-
-                -- Campos de producción agregados en v1.2
-                average_price DECIMAL(10,2) DEFAULT 0.00,
-                total_production DECIMAL(15,2) DEFAULT 0.00,
-
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                INDEX idx_project_id (project_id),
-                INDEX idx_project_year (project_id, year),
-                INDEX idx_project_status (project_id, status),
-
-                UNIQUE KEY unique_project_year (project_id, year),
-                FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE
-            ) $charset_collate;";
-            dbDelta($sql_campaigns);
-            // error_log('CCP DB: Campaigns table created/updated'); // Commented out to prevent activation output
-
-            // Tabla de Montes
-            // error_log('CCP DB: Creating montes table'); // Commented out to prevent activation output
+            // Tabla de Montes - solo si no existe
             $table_name_montes = $wpdb->prefix . 'pecan_montes';
-            $sql_montes = "CREATE TABLE $table_name_montes (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_montes))) {
+                $sql_montes = "CREATE TABLE $table_name_montes (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    project_id BIGINT UNSIGNED NOT NULL,
+                    campaign_created_id BIGINT UNSIGNED NULL,
+                    monte_name VARCHAR(255) NOT NULL,
+                    area_hectareas DECIMAL(10,2) NOT NULL,
+                    plantas_por_hectarea INT NOT NULL,
+                    fecha_plantacion DATE NULL,
+                    variedad VARCHAR(255) NULL,
+                    status ENUM('active', 'retired') DEFAULT 'active',
+                    campaign_retired_id BIGINT UNSIGNED NULL,
+                    notes TEXT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_project_id (project_id),
+                    INDEX idx_campaign_created (campaign_created_id),
+                    INDEX idx_project_status (project_id, status),
+                    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
+                    FOREIGN KEY (campaign_created_id) REFERENCES $table_name_campaigns(id) ON DELETE SET NULL,
+                    FOREIGN KEY (campaign_retired_id) REFERENCES $table_name_campaigns(id) ON DELETE SET NULL
+                ) $charset_collate;";
+                dbDelta($sql_montes);
+                $tables_created[] = 'montes';
+            }
 
-                project_id BIGINT UNSIGNED NOT NULL,
-                campaign_created_id BIGINT UNSIGNED NULL,
-                monte_name VARCHAR(255) NOT NULL,
-                area_hectareas DECIMAL(10,2) NOT NULL,
-                plantas_por_hectarea INT NOT NULL,
-                fecha_plantacion DATE NULL,
-                variedad VARCHAR(255) NULL,
-
-                status ENUM('active', 'retired') DEFAULT 'active',
-                campaign_retired_id BIGINT UNSIGNED NULL,
-
-                notes TEXT NULL,
-
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                INDEX idx_project_id (project_id),
-                INDEX idx_campaign_created (campaign_created_id),
-                INDEX idx_project_status (project_id, status),
-
-                FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
-                FOREIGN KEY (campaign_created_id) REFERENCES $table_name_campaigns(id) ON DELETE SET NULL,
-                FOREIGN KEY (campaign_retired_id) REFERENCES $table_name_campaigns(id) ON DELETE SET NULL
-            ) $charset_collate;";
-            dbDelta($sql_montes);
-            // error_log('CCP DB: Montes table created'); // Commented out to prevent activation output
-
-            // Tabla de Registros Anuales (Nueva estructura híbrida)
-            // error_log('CCP DB: Creating annual_records table'); // Commented out to prevent activation output
+            // Tabla de Registros Anuales - solo si no existe
             $table_name_annual_records = $wpdb->prefix . 'pecan_annual_records';
-            $sql_data = "CREATE TABLE $table_name_annual_records (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_annual_records))) {
+                $sql_data = "CREATE TABLE $table_name_annual_records (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    project_id BIGINT UNSIGNED NOT NULL,
+                    campaign_id BIGINT UNSIGNED NULL,
+                    monte_id BIGINT UNSIGNED NULL,
+                    type ENUM('production', 'investment', 'cost', 'global_config') NOT NULL,
+                    category VARCHAR(100) NOT NULL,
+                    total_value DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+                    details LONGTEXT NULL,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_project_id (project_id),
+                    INDEX idx_campaign_id (campaign_id),
+                    INDEX idx_monte_id (monte_id),
+                    INDEX idx_project_campaign (project_id, campaign_id),
+                    INDEX idx_type (type),
+                    INDEX idx_category (category),
+                    INDEX idx_type_category (type, category),
+                    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
+                    FOREIGN KEY (campaign_id) REFERENCES $table_name_campaigns(id) ON DELETE CASCADE,
+                    FOREIGN KEY (monte_id) REFERENCES $table_name_montes(id) ON DELETE CASCADE
+                ) $charset_collate;";
+                dbDelta($sql_data);
+                $tables_created[] = 'annual_records';
+            }
 
-                project_id BIGINT UNSIGNED NOT NULL,
-                campaign_id BIGINT UNSIGNED NULL,
-                monte_id BIGINT UNSIGNED NULL,
-
-                type ENUM('production', 'investment', 'cost', 'global_config') NOT NULL,
-                category VARCHAR(100) NOT NULL,
-
-                total_value DECIMAL(15,2) NOT NULL DEFAULT 0.00,
-
-                details LONGTEXT NULL,
-
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                INDEX idx_project_id (project_id),
-                INDEX idx_campaign_id (campaign_id),
-                INDEX idx_monte_id (monte_id),
-                INDEX idx_project_campaign (project_id, campaign_id),
-                INDEX idx_type (type),
-                INDEX idx_category (category),
-                INDEX idx_type_category (type, category),
-
-                FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
-                FOREIGN KEY (campaign_id) REFERENCES $table_name_campaigns(id) ON DELETE CASCADE,
-                FOREIGN KEY (monte_id) REFERENCES $table_name_montes(id) ON DELETE CASCADE
-            ) $charset_collate;";
-            dbDelta($sql_data);
-            // error_log('CCP DB: Annual_records table created'); // Commented out to prevent activation output
-
-            // Tabla de Inversiones
-            // error_log('CCP DB: Creating investments table'); // Commented out to prevent activation output
+            // Tabla de Inversiones - solo si no existe
             $table_name_investments = $wpdb->prefix . 'pecan_investments';
-            $sql_investments = "CREATE TABLE $table_name_investments (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_investments))) {
+                $sql_investments = "CREATE TABLE $table_name_investments (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    project_id BIGINT UNSIGNED NOT NULL,
+                    campaign_id BIGINT UNSIGNED NULL,
+                    category VARCHAR(100) NOT NULL,
+                    description TEXT NOT NULL,
+                    total_value DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+                    details LONGTEXT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_project_id (project_id),
+                    INDEX idx_campaign_id (campaign_id),
+                    INDEX idx_category (category),
+                    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
+                    FOREIGN KEY (campaign_id) REFERENCES $table_name_campaigns(id) ON DELETE CASCADE
+                ) $charset_collate;";
+                dbDelta($sql_investments);
+                $tables_created[] = 'investments';
+            }
 
-                project_id BIGINT UNSIGNED NOT NULL,
-                campaign_id BIGINT UNSIGNED NULL,
+            // Tabla de Costos - solo si no existe
+            $table_name_costs = $wpdb->prefix . 'pecan_costs';
+            if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_costs))) {
+                $sql_costs = "CREATE TABLE $table_name_costs (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    project_id BIGINT UNSIGNED NOT NULL,
+                    campaign_id BIGINT UNSIGNED NOT NULL,
+                    category VARCHAR(50) NOT NULL COMMENT 'Categoría principal: combustible, cosecha, insumos, mano-obra, mantenimientos, costos-oportunidad, energia, gastos-admin',
+                    cost_data LONGTEXT NULL COMMENT 'Datos JSON que contienen los detalles específicos del costo del formulario',
+                    total_amount DECIMAL(15,2) NOT NULL DEFAULT 0.00 COMMENT 'Monto total calculado del costo',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_project_id (project_id),
+                    INDEX idx_campaign_id (campaign_id),
+                    INDEX idx_category (category),
+                    INDEX idx_project_campaign (project_id, campaign_id),
+                    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
+                    FOREIGN KEY (campaign_id) REFERENCES $table_name_campaigns(id) ON DELETE CASCADE
+                ) $charset_collate;";
+                dbDelta($sql_costs);
+                $tables_created[] = 'costs';
+            }
 
-                category VARCHAR(100) NOT NULL,
-                description TEXT NOT NULL,
-                total_value DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            // Migrar datos existentes si se crearon nuevas tablas
+            if (!empty($tables_created)) {
+                self::migrate_existing_data();
+            }
 
-                details LONGTEXT NULL,
+            // Actualizar la versión de la BD si se crearon tablas o cambió la versión
+            if (!empty($tables_created) || $installed_version != self::$db_version) {
+                update_option(self::$db_version_key, self::$db_version);
+            }
 
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                INDEX idx_project_id (project_id),
-                INDEX idx_campaign_id (campaign_id),
-                INDEX idx_category (category),
-
-                FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
-                FOREIGN KEY (campaign_id) REFERENCES $table_name_campaigns(id) ON DELETE CASCADE
-            ) $charset_collate;";
-            dbDelta($sql_investments);
-            // error_log('CCP DB: Investments table created'); // Commented out to prevent activation output
-
-            // Migrar datos existentes si es necesario
-            // error_log('CCP DB: Starting migration'); // Commented out to prevent activation output
-            self::migrate_existing_data();
-            // error_log('CCP DB: Migration completed'); // Commented out to prevent activation output
-
-            // Actualizar la versión de la BD en la base de datos.
-            update_option(self::$db_version_key, self::$db_version);
-            // error_log('CCP DB: Database version updated to ' . self::$db_version); // Commented out to prevent activation output
-        } else {
-            // error_log('CCP DB: Tables already exist and version is current, skipping creation'); // Commented out to prevent activation output
+            // Log de qué tablas se crearon
+            if (!empty($tables_created)) {
+                error_log('CCP DB: Created tables: ' . implode(', ', $tables_created));
+            }
         }
         // error_log('CCP DB: create_tables completed'); // Commented out to prevent activation output
     }

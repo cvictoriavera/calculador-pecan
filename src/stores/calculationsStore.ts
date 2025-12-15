@@ -1,6 +1,7 @@
 // Calculations Store - Selectores y cálculos memoizados
 import { create } from 'zustand';
 import { useDataStore } from './dataStore';
+import { useUiStore } from './uiStore';
 
 // Función auxiliar para memoización simple
 const memoize = <TArgs extends readonly unknown[], TReturn>(
@@ -36,9 +37,15 @@ interface CalculationsState {
 export const useCalculationsStore = create<CalculationsState>((_, get) => ({
   // Selector para costos totales por año
   getTotalCosts: memoize((year: number): number => {
-    const costs = useDataStore.getState().costs
-      .filter(c => c.year === year);
-    return costs.reduce((sum, cost) => sum + cost.amount, 0);
+    const { costs } = useDataStore.getState();
+    const { currentCampaign } = useUiStore.getState();
+
+    // Only return costs if they match the requested year
+    if (currentCampaign !== year) {
+      return 0;
+    }
+
+    return costs.reduce((sum, cost) => sum + cost.total_amount, 0);
   }),
 
   // Selector para inversiones totales por año
@@ -50,11 +57,16 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
 
   // Selector para costos por categoría
   getCostByCategory: memoize((year: number): Record<string, number> => {
-    const costs = useDataStore.getState().costs
-      .filter(c => c.year === year);
+    const { costs } = useDataStore.getState();
+    const { currentCampaign } = useUiStore.getState();
+
+    // Only return costs if they match the requested year
+    if (currentCampaign !== year) {
+      return {};
+    }
 
     return costs.reduce((acc, cost) => {
-      acc[cost.category] = (acc[cost.category] || 0) + cost.amount;
+      acc[cost.category] = (acc[cost.category] || 0) + cost.total_amount;
       return acc;
     }, {} as Record<string, number>);
   }),

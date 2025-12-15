@@ -33,7 +33,7 @@ export default function CosechaForm({ onSave, onCancel, initialData }: CosechaFo
   } = useForm<CosechaFormData>({
     resolver: zodResolver(cosechaFormSchema),
     defaultValues: {
-      tipo: "cosecha",
+      type: "cosecha",
       valores: initialData?.valores || {},
       total: 0,
     },

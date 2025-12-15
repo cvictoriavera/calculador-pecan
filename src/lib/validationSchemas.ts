@@ -4,7 +4,7 @@ import { z } from "zod";
 // ============= INSUMOS =============
 export const insumoItemSchema = z.object({
   id: z.string(),
-  tipo: z.string().min(1, "Tipo requerido"),
+  type: z.string().min(1, "Tipo requerido"),
   producto: z.string().min(1, "Producto requerido"),
   precioUnidad: z.number().min(0.01, "Precio debe ser mayor a 0"),
   dosisMl: z.number().min(0, "Dosis debe ser mayor o igual a 0").optional(),
@@ -14,7 +14,7 @@ export const insumoItemSchema = z.object({
 });
 
 export const insumosFormSchema = z.object({
-  tipo: z.literal("insumos"),
+  type: z.literal("insumos"),
   items: z.array(insumoItemSchema).min(1, "Debe agregar al menos un ítem"),
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),
 });
@@ -68,7 +68,7 @@ export const combustibleSubtotalesSchema = z.object({
 });
 
 export const combustibleFormSchema = z.object({
-  tipo: z.literal("combustible"),
+  type: z.literal("combustible"),
   data: combustibleDataSchema,
   subtotales: combustibleSubtotalesSchema,
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),
@@ -84,7 +84,7 @@ export const manoObraItemSchema = z.object({
 });
 
 export const manoObraFormSchema = z.object({
-  tipo: z.literal("mano-obra"),
+  type: z.literal("mano-obra"),
   items: z.array(manoObraItemSchema).min(1, "Debe agregar al menos un ítem"),
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),
 });
@@ -99,7 +99,7 @@ export const staffItemSchema = z.object({
 });
 
 export const gastosAdminFormSchema = z.object({
-  tipo: z.literal("gastos-admin"),
+  type: z.literal("gastos-admin"),
   gastosGenerales: z.record(z.number().min(0, "Valor debe ser mayor o igual a 0")),
   staff: z.array(staffItemSchema),
   totalGenerales: z.number().min(0, "Total debe ser mayor o igual a 0"),
@@ -115,14 +115,14 @@ export const mantenimientoItemSchema = z.object({
 });
 
 export const mantenimientosFormSchema = z.object({
-  tipo: z.literal("mantenimientos"),
+  type: z.literal("mantenimientos"),
   items: z.array(mantenimientoItemSchema).min(1, "Debe agregar al menos un ítem"),
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),
 });
 
 // ============= COSTOS DE OPORTUNIDAD =============
 export const costosOportunidadFormSchema = z.object({
-  tipo: z.literal("costos-oportunidad"),
+  type: z.literal("costos-oportunidad"),
   cantidad: z.number().min(0.01, "Cantidad debe ser mayor a 0"),
   precioUnidad: z.number().min(0.01, "Precio debe ser mayor a 0"),
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),
@@ -130,16 +130,16 @@ export const costosOportunidadFormSchema = z.object({
 
 // ============= COSECHA =============
 export const cosechaFormSchema = z.object({
-  tipo: z.literal("cosecha"),
+  type: z.literal("cosecha"),
   valores: z.record(z.number().min(0, "Valor debe ser mayor o igual a 0")),
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),
 });
 
 // ============= ENERGÍA =============
 export const energiaFormSchema = z.object({
-  tipo: z.literal("energia"),
+  type: z.literal("energia"),
   data: z.object({
-    tipoEnergia: z.enum(["instalaciones", "riego"]),
+    tipoEnergia: z.enum(["Instalaciones", "Riego"]),
     subtotalAnual: z.number().min(0.01, "Subtotal debe ser mayor a 0"),
   }),
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),

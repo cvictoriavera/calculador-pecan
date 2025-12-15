@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, TrendingUp, Pencil, Trash2 } from "lucide-react";
@@ -15,7 +15,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
-import { useUiStore, useDataStore } from "@/stores";
+import { useDataStore } from "@/stores";
+import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 
 const categoriaLabels: Record<string, string> = {
@@ -42,10 +43,53 @@ const categoriaColors: Record<string, string> = {
 
 
 const Costos = () => {
-  const { currentCampaign } = useUiStore();
-  const { costs, addCost, updateCost, deleteCost } = useDataStore();
+  const { currentProjectId, campaigns, currentCampaign } = useApp();
+  const { costs, loadCosts, addCost, updateCost, deleteCost } = useDataStore();
 
   console.log('Costos page - currentCampaign:', currentCampaign);
+
+  // Función para obtener la descripción específica del costo
+  const getCostoDescription = (costo: any) => {
+    // Si tiene detalles y es de tipo insumos o combustible, mostrar el tipo específico
+    if (costo.details && typeof costo.details === 'object') {
+      if (costo.details.type) {
+        return costo.details.type;
+      }
+      // Para compatibilidad con datos antiguos que usan subtype
+      if (costo.details.subtype) {
+        // Para combustible - mapear subtipos a nombres legibles
+        const subtypeLabels: Record<string, string> = {
+          'machinery': 'Tractores',
+          'vehicles': 'Vehículos/Rodados',
+          'irrigation': 'Riego',
+          'other': 'Otros'
+        };
+        return subtypeLabels[costo.details.subtype] || costo.details.subtype;
+      }
+    }
+
+    // Para otros tipos de costos, mostrar la categoría genérica
+    return categoriaLabels[costo.category] || costo.category;
+  };
+
+  // Load costs when component mounts or campaign changes
+  useEffect(() => {
+    const loadCostsData = async () => {
+      if (currentProjectId) {
+        // Find the current campaign
+        const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
+        if (currentCamp) {
+          try {
+            await loadCosts(currentProjectId, currentCamp.id);
+          } catch (error) {
+            console.error("Error loading costs:", error);
+          }
+        }
+      }
+    };
+
+    loadCostsData();
+  }, [currentProjectId, campaigns, currentCampaign, loadCosts]);
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCosto, setEditingCosto] = useState<any>(null);
@@ -57,10 +101,15 @@ const Costos = () => {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (costoToDelete) {
-      deleteCost(costoToDelete.id);
-      toast.success("Costo eliminado correctamente");
+      try {
+        await deleteCost(costoToDelete.id);
+        toast.success("Costo eliminado correctamente");
+      } catch (error) {
+        toast.error("Error al eliminar el costo");
+        console.error("Error deleting cost:", error);
+      }
     }
     setDeleteDialogOpen(false);
     setCostoToDelete(null);
@@ -71,42 +120,85 @@ const Costos = () => {
     setSheetOpen(true);
   };
 
-  const handleUpdateCosto = (categoria: string, formData: any) => {
-    if (editingCosto) {
-      updateCost(editingCosto.id, {
-        category: categoria,
-        description: categoriaLabels[categoria] || categoria,
-        amount: formData.total || 0,
-        data: formData,
-      });
-      toast.success("Costo actualizado correctamente");
-      setEditingCosto(null);
-    } else {
-      addCost({
-        id: Date.now().toString(),
-        year: currentCampaign,
-        category: categoria,
-        description: categoriaLabels[categoria] || categoria,
-        amount: formData.total || 0,
-        date: new Date(),
-        data: formData,
-      });
-      toast.success("Costo registrado correctamente");
+  const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
+    if (!currentProjectId) {
+      toast.error("No hay proyecto activo");
+      return;
+    }
+
+    // Find the current campaign
+    const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
+    if (!currentCamp) {
+      toast.error("No se pudo encontrar la campaña actual");
+      return;
+    }
+
+    try {
+      // Check if this is the new format (object with category, details, total_amount) - direct from forms like InsumosForm
+      if (typeof categoriaOrData === 'object' && categoriaOrData.category) {
+        const costData = categoriaOrData;
+        await addCost({
+          project_id: currentProjectId,
+          campaign_id: currentCamp.id,
+          category: costData.category,
+          details: costData.details,
+          total_amount: costData.total_amount,
+        });
+        toast.success("Costo registrado correctamente");
+      }
+      // Check if formData is the new format (when called from AddCostoSheet with category string + new format data)
+      else if (typeof formData === 'object' && formData.category) {
+        await addCost({
+          project_id: currentProjectId,
+          campaign_id: currentCamp.id,
+          category: formData.category,
+          details: formData.details,
+          total_amount: formData.total_amount,
+        });
+        toast.success("Costo registrado correctamente");
+      }
+      // Legacy format for editing or other forms
+      else if (editingCosto) {
+        const categoria = categoriaOrData as string;
+        await updateCost(editingCosto.id, {
+          category: categoria,
+          details: formData,
+          total_amount: formData?.total || formData?.total_amount || 0,
+        });
+        toast.success("Costo actualizado correctamente");
+        setEditingCosto(null);
+      }
+      // Legacy format for single cost creation
+      else {
+        const categoria = categoriaOrData as string;
+        await addCost({
+          project_id: currentProjectId,
+          campaign_id: currentCamp.id,
+          category: categoria,
+          details: formData,
+          total_amount: formData?.total || formData?.total_amount || 0,
+        });
+        toast.success("Costo registrado correctamente");
+      }
+    } catch (error) {
+      toast.error("Error al guardar el costo");
+      console.error("Error saving cost:", error);
     }
   };
 
 
-  // Filter costs by current campaign year
-  const costosFiltered = costs.filter((c) => c.year === currentCampaign);
-  const totalCostos = costosFiltered.reduce((acc, c) => acc + c.amount, 0);
+  // All costs are already filtered by current campaign
+  const costosFiltered = costs;
+  const totalCostos = costosFiltered.reduce((acc, c) => acc + parseFloat(String(c.total_amount || 0)), 0);
 
   // Prepare data for pie chart
   const costoPorCategoria = costosFiltered.reduce((acc, cost) => {
+    const costValue = parseFloat(String(cost.total_amount || 0));
     const existing = acc.find((item) => item.name === cost.category);
     if (existing) {
-      existing.value += cost.amount;
+      existing.value += costValue;
     } else {
-      acc.push({ name: cost.category, value: cost.amount });
+      acc.push({ name: cost.category, value: costValue });
     }
     return acc;
   }, [] as { name: string; value: number }[]);
@@ -221,9 +313,9 @@ const Costos = () => {
                           {categoriaLabels[costo.category] || costo.category}
                         </Badge>
                       </td>
-                      <td className="p-3 text-sm text-foreground">{costo.description}</td>
+                      <td className="p-3 text-sm text-foreground">{getCostoDescription(costo)}</td>
                       <td className="p-3 text-sm text-right font-semibold text-foreground">
-                        ${costo.amount.toLocaleString()}
+                        ${costo.total_amount.toLocaleString()}
                       </td>
                       <td className="p-3 text-sm text-center">
                         <div className="flex items-center justify-center gap-2">

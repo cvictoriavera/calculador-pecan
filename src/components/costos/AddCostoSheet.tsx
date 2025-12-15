@@ -107,17 +107,17 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
     
     switch (selectedCategory) {
       case "insumos":
-        return <InsumosForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
+        return <InsumosForm onSave={handleSave} onCancel={handleBack} />;
       case "combustible":
-        return <CombustibleForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
+        return <CombustibleForm onSave={handleSave} onCancel={handleBack} />;
       case "mano-obra":
-        return <ManoObraForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
+        return <ManoObraForm onSave={handleSave} onCancel={handleBack} />;
       case "energia":
-        return <EnergiaForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
+        return <EnergiaForm onSave={handleSave} onCancel={handleBack} />;
       case "cosecha":
         return <CosechaForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
       case "gastos-admin":
-        return <GastosAdminForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
+        return <GastosAdminForm onSave={handleSave} onCancel={handleBack} />;
       case "mantenimientos":
         return <MantenimientosForm onSave={handleSave} onCancel={handleBack} initialData={initialData} />;
       case "costos-oportunidad":

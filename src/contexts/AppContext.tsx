@@ -29,6 +29,16 @@ interface Campaign {
   updated_at: string;
 }
 
+interface Project {
+  id: number;
+  user_id: number;
+  project_name: string;
+  description?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AppContextType {
   projectName: string;
   setProjectName: (name: string) => void;
@@ -36,6 +46,8 @@ interface AppContextType {
   setCurrentProjectId: (id: number) => void;
   initialYear: number | null;
   setInitialYear: (year: number) => void;
+  projects: Project[];
+  projectsLoading: boolean;
   campaigns: Campaign[];
   campaignsLoading: boolean;
   currentCampaign: number;
@@ -47,6 +59,7 @@ interface AppContextType {
   updateMonte: (id: string, monte: Omit<Monte, "id">) => void;
   deleteMonte: (id: string) => void;
   updateCampaign: (campaignId: number, data: any) => Promise<any>;
+  changeProject: (projectId: number) => void;
   isOnboardingComplete: boolean;
   isLoading: boolean;
   completeOnboarding: (name: string, year: number, projectId: number) => Promise<void>;
@@ -66,6 +79,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("initialYear");
     return stored ? parseInt(stored) : null;
   });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [currentCampaign, setCurrentCampaign] = useState(() => {
@@ -169,12 +184,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Check for existing projects on mount
   useEffect(() => {
     const checkExistingProjects = async () => {
-    
+      setProjectsLoading(true);
       try {
-        const projects = await getProjects();
-        if (projects && projects.length > 0) {
+        const fetchedProjects = await getProjects();
+        if (fetchedProjects && fetchedProjects.length > 0) {
+          setProjects(fetchedProjects);
           // Load the first project
-          const project = projects[0];
+          const project = fetchedProjects[0];
           setCurrentProjectId(project.id);
           setProjectName(project.project_name);
 
@@ -202,7 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               }));
               setMontes(transformedMontes);
             } else {
-            
+
               setMontes([]);
             }
           } catch (error) {
@@ -211,16 +227,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setMontesLoading(false);
           }
         } else {
-          
+
           // Clear currentProjectId if no projects found
           setCurrentProjectId(null);
           setProjectName("");
           localStorage.removeItem("currentProjectId");
           localStorage.removeItem("projectName");
+          setProjects([]);
         }
       } catch (error) {
         console.error('Error checking existing projects:', error);
+        setProjects([]);
       } finally {
+        setProjectsLoading(false);
         setIsLoading(false);
       }
     };
@@ -351,6 +370,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const changeProject = async (projectId: number) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    setCurrentProjectId(projectId);
+    setProjectName(project.project_name);
+
+    // Reset campaign to current year or find appropriate
+    const currentYear = new Date().getFullYear();
+    setCurrentCampaign(currentYear);
+
+    // The useEffect on currentProjectId will handle loading campaigns and montes
+  };
+
 
 
   return (
@@ -362,6 +395,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCurrentProjectId,
         initialYear,
         setInitialYear,
+        projects,
+        projectsLoading,
         campaigns,
         campaignsLoading,
         currentCampaign,
@@ -373,6 +408,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateMonte,
         deleteMonte: deleteMonteContext,
         updateCampaign: updateCampaignInContext,
+        changeProject,
         isOnboardingComplete,
         isLoading,
         completeOnboarding,

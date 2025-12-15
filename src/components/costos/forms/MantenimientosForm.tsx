@@ -30,7 +30,7 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
   } = useForm<MantenimientosFormData>({
     resolver: zodResolver(mantenimientosFormSchema),
     defaultValues: {
-      tipo: "mantenimientos",
+      type: "mantenimientos",
       items: initialData?.items || [{
         id: Date.now().toString(),
         nombreHerramienta: "",

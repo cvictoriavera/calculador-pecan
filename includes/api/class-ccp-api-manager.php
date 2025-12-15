@@ -24,6 +24,7 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-campaigns-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-annual-records-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-investments-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-costs-db.php';
 
 		// Include controller classes
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-projects-controller.php';
@@ -31,6 +32,7 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-campaigns-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-annual-records-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-investments-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-costs-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-database-controller.php';
 
 		// Instantiate controllers and register routes
@@ -48,6 +50,9 @@ class CCP_API_Manager {
 
 		$investments_controller = new CCP_Investments_Controller();
 		$investments_controller->register_routes();
+
+		$costs_controller = new CCP_Costs_Controller();
+		$costs_controller->register_routes();
 
 		$database_controller = new CCP_Database_Controller();
 		$database_controller->register_routes();

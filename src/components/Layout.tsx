@@ -3,6 +3,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useUiStore } from "@/stores";
 
@@ -11,7 +14,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { campaigns, currentCampaign, setCurrentCampaign, montes } = useApp();
+  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, changeProject, montes } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
 
   const totalArea = montes
@@ -48,6 +51,36 @@ export function Layout({ children }: LayoutProps) {
           <header className="h-16 flex items-center justify-between px-6 border-none border-border bg-card shadow-sm">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-foreground" />
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Proyecto:</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-[200px] justify-between bg-secondary">
+                      {projects.find(p => p.id === currentProjectId)?.project_name || "Seleccionar Proyecto"}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[200px]">
+                    <DropdownMenuLabel>Proyectos Recientes</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {projects.map((project) => (
+                      <DropdownMenuItem
+                        key={project.id}
+                        onClick={() => changeProject(project.id)}
+                        className={project.id === currentProjectId ? "bg-accent" : ""}
+                      >
+                        {project.project_name}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Button variant="ghost" className="w-full justify-start p-0">
+                        Crear Nuevo Proyecto
+                      </Button>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-muted-foreground">Campaña Actual:</span>
                 <Select
