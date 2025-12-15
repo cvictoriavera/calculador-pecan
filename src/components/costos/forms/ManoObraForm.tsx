@@ -123,7 +123,7 @@ export default function ManoObraForm({ onSave, onCancel }: ManoObraFormProps) {
     const costData = {
       category: "mano-obra",
       details: {
-        type: "labor_monthly",
+        type: "Personal",
         data: {
           staff_list: staffList,
           globals: globals

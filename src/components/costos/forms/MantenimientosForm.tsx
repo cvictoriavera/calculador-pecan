@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ interface MantenimientosFormProps {
 }
 
 export default function MantenimientosForm({ onSave, onCancel, initialData }: MantenimientosFormProps) {
+  const [nextId, setNextId] = useState(1);
+
   const {
     register,
     control,
@@ -32,7 +35,7 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
     defaultValues: {
       type: "mantenimientos",
       items: initialData?.items || [{
-        id: Date.now().toString(),
+        id: "item_1",
         nombreHerramienta: "",
         precioReparacion: 0,
       }],
@@ -56,11 +59,13 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
   };
 
   const addItem = () => {
+    const newId = `item_${nextId}`;
     append({
-      id: Date.now().toString(),
+      id: newId,
       nombreHerramienta: "",
       precioReparacion: 0,
     });
+    setNextId(prev => prev + 1);
   };
 
   return (

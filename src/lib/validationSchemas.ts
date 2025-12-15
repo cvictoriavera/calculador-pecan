@@ -122,7 +122,7 @@ export const mantenimientosFormSchema = z.object({
 
 // ============= COSTOS DE OPORTUNIDAD =============
 export const costosOportunidadFormSchema = z.object({
-  type: z.literal("costos-oportunidad"),
+  type: z.literal("Arrendamiento"),
   cantidad: z.number().min(0.01, "Cantidad debe ser mayor a 0"),
   precioUnidad: z.number().min(0.01, "Precio debe ser mayor a 0"),
   total: z.number().min(0, "Total debe ser mayor o igual a 0"),

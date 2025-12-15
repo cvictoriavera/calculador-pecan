@@ -32,7 +32,7 @@ const categorias = [
   { id: "combustible", label: "Combustible", icon: Fuel, color: "bg-warning/10 text-warning" },
   { id: "mano-obra", label: "Mano de Obra", icon: Users, color: "bg-cocoa/10 text-cocoa" },
   { id: "energia", label: "Energía Eléctrica", icon: Zap, color: "bg-camel/10 text-camel" },
-  { id: "cosecha", label: "Cosecha y Poscosecha", icon: Wheat, color: "bg-primary/10 text-primary" },
+  { id: "cosecha", label: "Cosecha y Poscosecha", icon: Wheat, color: "bg-primary/10 text-primary", disabled: true },
   { id: "gastos-admin", label: "Gastos Administrativos", icon: FileText, color: "bg-muted-foreground/10 text-muted-foreground" },
   { id: "mantenimientos", label: "Mantenimientos", icon: Wrench, color: "bg-cocoa/10 text-cocoa" },
   { id: "costos-oportunidad", label: "Costos de Oportunidad", icon: TrendingUp, color: "bg-warning/10 text-warning" },
@@ -161,13 +161,27 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
               {categorias.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-secondary/50 transition-colors text-left"
+                  onClick={() => !cat.disabled && setSelectedCategory(cat.id)}
+                  disabled={cat.disabled}
+                  className={`w-full flex items-center gap-4 p-4 rounded-lg border transition-colors text-left ${
+                    cat.disabled
+                      ? "border-border/50 bg-secondary/20 text-muted-foreground cursor-not-allowed opacity-60"
+                      : "border-border hover:bg-secondary/50 text-foreground"
+                  }`}
                 >
-                  <div className={`p-3 rounded-lg ${cat.color}`}>
+                  <div className={`p-3 rounded-lg ${cat.disabled ? "bg-muted" : cat.color}`}>
                     <cat.icon className="h-5 w-5" />
                   </div>
-                  <span className="font-medium text-foreground">{cat.label}</span>
+                  <div className="flex-1">
+                    <span className={`font-medium ${cat.disabled ? "text-muted-foreground" : "text-foreground"}`}>
+                      {cat.label}
+                    </span>
+                    {cat.disabled && (
+                      <span className="block text-xs text-muted-foreground mt-1">
+                        En reparación de errores
+                      </span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>

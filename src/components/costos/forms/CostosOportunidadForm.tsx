@@ -25,7 +25,7 @@ export default function CostosOportunidadForm({ onSave, onCancel, initialData }:
   } = useForm<CostosOportunidadFormData>({
     resolver: zodResolver(costosOportunidadFormSchema),
     defaultValues: {
-      type: "costos-oportunidad",
+      type: "Arrendamiento",
       cantidad: initialData?.cantidad || 0,
       precioUnidad: initialData?.precioUnidad || 0,
       total: 0,

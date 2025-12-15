@@ -115,10 +115,10 @@ const Costos = () => {
     setCostoToDelete(null);
   };
 
-  const handleEditCosto = (costo: any) => {
-    setEditingCosto(costo);
-    setSheetOpen(true);
-  };
+  // const handleEditCosto = (costo: any) => {
+  //   setEditingCosto(costo);
+  //   setSheetOpen(true);
+  // };
 
   const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
     if (!currentProjectId) {
@@ -322,8 +322,9 @@ const Costos = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            onClick={() => handleEditCosto(costo)}
+                            className="h-8 w-8 text-muted-foreground opacity-50 cursor-not-allowed"
+                            disabled={true}
+                            title="Editar próximamente"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
