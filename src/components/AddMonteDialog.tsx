@@ -21,7 +21,7 @@ import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 
 export function AddMonteDialog() {
-  const { addMonte } = useApp();
+  const { addMonte, montes } = useApp();
   const [open, setOpen] = useState(false);
   const [nombre, setNombre] = useState("");
   const [hectareas, setHectareas] = useState("");
@@ -32,6 +32,39 @@ export function AddMonteDialog() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
+  const generateNextMonteName = () => {
+    // Get existing monte names that start with "Monte "
+    const monteNames = montes
+      .map(m => m.nombre)
+      .filter(name => name.startsWith('Monte '))
+      .map(name => name.replace('Monte ', ''));
+
+    // Find the next available letter
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let i = 0; i < letters.length; i++) {
+      const letter = letters[i];
+      if (!monteNames.includes(letter)) {
+        return `Monte ${letter}`;
+      }
+    }
+
+    // If all single letters are used, start with AA, AB, etc.
+    let index = 0;
+    while (true) {
+      const letter1 = letters[Math.floor(index / 26)];
+      const letter2 = letters[index % 26];
+      const combo = letter1 + letter2;
+      if (!monteNames.includes(combo)) {
+        return `Monte ${combo}`;
+      }
+      index++;
+      if (index > 26 * 26) break; // Prevent infinite loop
+    }
+
+    // Fallback
+    return `Monte ${Date.now()}`;
+  };
+
   const handleSubmit = async () => {
     if (!hectareas || !densidad || !añoPlantacion || !variedad) {
       toast.error("Por favor completa todos los campos requeridos");
@@ -39,7 +72,7 @@ export function AddMonteDialog() {
     }
 
     try {
-      const monteNombre = nombre || `Monte ${Math.random().toString(36).substr(2, 9)}`;
+      const monteNombre = nombre || generateNextMonteName();
 
       await addMonte({
         nombre: monteNombre,
