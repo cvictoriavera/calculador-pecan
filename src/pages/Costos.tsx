@@ -121,6 +121,7 @@ const Costos = () => {
   };
 
   const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
+    console.log('handleUpdateCosto called with:', categoriaOrData, formData);
     if (!currentProjectId) {
       toast.error("No hay proyecto activo");
       return;
@@ -137,9 +138,11 @@ const Costos = () => {
       // Check if this is the new format (object with category, details, total_amount) - direct from forms like InsumosForm
       if (typeof categoriaOrData === 'object' && categoriaOrData.category) {
         const costData = categoriaOrData;
+        console.log('Processing new format cost data:', costData);
 
         // Check if this is an update to existing record
         if (costData.existingId) {
+          console.log('Updating existing cost ID:', costData.existingId);
           await updateCost(costData.existingId, {
             category: costData.category,
             details: costData.details,
@@ -147,6 +150,7 @@ const Costos = () => {
           });
           toast.success("Costo actualizado correctamente");
         } else {
+          console.log('Adding new cost');
           await addCost({
             project_id: currentProjectId,
             campaign_id: currentCamp.id,

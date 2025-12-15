@@ -117,7 +117,6 @@ export const mantenimientoItemSchema = z.object({
 export const mantenimientosFormSchema = z.object({
   type: z.literal("mantenimientos"),
   items: z.array(mantenimientoItemSchema).min(1, "Debe agregar al menos un ítem"),
-  total: z.number().min(0.01, "Total debe ser mayor a 0"),
 });
 
 // ============= COSTOS DE OPORTUNIDAD =============
@@ -125,7 +124,6 @@ export const costosOportunidadFormSchema = z.object({
   type: z.literal("Arrendamiento"),
   cantidad: z.number().min(0.01, "Cantidad debe ser mayor a 0"),
   precioUnidad: z.number().min(0.01, "Precio debe ser mayor a 0"),
-  total: z.number().min(0.01, "Total debe ser mayor a 0"),
 });
 
 // ============= COSECHA =============

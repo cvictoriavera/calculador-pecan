@@ -102,11 +102,14 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
   };
 
   const handleSave = (data: any) => {
+    console.log('AddCostoSheet handleSave called with data:', data, 'selectedCategory:', selectedCategory);
     if (selectedCategory) {
       // Si estamos editando un registro existente, incluir el ID para actualizarlo
       if (existingCostoForCategory) {
+        console.log('Updating existing cost with ID:', existingCostoForCategory.id);
         onSave(selectedCategory, { ...data, existingId: existingCostoForCategory.id });
       } else {
+        console.log('Creating new cost');
         onSave(selectedCategory, data);
       }
       handleClose();

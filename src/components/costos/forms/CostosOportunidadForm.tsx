@@ -11,9 +11,9 @@ import {
 } from "@/lib/validationSchemas";
 
 interface CostosOportunidadFormProps {
-  onSave: (data: CostosOportunidadFormData) => void;
+  onSave: (data: any) => void;
   onCancel: () => void;
-  initialData?: Partial<CostosOportunidadFormData>;
+  initialData?: any;
   existingCosts?: any[];
 }
 
@@ -29,7 +29,6 @@ export default function CostosOportunidadForm({ onSave, onCancel, initialData }:
       type: "Arrendamiento",
       cantidad: initialData?.cantidad || 0,
       precioUnidad: initialData?.precioUnidad || 0,
-      total: 0,
     },
   });
 
@@ -38,6 +37,7 @@ export default function CostosOportunidadForm({ onSave, onCancel, initialData }:
   const total = calcularTotalOportunidad(watchedCantidad || 0, watchedPrecio || 0);
 
   const onSubmit = (data: CostosOportunidadFormData) => {
+    console.log('CostosOportunidadForm onSubmit called with data:', data);
     // Validate that all required fields are filled
     if (!data.cantidad || data.cantidad <= 0) {
       alert('Por favor ingresa una cantidad válida mayor a 0.');
@@ -48,9 +48,16 @@ export default function CostosOportunidadForm({ onSave, onCancel, initialData }:
       return;
     }
 
+    console.log('CostosOportunidadForm validation passed, calling onSave');
     onSave({
-      ...data,
-      total,
+      category: "costos-oportunidad",
+      details: {
+        type: data.type,
+        cantidad: data.cantidad,
+        precioUnidad: data.precioUnidad,
+        total,
+      },
+      total_amount: total,
     });
   };
 

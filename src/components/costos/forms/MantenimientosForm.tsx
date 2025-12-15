@@ -16,9 +16,9 @@ import {
 } from "@/lib/validationSchemas";
 
 interface MantenimientosFormProps {
-  onSave: (data: MantenimientosFormData) => void;
+  onSave: (data: any) => void;
   onCancel: () => void;
-  initialData?: Partial<MantenimientosFormData>;
+  initialData?: any;
   existingCosts?: any[];
 }
 
@@ -40,7 +40,6 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
         nombreHerramienta: "",
         precioReparacion: 0,
       }],
-      total: 0,
     },
   });
 
@@ -53,6 +52,8 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
   const totalGeneral = calcularTotalMantenimientos(watchedItems || []);
 
   const onSubmit = (data: MantenimientosFormData) => {
+    console.log('MantenimientosForm onSubmit called with data:', data);
+
     // Validate that all required fields are filled
     for (const item of data.items) {
       if (!item.nombreHerramienta || item.nombreHerramienta.trim() === '') {
@@ -65,9 +66,19 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
       }
     }
 
+    console.log('MantenimientosForm validation passed, calling onSave');
+
+    // Use the calculated total instead of the form data total
+    const calculatedTotal = calcularTotalMantenimientos(data.items);
+
     onSave({
-      ...data,
-      total: totalGeneral,
+      category: "mantenimientos",
+      details: {
+        type: "Mantenimientos",
+        items: data.items,
+        total: calculatedTotal,
+      },
+      total_amount: calculatedTotal,
     });
   };
 
@@ -81,8 +92,13 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
     setNextId(prev => prev + 1);
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSubmit(onSubmit)(e);
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleFormSubmit} className="space-y-4">
       <p className="text-sm text-muted-foreground">
         Registra las herramientas reparadas y su costo de reparación.
       </p>
