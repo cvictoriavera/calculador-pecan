@@ -38,16 +38,6 @@ const categorias = [
   { id: "costos-oportunidad", label: "Costos de Oportunidad", icon: TrendingUp, color: "bg-warning/10 text-warning" },
 ];
 
-const categoriaLabelToId: Record<string, string> = {
-  "Insumos": "insumos",
-  "Combustible": "combustible",
-  "Mano de Obra": "mano-obra",
-  "Energía": "energia",
-  "Cosecha": "cosecha",
-  "Administración": "gastos-admin",
-  "Mantenimientos": "mantenimientos",
-  "Oportunidad": "costos-oportunidad",
-};
 
 interface CostoRegistro {
   id: number;
@@ -72,14 +62,16 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [existingCostoForCategory, setExistingCostoForCategory] = useState<CostoRegistro | null>(null);
 
+  // Actualizar el estado cuando editingCosto cambia
   useEffect(() => {
-    if (editingCosto && open) {
-      const categoryId = categoriaLabelToId[editingCosto.category];
-      if (categoryId) {
-        setSelectedCategory(categoryId);
-      }
+    if (editingCosto) {
+      setSelectedCategory(editingCosto.category);
+      setExistingCostoForCategory(editingCosto);
+    } else {
+      setSelectedCategory(null);
+      setExistingCostoForCategory(null);
     }
-  }, [editingCosto, open]);
+  }, [editingCosto]);
 
   const handleClose = () => {
     setSelectedCategory(null);

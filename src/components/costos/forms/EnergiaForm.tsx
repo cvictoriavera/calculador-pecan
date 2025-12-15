@@ -29,14 +29,32 @@ interface EnergiaFormProps {
   existingCosts?: any[];
 }
 
-export default function EnergiaForm({ onSave, onCancel, existingCosts }: EnergiaFormProps) {
-  const [currentStep, setCurrentStep] = useState<'selection' | 'form'>('selection');
-  const [selectedType, setSelectedType] = useState<typeof tiposEnergia[0] | null>(null);
-  const [subtotalAnual, setSubtotalAnual] = useState(0);
+export default function EnergiaForm({ onSave, onCancel, initialData, existingCosts }: EnergiaFormProps) {
+  const [currentStep, setCurrentStep] = useState<'selection' | 'form'>(() => {
+    // If we have initialData, start directly in form mode
+    return initialData ? 'form' : 'selection';
+  });
+  const [selectedType, setSelectedType] = useState<typeof tiposEnergia[0] | null>(() => {
+    // If we have initialData, find the matching type
+    if (initialData?.type) {
+      return tiposEnergia.find(t => t.label === initialData.type) || null;
+    }
+    return null;
+  });
+  const [subtotalAnual, setSubtotalAnual] = useState(() => {
+    // Initialize with initialData if available
+    return initialData?.data?.subtotalAnual || 0;
+  });
 
   const handleTypeSelect = (tipo: typeof tiposEnergia[0]) => {
     setSelectedType(tipo);
     setCurrentStep('form');
+
+    // If we have initialData for this type, use it
+    if (initialData?.type === tipo.label && initialData?.data) {
+      setSubtotalAnual(initialData.data.subtotalAnual || 0);
+      return;
+    }
 
     // Check if there's existing data for this type
     const existingCost = existingCosts?.find(cost =>

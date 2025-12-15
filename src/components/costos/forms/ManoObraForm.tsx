@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Users } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 
 interface StaffMember {
@@ -38,23 +38,52 @@ const availableRoles = [
   "Tractorista"
 ];
 
-export default function ManoObraForm({ onSave, onCancel }: ManoObraFormProps) {
-  const [staffList, setStaffList] = useState<StaffMember[]>([
-    {
-      id: "staff_1",
-      role: "",
-      salary_base: 0,
-      social_tax_pct: 30,
-      people_count: 1,
-      apply_aguinaldo: 0,
+export default function ManoObraForm({ onSave, onCancel, initialData }: ManoObraFormProps) {
+  const [staffList, setStaffList] = useState<StaffMember[]>(() => {
+    // Initialize with initialData if available
+    if (initialData?.data?.staff_list && Array.isArray(initialData.data.staff_list)) {
+      return initialData.data.staff_list.map((member: any, index: number) => ({
+        id: member.id || `staff_${index + 1}`,
+        role: member.role || "",
+        salary_base: member.salary_base || 0,
+        social_tax_pct: member.social_tax_pct || 30,
+        people_count: member.people_count || 1,
+        apply_aguinaldo: member.apply_aguinaldo || 0,
+      }));
     }
-  ]);
+    return [
+      {
+        id: "staff_1",
+        role: "",
+        salary_base: 0,
+        social_tax_pct: 30,
+        people_count: 1,
+        apply_aguinaldo: 0,
+      }
+    ];
+  });
 
-  const [nextId, setNextId] = useState(2);
+  const [nextId, setNextId] = useState(() => {
+    // Set nextId based on initialData or default
+    if (initialData?.data?.staff_list && Array.isArray(initialData.data.staff_list)) {
+      const maxId = Math.max(...initialData.data.staff_list.map((s: any) => parseInt((s.id || 'staff_1').split('_')[1])));
+      return maxId + 1;
+    }
+    return 2;
+  });
 
-  const [globals, setGlobals] = useState({
-    overtime_monthly_est: 0,
-    personnel_expenses_yearly: 0,
+  const [globals, setGlobals] = useState(() => {
+    // Initialize with initialData if available
+    if (initialData?.data?.globals) {
+      return {
+        overtime_monthly_est: initialData.data.globals.overtime_monthly_est || 0,
+        personnel_expenses_yearly: initialData.data.globals.personnel_expenses_yearly || 0,
+      };
+    }
+    return {
+      overtime_monthly_est: 0,
+      personnel_expenses_yearly: 0,
+    };
   });
 
   // Funciones para manejar personal
@@ -167,8 +196,6 @@ export default function ManoObraForm({ onSave, onCancel }: ManoObraFormProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <Users className="h-12 w-12 text-primary mx-auto mb-2" />
-        <h3 className="text-lg font-semibold mb-2">Mano de Obra</h3>
         <p className="text-sm text-muted-foreground">
           Gestiona el personal y calcula costos anuales incluyendo aguinaldo y cargas sociales
         </p>

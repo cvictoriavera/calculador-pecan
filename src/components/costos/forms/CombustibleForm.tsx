@@ -87,7 +87,7 @@ export default function CombustibleForm({ onSave, onCancel, initialData, existin
   });
 
   const [vehiclesData, setVehiclesData] = useState(() => {
-    if (initialData?.type === "Vehiculos" && initialData.data) {
+    if ((initialData?.type === "Vehiculos" || initialData?.type === "Vehículos/Rodados") && initialData.data) {
       return {
         fleet_list: initialData.data.fleet_list || [],
         fuel_liters: initialData.data.fuel_liters || 0,
@@ -262,9 +262,12 @@ export default function CombustibleForm({ onSave, onCancel, initialData, existin
     // Check if this type already exists to determine if we need to update
     const existingCost = existingCosts?.find(cost =>
       cost.category === 'combustible' &&
-      cost.details?.type === (selectedType.subtype === 'machinery' ? "Tractores" :
+      (cost.details?.type === (selectedType.subtype === 'machinery' ? "Tractores" :
+                             selectedType.subtype === 'vehicles' ? "Vehículos/Rodados" :
+                             selectedType.subtype === 'irrigation' ? "Riego" : "Otros") ||
+       cost.details?.type === (selectedType.subtype === 'machinery' ? "Tractores" :
                              selectedType.subtype === 'vehicles' ? "Vehiculos" :
-                             selectedType.subtype === 'irrigation' ? "Riego" : "Otros")
+                             selectedType.subtype === 'irrigation' ? "Riego" : "Otros"))
     );
 
     switch (selectedType.subtype) {
@@ -318,7 +321,7 @@ export default function CombustibleForm({ onSave, onCancel, initialData, existin
         costData = {
           category: "combustible",
           details: {
-            type: "Vehiculos",
+            type: "Vehículos/Rodados",
             data: vehiclesData,
             breakdown: vehiclesBreakdown
           },

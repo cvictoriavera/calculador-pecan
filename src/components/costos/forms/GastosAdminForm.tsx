@@ -78,19 +78,73 @@ interface GastosAdminFormProps {
   existingCosts?: any[];
 }
 
-export default function GastosAdminForm({ onSave, onCancel, existingCosts }: GastosAdminFormProps) {
-  const [currentStep, setCurrentStep] = useState<'selection' | 'form'>('selection');
-  const [selectedType, setSelectedType] = useState<typeof tiposGastosAdmin[0] | null>(null);
+export default function GastosAdminForm({ onSave, onCancel, initialData, existingCosts }: GastosAdminFormProps) {
+  const [currentStep, setCurrentStep] = useState<'selection' | 'form'>(() => {
+    // If we have initialData, start directly in form mode
+    return initialData ? 'form' : 'selection';
+  });
+  const [selectedType, setSelectedType] = useState<typeof tiposGastosAdmin[0] | null>(() => {
+    // If we have initialData, find the matching type
+    if (initialData?.type) {
+      return tiposGastosAdmin.find(t => t.label === initialData.type) || null;
+    }
+    return null;
+  });
 
   // Estado para gastos generales
-  const [gastosGeneralesItems, setGastosGeneralesItems] = useState<GastoGeneralItem[]>([]);
+  const [gastosGeneralesItems, setGastosGeneralesItems] = useState<GastoGeneralItem[]>(() => {
+    // Initialize with initialData if available
+    if (initialData?.type === "Gastos Generales" && initialData?.data?.items) {
+      return initialData.data.items.map((item: any, index: number) => ({
+        id: item.id || `gasto_${index + 1}`,
+        tipo: item.tipo || "",
+        monto: item.monto || 0,
+      }));
+    }
+    return [];
+  });
 
   // Estado para staff administrativo
-  const [staffItems, setStaffItems] = useState<StaffAdminItem[]>([]);
+  const [staffItems, setStaffItems] = useState<StaffAdminItem[]>(() => {
+    // Initialize with initialData if available
+    if (initialData?.type === "Staff Administrativo" && initialData?.data?.staff) {
+      return initialData.data.staff.map((item: any, index: number) => ({
+        id: item.id || `staff_${index + 1}`,
+        rol: item.rol || "",
+        remuneracion: item.remuneracion || 0,
+        cargasSociales: item.cargasSociales || 30,
+        nroProfesionales: item.nroProfesionales || 1,
+      }));
+    }
+    return [];
+  });
 
   const handleTypeSelect = (tipo: typeof tiposGastosAdmin[0]) => {
     setSelectedType(tipo);
     setCurrentStep('form');
+
+    // If we have initialData for this type, use it
+    if (initialData?.type === tipo.label && initialData?.data) {
+      const initialDataObj = initialData.data;
+      if (tipo.id === "gastos-generales" && initialDataObj.items) {
+        setGastosGeneralesItems(initialDataObj.items.map((item: any, index: number) => ({
+          id: item.id || `gasto_${index + 1}`,
+          tipo: item.tipo || "",
+          monto: item.monto || 0,
+        })));
+        setStaffItems([]);
+      } else if (tipo.id === "staff-administrativo" && initialDataObj.staff) {
+        setStaffItems(initialDataObj.staff.map((item: any, index: number) => ({
+          id: item.id || `staff_${index + 1}`,
+          rol: item.rol || "",
+          remuneracion: item.remuneracion || 0,
+          cargasSociales: item.cargasSociales || 30,
+          nroProfesionales: item.nroProfesionales || 1,
+        })));
+        setGastosGeneralesItems([]);
+      }
+      return;
+    }
 
     // Check if there's existing data for this type
     const existingCost = existingCosts?.find(cost =>
