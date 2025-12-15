@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
@@ -213,31 +214,55 @@ const Produccion = () => {
               <Edit className="h-5 w-5" />
               Editar Producción
             </Button>
-            <Button
-              onClick={async () => {
-                try {
-                  // Update campaign in database to remove production data
-                  if (currentCampaignId) {
-                    await updateCampaign(currentCampaignId, {
-                      average_price: 0,
-                      total_production: 0,
-                    });
-                  }
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="gap-2">
+                  <Trash2 className="h-5 w-5" />
+                  Eliminar Producción
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción eliminará permanentemente todos los datos de producción de la campaña {currentCampaign}.
+                    Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      try {
+                        console.log('Starting production deletion for campaign:', currentCampaignId);
+                        // Update campaign in database to remove production data
+                        if (currentCampaignId) {
+                          const updateData = {
+                            average_price: 0,
+                            total_production: 0,
+                            montes_contribuyentes: null,
+                            montes_production: null,
+                          };
+                          console.log('Updating campaign with data:', updateData);
+                          const result = await updateCampaign(currentCampaignId, updateData);
+                          console.log('Campaign update result:', result);
+                        }
 
-                  // Delete from local Zustand stores
-                  productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
-                  productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
-                } catch (error) {
-                  console.error('Error deleting production:', error);
-                  // TODO: Show error message to user
-                }
-              }}
-              variant="destructive"
-              className="gap-2"
-            >
-              <Trash2 className="h-5 w-5" />
-              
-            </Button>
+                        // Delete from local Zustand stores
+                        productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
+                        productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
+                        console.log('Production deletion completed successfully');
+                      } catch (error) {
+                        console.error('Error deleting production:', error);
+                        // TODO: Show error message to user
+                      }
+                    }}
+                  >
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ) : (
           <Button

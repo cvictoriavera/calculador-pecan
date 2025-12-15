@@ -272,13 +272,13 @@ class CCP_Campaigns_DB {
 			$update_format[] = '%f';
 		}
 
-		if ( isset( $data['montes_contribuyentes'] ) ) {
-			$update_data['montes_contribuyentes'] = sanitize_text_field( $data['montes_contribuyentes'] );
+		if ( array_key_exists( 'montes_contribuyentes', $data ) ) {
+			$update_data['montes_contribuyentes'] = $data['montes_contribuyentes'] ? sanitize_text_field( $data['montes_contribuyentes'] ) : null;
 			$update_format[] = '%s';
 		}
 
-		if ( isset( $data['montes_production'] ) ) {
-			$update_data['montes_production'] = sanitize_text_field( $data['montes_production'] );
+		if ( array_key_exists( 'montes_production', $data ) ) {
+			$update_data['montes_production'] = $data['montes_production'] ? sanitize_text_field( $data['montes_production'] ) : null;
 			$update_format[] = '%s';
 		}
 

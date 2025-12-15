@@ -258,12 +258,12 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 		}
 
 		// New fields from JSON body
-		if ( isset( $json_params['montes_contribuyentes'] ) ) {
-			$data['montes_contribuyentes'] = sanitize_text_field( $json_params['montes_contribuyentes'] );
+		if ( array_key_exists( 'montes_contribuyentes', $json_params ) ) {
+			$data['montes_contribuyentes'] = $json_params['montes_contribuyentes'] ? sanitize_text_field( $json_params['montes_contribuyentes'] ) : null;
 		}
 
-		if ( isset( $json_params['montes_production'] ) ) {
-			$data['montes_production'] = sanitize_text_field( $json_params['montes_production'] );
+		if ( array_key_exists( 'montes_production', $json_params ) ) {
+			$data['montes_production'] = $json_params['montes_production'] ? sanitize_text_field( $json_params['montes_production'] ) : null;
 		}
 
 		$result = $this->campaigns_db->update( $campaign_id, $data, $user_id );
