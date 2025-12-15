@@ -44,7 +44,14 @@ export default function EnergiaForm({ onSave, onCancel }: EnergiaFormProps) {
   };
 
   const handleSave = () => {
-    if (!selectedType || subtotalAnual <= 0) return;
+    if (!selectedType) {
+      alert('Por favor selecciona un tipo de energía.');
+      return;
+    }
+    if (subtotalAnual <= 0) {
+      alert('Por favor ingresa un subtotal anual válido mayor a 0.');
+      return;
+    }
 
     const costData = {
       category: "energia",

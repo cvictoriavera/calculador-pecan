@@ -159,12 +159,23 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
   };
 
   const handleSave = () => {
-    if (!selectedType) return;
+    if (!selectedType) {
+      alert('Por favor selecciona un tipo de combustible.');
+      return;
+    }
 
     let costData;
 
     switch (selectedType.subtype) {
       case 'machinery': {
+        if (machineryData.fuel_liters <= 0) {
+          alert('Por favor ingresa una cantidad de litros de combustible válida mayor a 0.');
+          return;
+        }
+        if (machineryData.fuel_price <= 0) {
+          alert('Por favor ingresa un precio por litro válido mayor a 0.');
+          return;
+        }
         const machineryBreakdown = calculateMachineryTotal();
         costData = {
           category: "combustible",
@@ -179,6 +190,28 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
       }
 
       case 'vehicles': {
+        if (vehiclesData.fleet_list.length === 0) {
+          alert('Por favor agrega al menos un vehículo a la flota.');
+          return;
+        }
+        for (const vehicle of vehiclesData.fleet_list) {
+          if (!vehicle.name || vehicle.name.trim() === '') {
+            alert('Por favor ingresa el nombre de todos los vehículos.');
+            return;
+          }
+          if (!vehicle.value || vehicle.value <= 0) {
+            alert('Por favor ingresa un valor válido mayor a 0 para todos los vehículos.');
+            return;
+          }
+        }
+        if (vehiclesData.fuel_liters <= 0) {
+          alert('Por favor ingresa una cantidad de litros de combustible válida mayor a 0.');
+          return;
+        }
+        if (vehiclesData.fuel_price <= 0) {
+          alert('Por favor ingresa un precio por litro válido mayor a 0.');
+          return;
+        }
         const vehiclesBreakdown = calculateVehiclesTotal();
         costData = {
           category: "combustible",
@@ -193,6 +226,14 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
       }
 
       case 'irrigation': {
+        if (irrigationData.fuel_liters <= 0) {
+          alert('Por favor ingresa una cantidad de litros de combustible válida mayor a 0.');
+          return;
+        }
+        if (irrigationData.fuel_price <= 0) {
+          alert('Por favor ingresa un precio por litro válido mayor a 0.');
+          return;
+        }
         const irrigationTotal = calculateSimpleFuelTotal(irrigationData.fuel_liters, irrigationData.fuel_price);
         costData = {
           category: "combustible",
@@ -207,6 +248,14 @@ export default function CombustibleForm({ onSave, onCancel }: CombustibleFormPro
       }
 
       case 'other': {
+        if (otherData.fuel_liters <= 0) {
+          alert('Por favor ingresa una cantidad de litros de combustible válida mayor a 0.');
+          return;
+        }
+        if (otherData.fuel_price <= 0) {
+          alert('Por favor ingresa un precio por litro válido mayor a 0.');
+          return;
+        }
         const otherTotal = calculateSimpleFuelTotal(otherData.fuel_liters, otherData.fuel_price);
         costData = {
           category: "combustible",

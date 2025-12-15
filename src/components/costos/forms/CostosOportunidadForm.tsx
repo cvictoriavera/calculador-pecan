@@ -37,6 +37,16 @@ export default function CostosOportunidadForm({ onSave, onCancel, initialData }:
   const total = calcularTotalOportunidad(watchedCantidad || 0, watchedPrecio || 0);
 
   const onSubmit = (data: CostosOportunidadFormData) => {
+    // Validate that all required fields are filled
+    if (!data.cantidad || data.cantidad <= 0) {
+      alert('Por favor ingresa una cantidad válida mayor a 0.');
+      return;
+    }
+    if (!data.precioUnidad || data.precioUnidad <= 0) {
+      alert('Por favor ingresa un precio por unidad válido mayor a 0.');
+      return;
+    }
+
     onSave({
       ...data,
       total,

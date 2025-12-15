@@ -52,6 +52,18 @@ export default function MantenimientosForm({ onSave, onCancel, initialData }: Ma
   const totalGeneral = calcularTotalMantenimientos(watchedItems || []);
 
   const onSubmit = (data: MantenimientosFormData) => {
+    // Validate that all required fields are filled
+    for (const item of data.items) {
+      if (!item.nombreHerramienta || item.nombreHerramienta.trim() === '') {
+        alert('Por favor ingresa el nombre de la herramienta para todos los items.');
+        return;
+      }
+      if (!item.precioReparacion || item.precioReparacion <= 0) {
+        alert('Por favor ingresa un precio de reparación válido mayor a 0 para todos los items.');
+        return;
+      }
+    }
+
     onSave({
       ...data,
       total: totalGeneral,

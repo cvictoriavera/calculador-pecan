@@ -118,6 +118,26 @@ export default function ManoObraForm({ onSave, onCancel }: ManoObraFormProps) {
   const handleSave = () => {
     if (staffList.length === 0) return;
 
+    // Validate that all required fields are filled
+    for (const member of staffList) {
+      if (!member.role || member.role.trim() === '') {
+        alert('Por favor selecciona un rol para todos los miembros del personal.');
+        return;
+      }
+      if (!member.salary_base || member.salary_base <= 0) {
+        alert('Por favor ingresa un sueldo base válido mayor a 0 para todos los miembros.');
+        return;
+      }
+      if (!member.social_tax_pct || member.social_tax_pct <= 0) {
+        alert('Por favor ingresa cargas sociales válidas mayor a 0.');
+        return;
+      }
+      if (!member.people_count || member.people_count <= 0) {
+        alert('Por favor ingresa una cantidad de personas válida mayor a 0.');
+        return;
+      }
+    }
+
     const breakdown = calculateTotalLaborCost();
 
     const costData = {

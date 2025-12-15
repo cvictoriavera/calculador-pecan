@@ -170,6 +170,41 @@ export default function InsumosForm({ onSave, onCancel }: InsumosFormProps) {
   const handleSave = () => {
     if (!selectedType || items.length === 0) return;
 
+    // Validate that all required fields are filled
+    for (const item of items) {
+      if (!item.product || item.product.trim() === '') {
+        alert('Por favor selecciona un producto para todos los items.');
+        return;
+      }
+      if (item.unit_price <= 0) {
+        alert('Por favor ingresa un precio válido mayor a 0 para todos los items.');
+        return;
+      }
+      if (selectedType.esFertilizanteSuelo) {
+        if (!item.quantity_used || item.quantity_used <= 0) {
+          alert('Por favor ingresa una cantidad utilizada válida mayor a 0.');
+          return;
+        }
+      } else {
+        if (!item.application_dose_ml || item.application_dose_ml <= 0) {
+          alert('Por favor ingresa una dosis de aplicación válida mayor a 0.');
+          return;
+        }
+        if (!item.application_volume_l || item.application_volume_l <= 0) {
+          alert('Por favor ingresa un volumen de aplicación válido mayor a 0.');
+          return;
+        }
+        if (!item.application_count || item.application_count <= 0) {
+          alert('Por favor ingresa una cantidad de aplicaciones válida mayor a 0.');
+          return;
+        }
+      }
+      if (item.cost <= 0) {
+        alert('El costo calculado debe ser mayor a 0. Verifica que todos los campos estén completos.');
+        return;
+      }
+    }
+
     const totalCost = items.reduce((sum, item) => sum + item.cost, 0);
 
     const costData = {

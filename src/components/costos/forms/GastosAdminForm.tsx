@@ -184,6 +184,19 @@ export default function GastosAdminForm({ onSave, onCancel }: GastosAdminFormPro
 
     if (selectedType.id === "gastos-generales") {
       if (gastosGeneralesItems.length === 0) return;
+
+      // Validate gastos generales items
+      for (const item of gastosGeneralesItems) {
+        if (!item.tipo || item.tipo.trim() === '') {
+          alert('Por favor selecciona un tipo de gasto para todos los items.');
+          return;
+        }
+        if (!item.monto || item.monto <= 0) {
+          alert('Por favor ingresa un monto válido mayor a 0 para todos los items.');
+          return;
+        }
+      }
+
       const costData = {
         category: "gastos-admin",
         details: {
@@ -201,6 +214,27 @@ export default function GastosAdminForm({ onSave, onCancel }: GastosAdminFormPro
       onSave(costData);
     } else if (selectedType.id === "staff-administrativo") {
       if (staffItems.length === 0) return;
+
+      // Validate staff items
+      for (const item of staffItems) {
+        if (!item.rol || item.rol.trim() === '') {
+          alert('Por favor selecciona un rol para todos los miembros del staff.');
+          return;
+        }
+        if (!item.remuneracion || item.remuneracion <= 0) {
+          alert('Por favor ingresa una remuneración válida mayor a 0.');
+          return;
+        }
+        if (!item.cargasSociales || item.cargasSociales <= 0) {
+          alert('Por favor ingresa cargas sociales válidas mayor a 0.');
+          return;
+        }
+        if (!item.nroProfesionales || item.nroProfesionales <= 0) {
+          alert('Por favor ingresa un número válido de profesionales mayor a 0.');
+          return;
+        }
+      }
+
       const costData = {
         category: "gastos-admin",
         details: {

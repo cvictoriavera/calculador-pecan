@@ -43,6 +43,13 @@ export default function CosechaForm({ onSave, onCancel, initialData }: CosechaFo
   const totalGeneral = calcularTotalCosecha(watchedValores || {});
 
   const onSubmit = (data: CosechaFormData) => {
+    // Validate that at least one field has a value > 0
+    const hasValidValue = Object.values(data.valores || {}).some(value => value && value > 0);
+    if (!hasValidValue) {
+      alert('Por favor ingresa al menos un costo válido mayor a 0.');
+      return;
+    }
+
     onSave({
       ...data,
       total: totalGeneral,
