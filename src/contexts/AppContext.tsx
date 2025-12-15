@@ -268,15 +268,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
           is_current: y === currentYear ? 1 : 0,
         };
 
+        console.log(`Creating campaign for year ${y}:`, campaignData);
         const createdCampaign = await createCampaign(campaignData);
+        console.log(`Successfully created campaign for year ${y}:`, createdCampaign);
         createdCampaigns.push(createdCampaign);
       } catch (error) {
         console.error(`Error creating campaign for year ${y}:`, error);
+        // Check if it's a duplicate error - if so, try to get existing campaign
+        if (error instanceof Error && error.message && error.message.includes('already exists')) {
+          console.log(`Campaign for year ${y} already exists, fetching existing...`);
+          try {
+            const existingCampaigns = await getCampaignsByProject(projectId);
+            const existing = existingCampaigns.find(c => c.year === y);
+            if (existing) {
+              console.log(`Found existing campaign for year ${y}:`, existing);
+              createdCampaigns.push(existing);
+            }
+          } catch (fetchError) {
+            console.error(`Error fetching existing campaign for year ${y}:`, fetchError);
+          }
+        }
         // Continue with other campaigns even if one fails
       }
     }
 
-    setCampaigns(createdCampaigns);
+    const data = await getCampaignsByProject(projectId);
+    const sortedData = Array.isArray(data) ? data.sort((a, b) => a.year - b.year) : [];
+    setCampaigns(sortedData);
     setCurrentCampaign(currentYear);
   };
 

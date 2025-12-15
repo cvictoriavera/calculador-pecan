@@ -1,12 +1,948 @@
-[03-Dec-2025 01:39:15 UTC] CCP: Starting plugin activation
-[03-Dec-2025 01:39:15 UTC] CCP: Requiring database manager
-[03-Dec-2025 01:39:15 UTC] PHP Warning:  require_once(C:\Users\cvict\Local Sites\test\app\public\wp-content\plugins\calculador-pecan-1.0.0/includes/db/class-ccp-database-manager.php): Failed to open stream: No such file or directory in C:\Users\cvict\Local Sites\test\app\public\wp-content\plugins\calculador-pecan-1.0.0\calculador-pecan.php on line 42
-[03-Dec-2025 01:39:15 UTC] PHP Fatal error:  Uncaught Error: Failed opening required 'C:\Users\cvict\Local Sites\test\app\public\wp-content\plugins\calculador-pecan-1.0.0/includes/db/class-ccp-database-manager.php' (include_path='.:/usr/share/php:/www/wp-content/pear') in C:\Users\cvict\Local Sites\test\app\public\wp-content\plugins\calculador-pecan-1.0.0\calculador-pecan.php:42
-Stack trace:
-#0 C:\Users\cvict\Local Sites\test\app\public\wp-includes\class-wp-hook.php(341): calculador_pecan_activate(false)
-#1 C:\Users\cvict\Local Sites\test\app\public\wp-includes\class-wp-hook.php(365): WP_Hook->apply_filters('', Array)
-#2 C:\Users\cvict\Local Sites\test\app\public\wp-includes\plugin.php(522): WP_Hook->do_action(Array)
-#3 C:\Users\cvict\Local Sites\test\app\public\wp-admin\includes\plugin.php(703): do_action('activate_calcul...', false)
-#4 C:\Users\cvict\Local Sites\test\app\public\wp-admin\plugins.php(60): activate_plugin('calculador-peca...', 'https://test.co...', false)
-#5 {main}
-  thrown in C:\Users\cvict\Local Sites\test\app\public\wp-content\plugins\calculador-pecan-1.0.0\calculador-pecan.php on line 42
+[15-Dec-2025 20:44:56 UTC] CCP: get_items called for user_id: 2
+[15-Dec-2025 20:44:56 UTC] CCP: projects found: Array
+(
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP: Create project request received. Params: Array
+(
+    [project_name] => Finca Los Nekos
+    [description] => Proyecto creado en 2025
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP: Starting project creation transaction
+[15-Dec-2025 20:45:09 UTC] CCP: Creating project with data: Array
+(
+    [user_id] => 2
+    [project_name] => Finca Los Nekos
+    [description] => Proyecto creado en 2025
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP: Project created with ID: 14
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2015
+    [year] => 2015
+    [start_date] => 2015-01-01
+    [end_date] => 2015-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2015
+    [year] => 2015
+    [start_date] => 2015-01-01
+    [end_date] => 2015-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2015
+    [year] => 2015
+    [start_date] => 2015-01-01
+    [end_date] => 2015-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 185
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 185
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 185
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 185
+    [project_id] => 14
+    [campaign_name] => Campaña 2015
+    [year] => 2015
+    [start_date] => 2015-01-01
+    [end_date] => 2015-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 186
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 186
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 186
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 186
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2016
+    [year] => 2016
+    [start_date] => 2016-01-01
+    [end_date] => 2016-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2016
+    [year] => 2016
+    [start_date] => 2016-01-01
+    [end_date] => 2016-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2016
+    [year] => 2016
+    [start_date] => 2016-01-01
+    [end_date] => 2016-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 187
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 187
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 187
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 187
+    [project_id] => 14
+    [campaign_name] => Campaña 2016
+    [year] => 2016
+    [start_date] => 2016-01-01
+    [end_date] => 2016-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2017
+    [year] => 2017
+    [start_date] => 2017-01-01
+    [end_date] => 2017-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2017
+    [year] => 2017
+    [start_date] => 2017-01-01
+    [end_date] => 2017-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2017
+    [year] => 2017
+    [start_date] => 2017-01-01
+    [end_date] => 2017-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 188
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 188
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 188
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 188
+    [project_id] => 14
+    [campaign_name] => Campaña 2017
+    [year] => 2017
+    [start_date] => 2017-01-01
+    [end_date] => 2017-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2018
+    [year] => 2018
+    [start_date] => 2018-01-01
+    [end_date] => 2018-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2018
+    [year] => 2018
+    [start_date] => 2018-01-01
+    [end_date] => 2018-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2018
+    [year] => 2018
+    [start_date] => 2018-01-01
+    [end_date] => 2018-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 189
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 189
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 189
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 189
+    [project_id] => 14
+    [campaign_name] => Campaña 2018
+    [year] => 2018
+    [start_date] => 2018-01-01
+    [end_date] => 2018-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2019
+    [year] => 2019
+    [start_date] => 2019-01-01
+    [end_date] => 2019-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2019
+    [year] => 2019
+    [start_date] => 2019-01-01
+    [end_date] => 2019-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2019
+    [year] => 2019
+    [start_date] => 2019-01-01
+    [end_date] => 2019-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 190
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 190
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 190
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 190
+    [project_id] => 14
+    [campaign_name] => Campaña 2019
+    [year] => 2019
+    [start_date] => 2019-01-01
+    [end_date] => 2019-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2020
+    [year] => 2020
+    [start_date] => 2020-01-01
+    [end_date] => 2020-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2020
+    [year] => 2020
+    [start_date] => 2020-01-01
+    [end_date] => 2020-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2020
+    [year] => 2020
+    [start_date] => 2020-01-01
+    [end_date] => 2020-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 191
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 191
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 191
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 191
+    [project_id] => 14
+    [campaign_name] => Campaña 2020
+    [year] => 2020
+    [start_date] => 2020-01-01
+    [end_date] => 2020-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2021
+    [year] => 2021
+    [start_date] => 2021-01-01
+    [end_date] => 2021-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2021
+    [year] => 2021
+    [start_date] => 2021-01-01
+    [end_date] => 2021-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2021
+    [year] => 2021
+    [start_date] => 2021-01-01
+    [end_date] => 2021-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 192
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 192
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 192
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 192
+    [project_id] => 14
+    [campaign_name] => Campaña 2021
+    [year] => 2021
+    [start_date] => 2021-01-01
+    [end_date] => 2021-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2022
+    [year] => 2022
+    [start_date] => 2022-01-01
+    [end_date] => 2022-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2022
+    [year] => 2022
+    [start_date] => 2022-01-01
+    [end_date] => 2022-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2022
+    [year] => 2022
+    [start_date] => 2022-01-01
+    [end_date] => 2022-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 193
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 193
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 193
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 193
+    [project_id] => 14
+    [campaign_name] => Campaña 2022
+    [year] => 2022
+    [start_date] => 2022-01-01
+    [end_date] => 2022-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2023
+    [year] => 2023
+    [start_date] => 2023-01-01
+    [end_date] => 2023-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2023
+    [year] => 2023
+    [start_date] => 2023-01-01
+    [end_date] => 2023-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2023
+    [year] => 2023
+    [start_date] => 2023-01-01
+    [end_date] => 2023-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 194
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 194
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 194
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 194
+    [project_id] => 14
+    [campaign_name] => Campaña 2023
+    [year] => 2023
+    [start_date] => 2023-01-01
+    [end_date] => 2023-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2024
+    [year] => 2024
+    [start_date] => 2024-01-01
+    [end_date] => 2024-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2024
+    [year] => 2024
+    [start_date] => 2024-01-01
+    [end_date] => 2024-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2024
+    [year] => 2024
+    [start_date] => 2024-01-01
+    [end_date] => 2024-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result: 1 last_error:  insert_id: 195
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 195
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Campaign created with ID: 195
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Retrieved campaign: stdClass Object
+(
+    [id] => 195
+    [project_id] => 14
+    [campaign_name] => Campaña 2024
+    [year] => 2024
+    [start_date] => 2024-01-01
+    [end_date] => 2024-12-31
+    [status] => closed
+    [is_current] => 0
+    [notes] => 
+    [average_price] => 0.00
+    [total_production] => 0.00
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] WordPress database error Duplicate entry '14-2025' for key 'wp_pecan_campaigns.unique_project_year' for query INSERT INTO `wp_pecan_campaigns` (`project_id`, `campaign_name`, `year`, `start_date`, `end_date`, `status`, `is_current`, `notes`, `average_price`, `total_production`, `montes_contribuyentes`, `montes_production`, `created_at`, `updated_at`) VALUES (14, 'Campaña 2025', 2025, '2025-01-01', '2025-12-31', 'open', 1, NULL, 0.000000, 0.000000, NULL, NULL, '2025-12-15 20:45:09', '2025-12-15 20:45:09') made by require('wp-blog-header.php'), wp, WP->main, WP->parse_request, do_action_ref_array('parse_request'), WP_Hook->do_action, WP_Hook->apply_filters, rest_api_loaded, WP_REST_Server->serve_request, WP_REST_Server->dispatch, WP_REST_Server->respond_to_request, CCP_Campaigns_Controller->create_item, CCP_Campaigns_DB->create
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result:  last_error: Duplicate entry '14-2025' for key 'wp_pecan_campaigns.unique_project_year' insert_id: 0
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert failed with error: Duplicate entry '14-2025' for key 'wp_pecan_campaigns.unique_project_year'
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create returned false
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Starting create_item for user 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: Prepared data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Starting create with data: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+)
+ user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Project owner check - project_id: 14 owner: 2 user_id: 2
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert data prepared: Array
+(
+    [project_id] => 14
+    [campaign_name] => Campaña 2025
+    [year] => 2025
+    [start_date] => 2025-01-01
+    [end_date] => 2025-12-31
+    [status] => open
+    [is_current] => 1
+    [notes] => 
+    [average_price] => 0
+    [total_production] => 0
+    [montes_contribuyentes] => 
+    [montes_production] => 
+    [created_at] => 2025-12-15 20:45:09
+    [updated_at] => 2025-12-15 20:45:09
+)
+
+[15-Dec-2025 20:45:09 UTC] WordPress database error Duplicate entry '14-2025' for key 'wp_pecan_campaigns.unique_project_year' for query INSERT INTO `wp_pecan_campaigns` (`project_id`, `campaign_name`, `year`, `start_date`, `end_date`, `status`, `is_current`, `notes`, `average_price`, `total_production`, `montes_contribuyentes`, `montes_production`, `created_at`, `updated_at`) VALUES (14, 'Campaña 2025', 2025, '2025-01-01', '2025-12-31', 'open', 1, NULL, 0.000000, 0.000000, NULL, NULL, '2025-12-15 20:45:09', '2025-12-15 20:45:09') made by require('wp-blog-header.php'), wp, WP->main, WP->parse_request, do_action_ref_array('parse_request'), WP_Hook->do_action, WP_Hook->apply_filters, rest_api_loaded, WP_REST_Server->serve_request, WP_REST_Server->dispatch, WP_REST_Server->respond_to_request, CCP_Campaigns_Controller->create_item, CCP_Campaigns_DB->create
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert result:  last_error: Duplicate entry '14-2025' for key 'wp_pecan_campaigns.unique_project_year' insert_id: 0
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns DB: Insert failed with error: Duplicate entry '14-2025' for key 'wp_pecan_campaigns.unique_project_year'
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create result: 
+[15-Dec-2025 20:45:09 UTC] CCP Campaigns: DB create returned false

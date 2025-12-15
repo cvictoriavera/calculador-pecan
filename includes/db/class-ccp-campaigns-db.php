@@ -135,7 +135,10 @@ class CCP_Campaigns_DB {
 	 * @return int|false The ID of the newly created campaign or false on failure.
 	 */
 	public function create( $data, $user_id ) {
+		error_log( 'CCP Campaigns DB: Starting create with data: ' . print_r( $data, true ) . ' user_id: ' . $user_id );
+
 		if ( empty( $data['project_id'] ) || empty( $data['campaign_name'] ) || empty( $data['year'] ) || empty( $data['start_date'] ) ) {
+			error_log( 'CCP Campaigns DB: Missing required data' );
 			return false;
 		}
 
@@ -144,28 +147,35 @@ class CCP_Campaigns_DB {
 			$this->wpdb->prepare( "SELECT user_id FROM {$this->table_projects} WHERE id = %d", $data['project_id'] )
 		);
 
+		error_log( 'CCP Campaigns DB: Project owner check - project_id: ' . $data['project_id'] . ' owner: ' . $project_owner . ' user_id: ' . $user_id );
+
 		if ( absint( $project_owner ) !== absint( $user_id ) ) {
+			error_log( 'CCP Campaigns DB: User does not own project' );
 			return false; // User does not own the project.
 		}
 
+		$insert_data = array(
+			'project_id'            => absint( $data['project_id'] ),
+			'campaign_name'         => sanitize_text_field( $data['campaign_name'] ),
+			'year'                  => absint( $data['year'] ),
+			'start_date'            => sanitize_text_field( $data['start_date'] ),
+			'end_date'              => isset( $data['end_date'] ) ? sanitize_text_field( $data['end_date'] ) : null,
+			'status'                => isset( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'open',
+			'is_current'            => isset( $data['is_current'] ) ? absint( $data['is_current'] ) : 0,
+			'notes'                 => isset( $data['notes'] ) ? sanitize_textarea_field( $data['notes'] ) : null,
+			'average_price'         => isset( $data['average_price'] ) ? floatval( $data['average_price'] ) : 0.00,
+			'total_production'      => isset( $data['total_production'] ) ? floatval( $data['total_production'] ) : 0.00,
+			'montes_contribuyentes' => isset( $data['montes_contribuyentes'] ) ? sanitize_text_field( $data['montes_contribuyentes'] ) : null,
+			'montes_production'     => isset( $data['montes_production'] ) ? sanitize_text_field( $data['montes_production'] ) : null,
+			'created_at'            => current_time( 'mysql', 1 ),
+			'updated_at'            => current_time( 'mysql', 1 ),
+		);
+
+		error_log( 'CCP Campaigns DB: Insert data prepared: ' . print_r( $insert_data, true ) );
+
 		$result = $this->wpdb->insert(
 			$this->table_campaigns,
-			array(
-				'project_id'            => absint( $data['project_id'] ),
-				'campaign_name'         => sanitize_text_field( $data['campaign_name'] ),
-				'year'                  => absint( $data['year'] ),
-				'start_date'            => sanitize_text_field( $data['start_date'] ),
-				'end_date'              => isset( $data['end_date'] ) ? sanitize_text_field( $data['end_date'] ) : null,
-				'status'                => isset( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'open',
-				'is_current'            => isset( $data['is_current'] ) ? absint( $data['is_current'] ) : 0,
-				'notes'                 => isset( $data['notes'] ) ? sanitize_textarea_field( $data['notes'] ) : null,
-				'average_price'         => isset( $data['average_price'] ) ? floatval( $data['average_price'] ) : 0.00,
-				'total_production'      => isset( $data['total_production'] ) ? floatval( $data['total_production'] ) : 0.00,
-				'montes_contribuyentes' => isset( $data['montes_contribuyentes'] ) ? sanitize_text_field( $data['montes_contribuyentes'] ) : null,
-				'montes_production'     => isset( $data['montes_production'] ) ? sanitize_text_field( $data['montes_production'] ) : null,
-				'created_at'            => current_time( 'mysql', 1 ),
-				'updated_at'            => current_time( 'mysql', 1 ),
-			),
+			$insert_data,
 			array(
 				'%d', // project_id
 				'%s', // campaign_name
@@ -184,7 +194,10 @@ class CCP_Campaigns_DB {
 			)
 		);
 
+		error_log( 'CCP Campaigns DB: Insert result: ' . $result . ' last_error: ' . $this->wpdb->last_error . ' insert_id: ' . $this->wpdb->insert_id );
+
 		if ( false === $result ) {
+			error_log( 'CCP Campaigns DB: Insert failed with error: ' . $this->wpdb->last_error );
 			return false;
 		}
 

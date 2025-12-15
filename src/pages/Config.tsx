@@ -1,10 +1,26 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings, Save } from "lucide-react";
+import { getCurrentUser } from "@/services/userService";
 
 const Config = () => {
+  const [producerName, setProducerName] = useState("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        setProducerName(user.name || "");
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        // Fallback to empty or default
+      }
+    };
+    fetchUser();
+  }, []);
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
@@ -22,22 +38,17 @@ const Config = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nombre-productor">Nombre del Productor</Label>
-            <Input id="nombre-productor" placeholder="Ej: Juan Pérez" defaultValue="Juan Pérez" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="area-total">Área Total de Tierra (hectáreas)</Label>
-            <Input id="area-total" type="number" placeholder="Ej: 250" defaultValue="250" />
+            <Input
+              id="nombre-productor"
+              placeholder="Ej: Juan Pérez"
+              value={producerName}
+              onChange={(e) => setProducerName(e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="año-inicio">Año de Inicio de Registros</Label>
             <Input id="año-inicio" type="number" placeholder="Ej: 2005" defaultValue="2020" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="moneda">Moneda Preferida</Label>
-            <Input id="moneda" placeholder="Ej: USD, ARS" defaultValue="USD" />
           </div>
 
           <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 mt-4">
@@ -47,21 +58,7 @@ const Config = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-foreground">Configuración de Campañas</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="campaña-actual">Campaña Actual</Label>
-            <Input id="campaña-actual" type="number" placeholder="Ej: 2025" defaultValue="2025" />
-          </div>
-
-          <p className="text-sm text-muted-foreground">
-            Esta campaña se seleccionará por defecto al ingresar a la aplicación.
-          </p>
-        </CardContent>
-      </Card>
+     
 
     </div>
   );
