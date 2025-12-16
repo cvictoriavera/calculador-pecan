@@ -5,6 +5,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
+import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
 import { EvolucionProductiva } from "@/components/produccion/EvolucionProductiva";
 import { formatCurrency } from "@/lib/calculations";
 import { useDataStore } from "@/stores/dataStore";
@@ -24,6 +25,8 @@ const Produccion = () => {
   const { currentCampaign, campaigns, currentCampaignId, updateCampaign, montes } = useApp();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
 
   // Get data from stores
   const productions = useDataStore((state) => state.productions);
@@ -38,22 +41,8 @@ const Produccion = () => {
 
   const handleSaveProduccion = async (data: any) => {
     try {
-     
       // Calculate total production
       const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
-    
-
-      // Update campaign in database
-      if (currentCampaignId) {
-       
-        const result = await updateCampaign(currentCampaignId, {
-          average_price: data.precioPromedio,
-          total_production: totalKg,
-        });
-        console.log('Update campaign result:', result);
-      } else {
-        console.log('No currentCampaignId, skipping update');
-      }
 
       // Update local Zustand stores
       // Remove existing records for current campaign
@@ -70,12 +59,23 @@ const Produccion = () => {
         });
       });
 
-      // Prepare montes data
-      const montesContribuyentes = (data as any).produccionPorMonte.filter((p: any) => p.kgRecolectados > 0).map((p: any) => p.monteId);
-      const montesProduction = (data as any).metodo === 'detallado' ? (data as any).produccionPorMonte.reduce((acc: any, p: any) => {
+      // Prepare montes data for DB (IDs de los que aportaron algo)
+      const montesContribuyentes = (data as any).produccionPorMonte
+        .filter((p: any) => p.kgRecolectados > 0)
+        .map((p: any) => p.monteId);
+      
+      // 1. CREAMOS EL DICCIONARIO DE PRODUCCIÓN (ID: Kilos)
+      const produccionDiccionario = (data as any).produccionPorMonte.reduce((acc: any, p: any) => {
         if (p.kgRecolectados > 0) acc[p.monteId] = p.kgRecolectados;
         return acc;
-      }, {}) : null;
+      }, {});
+
+      // 2. CREAMOS EL OBJETO ESTRUCTURADO CON METADATOS
+      // Aquí guardamos el método ("total" o "detallado") para respetarlo al editar
+      const montesProductionJSON = {
+        metodo: data.metodo, 
+        distribucion: produccionDiccionario
+      };
 
       // Update campaign in database
       if (currentCampaignId) {
@@ -83,8 +83,12 @@ const Produccion = () => {
           average_price: data.precioPromedio,
           total_production: totalKg,
           montes_contribuyentes: JSON.stringify(montesContribuyentes),
-          montes_production: montesProduction ? JSON.stringify(montesProduction) : null,
+          // Guardamos la nueva estructura JSON
+          montes_production: JSON.stringify(montesProductionJSON),
         });
+        console.log('Campaign updated with method:', data.metodo);
+      } else {
+         console.log('No currentCampaignId, skipping DB update');
       }
 
       // Update local productionCampaigns
@@ -107,11 +111,14 @@ const Produccion = () => {
 
       setEditingData(null);
       setWizardOpen(false);
+      setEditData(null);
+      setEditOpen(false);
     } catch (error) {
       console.error('Error saving production:', error);
       // TODO: Show error message to user
     }
   };
+
 
   // Prepare chart data
   const chartData = campaigns
@@ -179,34 +186,79 @@ const Produccion = () => {
         {hasProduction ? (
           <div className="flex gap-2">
             <Button
-              onClick={() => {
-                const campana = productionCampaigns.find(pc => pc.year === currentCampaign);
-                const prodByMonte = productions
-                  .filter(p => p.year === currentCampaign)
-                  .reduce((acc, p) => {
-                    acc[p.monteId] = (acc[p.monteId] || 0) + p.kgHarvested;
-                    return acc;
-                  }, {} as Record<string, number>);
-                // Get montes in the same order as in the form
+             onClick={() => {
+                // 1. Obtenemos la campaña y normalizamos datos
+                const campana = campaigns.find(c => Number(c.year) === currentCampaign);
+                const totalProduccionRegistrada = campana?.total_production ? Number(campana.total_production) : 0;
+                
+                let prodByMonte: Record<string, number> = {};
+                let metodoDetectado: "detallado" | "total" = "detallado";
+
+                // 2. ESTRATEGIA DE RECUPERACIÓN DE DATOS
+                
+                // ESCENARIO 1: Existe el JSON detallado (Opción B usada originalmente)
+                if (campana && (campana as any).montes_production) {
+                  try {
+                    const rawData = (campana as any).montes_production;
+                    prodByMonte = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                    metodoDetectado = "detallado";
+                  } catch (e) {
+                    console.error("Error parseando JSON de producción:", e);
+                  }
+                } 
+                // ESCENARIO 2: No hay JSON, pero hay Total y Contribuyentes (Opción A usada originalmente)
+                else if (campana && (campana as any).montes_contribuyentes && totalProduccionRegistrada > 0) {
+                  metodoDetectado = "total"; // Marcamos que fue método total para que el UI lo sepa
+                  try {
+                    // a. Obtenemos los IDs de los montes que participaron
+                    const rawContrib = (campana as any).montes_contribuyentes;
+                    // Normalizamos IDs a string para evitar errores de comparación
+                    const idsContribuyentes: string[] = (typeof rawContrib === 'string' ? JSON.parse(rawContrib) : rawContrib).map(String);
+                    
+                    // b. Buscamos los objetos monte completos para saber sus hectáreas
+                    const montesQueAportaron = montes.filter(m => idsContribuyentes.includes(String(m.id)));
+                    
+                    // c. Calculamos el total de hectáreas de esos montes específicos
+                    const totalHectareas = montesQueAportaron.reduce((sum, m) => sum + m.hectareas, 0);
+                    
+                    // d. Distribuimos proporcionalmente (Regla de tres simple por superficie)
+                    if (totalHectareas > 0) {
+                      const rendimientoPromedio = totalProduccionRegistrada / totalHectareas;
+                      
+                      montesQueAportaron.forEach(m => {
+                        // Producción estimada = Hectáreas * Rendimiento Promedio
+                        prodByMonte[String(m.id)] = Math.round(m.hectareas * rendimientoPromedio);
+                      });
+                    }
+                  } catch (e) {
+                    console.error("Error recalculando distribución proporcional:", e);
+                  }
+                }
+
+                // 3. Preparación final de datos para el Formulario (Hidratación)
                 const montesDisponibles = montes
                   .filter((m) => m.añoPlantacion <= currentCampaign)
                   .map((m) => ({
                     ...m,
-                    edad: currentCampaign - m.añoPlantacion,
+                    edad: Number(currentCampaign) - Number(m.añoPlantacion),
                   }));
+
                 const produccionPorMonte = montesDisponibles.map(monte => ({
                   monteId: monte.id,
                   nombre: monte.nombre,
                   hectareas: monte.hectareas,
                   edad: monte.edad,
-                  kgRecolectados: prodByMonte[monte.id] || 0,
+                  // Aquí es donde la magia ocurre: ya sea que vino del JSON o del recálculo, el dato existe
+                  kgRecolectados: prodByMonte[String(monte.id)] || 0,
                 }));
-                setEditingData({
-                  precioPromedio: campana?.averagePrice || 0,
-                  metodo: "detallado", // Assume detallado for editing
+
+                setEditData({
+                  precioPromedio: campana?.average_price ? Number(campana.average_price) : 0,
+                  metodo: metodoDetectado, // Le pasamos al form el método original
                   produccionPorMonte,
                 });
-                setWizardOpen(true);
+                
+                setEditOpen(true);
               }}
               variant="outline"
               className="gap-2"
@@ -418,6 +470,14 @@ const Produccion = () => {
         onOpenChange={setWizardOpen}
         onSave={handleSaveProduccion}
         editingData={editingData}
+      />
+
+      {/* Edit Modal */}
+      <EditarProduccionForm
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSave={handleSaveProduccion}
+        editingData={editData}
       />
     </div>
   );
