@@ -10,7 +10,7 @@ export interface Monte {
   hectareas: number;
   densidad: number;
   añoPlantacion: number;
-  variedad: string;
+  variedad?: string;
 }
 
 interface Campaign {
@@ -312,7 +312,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         area_hectareas: monte.hectareas,
         plantas_por_hectarea: monte.densidad,
         fecha_plantacion: `${monte.añoPlantacion}-01-01`,
-        variedad: monte.variedad,
       } as Parameters<typeof createMonte>[0];
 
       const createdMonte = await createMonte(monteData);
@@ -341,7 +340,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         area_hectareas: updatedData.hectareas,
         plantas_por_hectarea: updatedData.densidad,
         fecha_plantacion: `${updatedData.añoPlantacion}-01-01`,
-        variedad: updatedData.variedad,
       };
 
       const updatedMonte = await updateMonteAPI(parseInt(id), updateData);

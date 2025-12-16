@@ -31,21 +31,19 @@ export function EditMonteDialog({ monte, open, onOpenChange }: EditMonteDialogPr
   const [hectareas, setHectareas] = useState(monte.hectareas.toString());
   const [densidad, setDensidad] = useState(monte.densidad.toString());
   const [añoPlantacion, setAñoPlantacion] = useState(monte.añoPlantacion.toString());
-  const [variedad, setVariedad] = useState(monte.variedad);
 
   useEffect(() => {
     setNombre(monte.nombre);
     setHectareas(monte.hectareas.toString());
     setDensidad(monte.densidad.toString());
     setAñoPlantacion(monte.añoPlantacion.toString());
-    setVariedad(monte.variedad);
   }, [monte]);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
   const handleSubmit = async () => {
-    if (!nombre || !hectareas || !densidad || !añoPlantacion || !variedad) {
+    if (!nombre || !hectareas || !densidad || !añoPlantacion) {
       toast.error("Por favor completa todos los campos");
       return;
     }
@@ -56,7 +54,6 @@ export function EditMonteDialog({ monte, open, onOpenChange }: EditMonteDialogPr
         hectareas: parseFloat(hectareas),
         densidad: parseFloat(densidad),
         añoPlantacion: parseInt(añoPlantacion),
-        variedad,
       });
 
       toast.success("Monte actualizado exitosamente");
@@ -118,22 +115,6 @@ export function EditMonteDialog({ monte, open, onOpenChange }: EditMonteDialogPr
                     {year}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="variedad">Variedad</Label>
-            <Select value={variedad} onValueChange={setVariedad}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar variedad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Pawnee">Pawnee</SelectItem>
-                <SelectItem value="Wichita">Wichita</SelectItem>
-                <SelectItem value="Western">Western</SelectItem>
-                <SelectItem value="Stuart">Stuart</SelectItem>
-                <SelectItem value="Desirable">Desirable</SelectItem>
-                <SelectItem value="Otras">Otras</SelectItem>
               </SelectContent>
             </Select>
           </div>

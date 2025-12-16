@@ -14,7 +14,7 @@ export interface MonteDB {
   area_hectareas: string;
   plantas_por_hectarea: number;
   fecha_plantacion: string | null;
-  variedad: string;
+  variedad?: string;
   status: string;
   created_at: string;
   updated_at: string;

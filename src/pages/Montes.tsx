@@ -165,10 +165,6 @@ const Montes = () => {
                   Plantación: {monte.añoPlantacion} ({monte.edad} años)
                 </span>
               </div>
-              <div className="pt-2 border-t border-border">
-                <p className="text-sm text-muted-foreground">Variedad</p>
-                <p className="text-base font-semibold text-foreground">{monte.variedad}</p>
-              </div>
             </CardContent>
           </Card>
         ))}

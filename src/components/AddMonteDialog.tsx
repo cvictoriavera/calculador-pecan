@@ -27,7 +27,6 @@ export function AddMonteDialog() {
   const [hectareas, setHectareas] = useState("");
   const [densidad, setDensidad] = useState("");
   const [añoPlantacion, setAñoPlantacion] = useState("");
-  const [variedad, setVariedad] = useState("");
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
@@ -66,7 +65,7 @@ export function AddMonteDialog() {
   };
 
   const handleSubmit = async () => {
-    if (!hectareas || !densidad || !añoPlantacion || !variedad) {
+    if (!hectareas || !densidad || !añoPlantacion) {
       toast.error("Por favor completa todos los campos requeridos");
       return;
     }
@@ -79,7 +78,6 @@ export function AddMonteDialog() {
         hectareas: parseFloat(hectareas),
         densidad: parseFloat(densidad),
         añoPlantacion: parseInt(añoPlantacion),
-        variedad,
       });
 
       toast.success("Monte agregado exitosamente");
@@ -88,7 +86,6 @@ export function AddMonteDialog() {
       setHectareas("");
       setDensidad("");
       setAñoPlantacion("");
-      setVariedad("");
     } catch (error) {
       console.error('Error adding monte:', error);
       toast.error("Error al agregar el monte");
@@ -152,22 +149,6 @@ export function AddMonteDialog() {
                     {year}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="variedad">Variedad *</Label>
-            <Select value={variedad} onValueChange={setVariedad}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar variedad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Pawnee">Pawnee</SelectItem>
-                <SelectItem value="Wichita">Wichita</SelectItem>
-                <SelectItem value="Western">Western</SelectItem>
-                <SelectItem value="Stuart">Stuart</SelectItem>
-                <SelectItem value="Desirable">Desirable</SelectItem>
-                <SelectItem value="Otras">Otras</SelectItem>
               </SelectContent>
             </Select>
           </div>
