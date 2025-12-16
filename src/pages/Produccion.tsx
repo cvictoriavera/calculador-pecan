@@ -200,12 +200,19 @@ const Produccion = () => {
                 if (campana && (campana as any).montes_production) {
                   try {
                     const rawData = (campana as any).montes_production;
-                    prodByMonte = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                    metodoDetectado = "detallado";
+                    let parsedData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                    if (parsedData && typeof parsedData === 'object' && parsedData.metodo) {
+                      metodoDetectado = parsedData.metodo;
+                      prodByMonte = parsedData.distribucion || {};
+                    } else {
+                      // Compatibilidad con datos antiguos sin metodo
+                      metodoDetectado = "detallado";
+                      prodByMonte = parsedData;
+                    }
                   } catch (e) {
                     console.error("Error parseando JSON de producción:", e);
                   }
-                } 
+                }
                 // ESCENARIO 2: No hay JSON, pero hay Total y Contribuyentes (Opción A usada originalmente)
                 else if (campana && (campana as any).montes_contribuyentes && totalProduccionRegistrada > 0) {
                   metodoDetectado = "total"; // Marcamos que fue método total para que el UI lo sepa

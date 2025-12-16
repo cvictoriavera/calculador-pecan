@@ -31,8 +31,11 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
     const data: ProduccionRecord[] = [];
     campaigns.forEach(camp => {
       if (camp.montes_production) {
-        const prod = JSON.parse(camp.montes_production);
-        Object.entries(prod).forEach(([monteId, kg]) => {
+        let prodData = JSON.parse(camp.montes_production);
+        if (prodData && typeof prodData === 'object' && prodData.distribucion) {
+          prodData = prodData.distribucion;
+        }
+        Object.entries(prodData).forEach(([monteId, kg]) => {
           data.push({
             campanaYear: camp.year,
             monteId,

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/contexts/AppContext";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -45,7 +46,7 @@ interface EditarProduccionProps {
 }
 
 export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }: EditarProduccionProps) {
-  const { currentCampaign } = useApp();
+  const { currentCampaign, montes } = useApp();
   const [showJovenes, setShowJovenes] = useState(false);
 
   const {
@@ -70,8 +71,17 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }
     if (editingData) {
       setValue("precioPromedio", editingData.precioPromedio);
       setValue("metodo", editingData.metodo);
-      setValue("pesoTotal", 0);
-      setValue("montesSeleccionados", []);
+      if (editingData.metodo === "total") {
+        const totalKg = editingData.produccionPorMonte.reduce((acc: number, p: any) => acc + (p.kgRecolectados || 0), 0);
+        const montesSeleccionados = editingData.produccionPorMonte
+          .filter((p: any) => p.kgRecolectados > 0)
+          .map((p: any) => p.monteId);
+        setValue("pesoTotal", totalKg);
+        setValue("montesSeleccionados", montesSeleccionados);
+      } else {
+        setValue("pesoTotal", 0);
+        setValue("montesSeleccionados", []);
+      }
       setValue("produccionPorMonte", editingData.produccionPorMonte);
     }
   }, [editingData, setValue]);
@@ -79,18 +89,21 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }
   if (!editingData) return null;
 
   const watchedValues = watch();
+  const watchedMetodo = watch("metodo");
+  const watchedPesoTotal = watch("pesoTotal") || 0;
+  const watchedMontesSeleccionados = watch("montesSeleccionados") || [];
   const watchedProduccionPorMonte = watch("produccionPorMonte") || [];
 
-  // PASO CLAVE: Mapeamos primero para guardar el índice original de cada monte
-  // Esto nos permite saber exactamente qué posición actualizar en el array principal
-  const montesMapeados = watchedProduccionPorMonte.map((monte, index) => ({
-    ...monte,
-    originalIndex: index // <--- Guardamos esto como oro
-  }));
+  // Filter montes that exist in current campaign
+  const montesDisponibles = montes
+    .filter((m) => m.añoPlantacion <= currentCampaign)
+    .map((m) => ({
+      ...m,
+      edad: currentCampaign - m.añoPlantacion,
+    }));
 
-  // Ahora filtramos sobre la lista que ya tiene el índice guardado
-  const montesProductivos = montesMapeados.filter((m) => m.edad >= 7);
-  const montesJovenes = montesMapeados.filter((m) => m.edad < 7);
+  const montesProductivos = montesDisponibles.filter((m) => m.edad >= 7);
+  const montesJovenes = montesDisponibles.filter((m) => m.edad < 7);
 
   // Los cálculos siguen igual, basados en el watch original
   const totalKg = watchedProduccionPorMonte.reduce((acc, p) => acc + (p?.kgRecolectados || 0), 0);
@@ -131,106 +144,212 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }
             )}
           </div>
 
-          {/* Montes Productivos */}
-          {montesProductivos.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                Montes Productivos ({">"}6 años)
-              </h4>
-              <div className="space-y-3">
-                {montesProductivos.map((field) => (
-                  <div
-                    key={field.monteId}
-                    className="flex items-center gap-4 p-3 border rounded-lg bg-card"
+          {/* Ingreso de Producción */}
+          {watchedMetodo === "detallado" ? (
+            <div className="space-y-4">
+              {/* Montes Productivos */}
+              {montesProductivos.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                    Montes Productivos ({">"}6 años)
+                  </h4>
+                  <div className="space-y-3">
+                    {montesProductivos.map((monte) => {
+                      const index = montesDisponibles.findIndex(m => m.id === monte.id);
+                      return (
+                        <div
+                          key={monte.id}
+                          className="flex items-center gap-4 p-3 border rounded-lg bg-card"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-foreground">
+                              {monte.nombre}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {monte.hectareas} ha · {monte.edad} años
+                            </p>
+                          </div>
+                          <div className="w-32">
+                            <Controller
+                              name={`produccionPorMonte.${index}.kgRecolectados`}
+                              control={control}
+                              render={({ field: inputField }) => (
+                                <Input
+                                  type="number"
+                                  placeholder="Kg"
+                                  value={inputField.value || ""}
+                                  onChange={(e) => inputField.onChange(parseFloat(e.target.value) || 0)}
+                                />
+                              )}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Montes Jóvenes - Collapsible */}
+              {montesJovenes.length > 0 && (
+                <div className="border-t pt-4">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full justify-between text-muted-foreground"
+                    onClick={() => setShowJovenes(!showJovenes)}
                   >
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">
-                        {field.nombre}
+                    <span>
+                      Montes en Crecimiento ({montesJovenes.length})
+                    </span>
+                    {showJovenes ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+
+                  {showJovenes && (
+                    <div className="space-y-3 mt-3">
+                      <p className="text-xs text-muted-foreground">
+                        Producción temprana si aplica
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        {field.hectareas} ha · {field.edad} años
-                      </p>
-                    </div>
-                    <div className="w-32">
+                      {montesJovenes.map((monte) => {
+                        const index = montesDisponibles.findIndex(m => m.id === monte.id);
+                        return (
+                          <div
+                            key={monte.id}
+                            className="flex items-center gap-4 p-3 border rounded-lg bg-muted/30"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-foreground">
+                                  {monte.nombre}
+                                </p>
+                                <Badge variant="secondary" className="text-xs">
+                                  Joven
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {monte.hectareas} ha · {monte.edad} años
+                              </p>
+                            </div>
+                            <div className="w-32">
+                              <Controller
+                                name={`produccionPorMonte.${index}.kgRecolectados`}
+                                control={control}
+                                render={({ field: inputField }) => (
+                                  <Input
+                                    type="number"
+                                    placeholder="Kg"
+                                    value={inputField.value || ""}
+                                    onChange={(e) => inputField.onChange(parseFloat(e.target.value) || 0)}
+                                />
+                              )}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+               </div>
+             )}
+           </div>
+         ) : (
+            <div className="space-y-6">
+              <div>
+                <Label>Peso Total Recolectado (Kg)</Label>
+                <Controller
+                  name="pesoTotal"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      type="number"
+                      placeholder="Ingrese el peso total"
+                      value={field.value || ""}
+                      onChange={(e) => {
+                        field.onChange(parseFloat(e.target.value) || 0);
+                        // Distribute weight proportionally
+                        const totalWeight = parseFloat(e.target.value) || 0;
+                        const selectedMontes = montesDisponibles.filter(m => watchedMontesSeleccionados.includes(m.id));
+                        const totalHectareas = selectedMontes.reduce((acc, m) => acc + m.hectareas, 0);
+
+                        if (totalHectareas > 0) {
+                          const newProduccionPorMonte = watchedProduccionPorMonte?.map(p => {
+                            if (watchedMontesSeleccionados.includes(p.monteId)) {
+                              const monte = selectedMontes.find(m => m.id === p.monteId);
+                              const proportion = monte ? monte.hectareas / totalHectareas : 0;
+                              return { ...p, kgRecolectados: Math.round(totalWeight * proportion) };
+                            }
+                            return { ...p, kgRecolectados: 0 };
+                          }) || [];
+                          setValue("produccionPorMonte", newProduccionPorMonte);
+                        }
+                      }}
+                      className="text-lg h-12"
+                    />
+                  )}
+                />
+              </div>
+
+              <div>
+                <Label className="mb-3 block">
+                  ¿Qué montes contribuyeron a esta cosecha?
+                </Label>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {montesDisponibles.map((monte) => (
+                    <div
+                      key={monte.id}
+                      className="flex items-center gap-3 p-3 border rounded-lg"
+                    >
                       <Controller
-                        name={`produccionPorMonte.${field.originalIndex}.kgRecolectados`}
+                        name="montesSeleccionados"
                         control={control}
-                        render={({ field: inputField }) => (
-                          <Input
-                            type="number"
-                            placeholder="Kg"
-                            value={inputField.value || ""}
-                            onChange={(e) => inputField.onChange(parseFloat(e.target.value) || 0)}
+                        render={({ field }) => (
+                          <Checkbox
+                            checked={field.value?.includes(monte.id) || false}
+                            onCheckedChange={(checked) => {
+                              const current = field.value || [];
+                              if (checked) {
+                                field.onChange([...current, monte.id]);
+                              } else {
+                                field.onChange(current.filter(id => id !== monte.id));
+                              }
+                            }}
                           />
                         )}
                       />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Montes Jóvenes - Collapsible */}
-          {montesJovenes.length > 0 && (
-            <div className="border-t pt-4">
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full justify-between text-muted-foreground"
-                onClick={() => setShowJovenes(!showJovenes)}
-              >
-                <span>
-                  Montes en Crecimiento ({montesJovenes.length})
-                </span>
-                {showJovenes ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-
-              {showJovenes && (
-                <div className="space-y-3 mt-3">
-                  <p className="text-xs text-muted-foreground">
-                    Producción temprana si aplica
-                  </p>
-                  {montesJovenes.map((field) => (
-                    <div
-                      key={field.monteId}
-                      className="flex items-center gap-4 p-3 border rounded-lg bg-muted/30"
-                    >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-foreground">
-                            {field.nombre}
+                            {monte.nombre}
                           </p>
-                          <Badge variant="secondary" className="text-xs">
-                            Joven
-                          </Badge>
+                          {monte.edad < 7 && (
+                            <Badge variant="secondary" className="text-xs">
+                              Joven
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {field.hectareas} ha · {field.edad} años
+                          {monte.hectareas} ha · {monte.edad} años
                         </p>
                       </div>
-                      <div className="w-32">
-                        <Controller
-                          name={`produccionPorMonte.${field.originalIndex}.kgRecolectados`}
-                          control={control}
-                          render={({ field: inputField }) => (
-                            <Input
-                              type="number"
-                              placeholder="Kg"
-                              value={inputField.value || ""}
-                              onChange={(e) => inputField.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          )}
-                        />
-                      </div>
+                      {watchedMontesSeleccionados?.includes(monte.id) && watchedPesoTotal > 0 && (
+                        <div className="text-right">
+                          <p className="font-medium text-accent">
+                            {watchedProduccionPorMonte?.find((p) => p?.monteId === monte.id)?.kgRecolectados?.toLocaleString() || 0}{" "}
+                            Kg
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Proporcional
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
           )}
 
