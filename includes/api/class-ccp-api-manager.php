@@ -25,6 +25,7 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-annual-records-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-investments-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-costs-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-yield-models-db.php';
 
 		// Include controller classes
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-projects-controller.php';
@@ -33,6 +34,7 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-annual-records-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-investments-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-costs-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-yield-models-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-users-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-database-controller.php';
 
@@ -54,6 +56,9 @@ class CCP_API_Manager {
 
 		$costs_controller = new CCP_Costs_Controller();
 		$costs_controller->register_routes();
+
+		$yield_models_controller = new CCP_Yield_Models_Controller();
+		$yield_models_controller->register_routes();
 
 		$users_controller = new CCP_Users_Controller();
 		$users_controller->register_routes();

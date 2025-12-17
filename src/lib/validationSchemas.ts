@@ -160,6 +160,17 @@ export const registrarProduccionFormSchema = z.object({
   produccionPorMonte: z.array(produccionPorMonteSchema).min(1, "Debe haber al menos un registro de producción"),
 });
 
+// ============= CURVA DE RENDIMIENTO =============
+export const yieldRowSchema = z.object({
+  age: z.number().int().min(1),
+  yield_kg: z.number().nonnegative("No puede haber producción negativa")
+            .max(200, "Alerta: ¿200kg por planta? Parece excesivo."),
+});
+
+export const yieldCurveFormSchema = z.object({
+  rows: z.array(yieldRowSchema),
+});
+
 // Tipos inferidos
 export type InsumoItemForm = z.infer<typeof insumoItemSchema>;
 export type InsumosFormData = z.infer<typeof insumosFormSchema>;
@@ -172,3 +183,5 @@ export type CosechaFormData = z.infer<typeof cosechaFormSchema>;
 export type EnergiaFormData = z.infer<typeof energiaFormSchema>;
 export type ProduccionPorMonteData = z.infer<typeof produccionPorMonteSchema>;
 export type RegistrarProduccionFormData = z.infer<typeof registrarProduccionFormSchema>;
+export type YieldRowData = z.infer<typeof yieldRowSchema>;
+export type YieldCurveFormData = z.infer<typeof yieldCurveFormSchema>;

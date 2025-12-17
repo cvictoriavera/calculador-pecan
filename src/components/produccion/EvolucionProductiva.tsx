@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Edit } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EditarCurvaRendimientoForm } from "./forms/EditarCurvaRendimientoForm";
+import { type YieldCurveFormData } from "@/lib/validationSchemas";
+import { useApp } from "@/contexts/AppContext";
+import { createYieldModel, updateYieldModel, getYieldModelsByProject } from "@/services/yieldModelService";
 
 interface ProduccionRecord {
   campanaYear: number;
@@ -16,7 +21,9 @@ interface EvolucionProductivaProps {
 }
 
 export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaProps) {
+  const { currentProjectId } = useApp();
   const [expandedMontes, setExpandedMontes] = useState<string[]>([]);
+  const [yieldCurveOpen, setYieldCurveOpen] = useState(false);
 
   const toggleMonte = (monteId: string) => {
     setExpandedMontes((prev) =>
@@ -86,10 +93,60 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
     return year - añoPlantacion;
   };
 
+  const handleSaveYieldCurve = async (data: YieldCurveFormData) => {
+    if (!currentProjectId) {
+      console.error('No current project ID');
+      return;
+    }
+
+    try {
+      // Transform form data to database format
+      const yieldData = data.rows.map(row => ({
+        year: row.age,
+        kg: row.yield_kg
+      }));
+
+      // Check if a yield model already exists for this project
+      const existingModels = await getYieldModelsByProject(currentProjectId);
+      const generalModel = existingModels.find((model: any) => model.variety === 'general');
+
+      if (generalModel) {
+        // Update existing model
+        await updateYieldModel(generalModel.id, {
+          yield_data: JSON.stringify(yieldData)
+        });
+        console.log('Updated existing yield model');
+      } else {
+        // Create new model
+        await createYieldModel({
+          project_id: currentProjectId,
+          variety: 'general',
+          model_name: 'Modelo General',
+          yield_data: JSON.stringify(yieldData),
+          is_active: 1
+        });
+        console.log('Created new yield model');
+      }
+
+      setYieldCurveOpen(false);
+    } catch (error) {
+      console.error('Error saving yield curve:', error);
+      // TODO: Show error message to user
+    }
+  };
+
   return (
     <Card className="border-border/50 shadow-md">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-foreground">Evolución Productiva</CardTitle>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => setYieldCurveOpen(true)}
+        >
+          <Edit className="h-5 w-5" />
+          Editar Curva de Rendimiento
+        </Button>
       </CardHeader>
       <CardContent>
         <ScrollArea className="max-w-full">
@@ -278,6 +335,12 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
           </div>
         )}
       </CardContent>
+
+      <EditarCurvaRendimientoForm
+        open={yieldCurveOpen}
+        onOpenChange={setYieldCurveOpen}
+        onSave={handleSaveYieldCurve}
+      />
     </Card>
   );
 }

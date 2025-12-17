@@ -1,39 +1,60 @@
-Analizando tu código en EditarProduccionForm.tsx y teniendo en cuenta que usas Zustand como fuente de verdad, el problema es casi con seguridad un tema de "Integridad de Datos en la Hidratación".
+1. La Estrategia: "Modelo como Documento"
+En lugar de que tu base de datos sea una hoja de cálculo gigante con miles de filas para cada año de cada árbol, trataremos cada "Curva de Productividad" como un Documento Único.
 
-Tu estructura de código usando useEffect con reset es correcta en teoría, pero falla en la práctica por cómo tu formulario decide qué pintar en pantalla.
+Hoy (MVP): El proyecto tendrá 1 fila llamada "Modelo General".
 
-Aquí están los 3 puntos críticos que debes revisar conceptualmente:
+Futuro (Update): El proyecto tendrá N filas: una fila para "Modelo Mahan", otra fila para "Modelo Western", etc.
 
-1. El problema de los "Datos Planos" vs. "Datos Enriquecidos"
-Este es el error más probable.
+2. Estructura SQL (wp_pecan_yield_models)
+Aquí tienes la definición de la tabla preparada para el futuro. La clave es la columna variety y la columna yield_data (JSON).
 
-Tu lógica visual: Para mostrar los inputs, tu formulario filtra el array produccionPorMonte basándose en la edad del monte (líneas 13 y 14: m.edad >= 7).
+$table_name_models = $wpdb->prefix . 'pecan_yield_models';
 
-El conflicto: Cuando guardas en la base de datos (y luego recuperas vía Zustand), es muy probable que solo estés guardando los datos "transaccionales" (monteId y kgRecolectados).
+$sql_models = "CREATE TABLE $table_name_models (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    
+    project_id BIGINT UNSIGNED NOT NULL,
+    
+    -- PREPARADO PARA EL FUTURO:
+    -- Hoy guardarás 'general' o NULL aquí. 
+    -- Mañana guardarás 'mahan', 'pawnee', etc.
+    variety VARCHAR(50) DEFAULT 'general', 
+    
+    -- Nombre amigable para mostrar en el selector (ej: 'Estándar INTA 2024')
+    model_name VARCHAR(100) NOT NULL,
+    
+    -- EL CORAZÓN DE LA TABLA (JSON):
+    -- Aquí guardas el array completo de los 20 o 30 años.
+    -- Evita tener que hacer 30 inserts/updates.
+    yield_data LONGTEXT NOT NULL, 
+    
+    is_active TINYINT(1) DEFAULT 1,
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_project_variety (project_id, variety),
+    
+    -- Regla: No puedes tener dos modelos con el mismo nombre para la misma variedad en un proyecto
+    UNIQUE KEY unique_model (project_id, variety, model_name),
+    
+    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE
+) $charset_collate;";
 
-El resultado: Si el objeto editingData que le pasas al reset solo tiene { monteId, kgRecolectados } pero le falta { edad, nombre, hectareas }, tus filtros (líneas 13 y 14) fallarán porque edad será undefined. Al no cumplir la condición del filtro, los arrays montesProductivos y montesJovenes quedan vacíos y el formulario no renderiza ningún campo, aunque los datos de los kilos sí existan.
+dbDelta($sql_models);
 
-Solución conceptual: Antes de pasar el objeto a editingData, debes hacer un "merge" (cruce de datos). Debes combinar los datos de producción guardados (Kilos) con tu catálogo maestro de Montes (Nombres y Edades) para que el formulario tenga toda la información necesaria para filtrar y mostrar las etiquetas.
 
-2. La dependencia circular del watch
-En tu código, la UI se dibuja iterando sobre watchedProduccionPorMonte (línea 12).
+3. Estructura del JSON (yield_data)
+Dentro de la columna yield_data, guardarás la curva completa. Esto es lo que tu Frontend (Zustand) enviará y recibirá.
 
-Esto significa que si el reset inicializa el formulario con un array vacío o incompleto, el watch devuelve eso mismo, y el .map de la línea 21 no tiene nada sobre qué iterar.
+Formato del JSON:
 
-A diferencia de un formulario estático donde los inputs "existen" y esperan un valor, aquí los inputs no existen hasta que el array del formulario tenga elementos.
-
-Verificación: Asegúrate de que editingData.produccionPorMonte sea un array que contenga todos los montes (incluso los que tienen 0 kg), porque si solo pasas los que tienen producción, los otros montes desaparecerán de la lista y no podrás editarlos para agregarles valor.
-
-3. La fragilidad del findIndex en el render
-En las líneas 25 y 38 usas: name={produccionPorMonte.${watchedProduccionPorMonte.findIndex(...)}.kgRecolectados}
-
-Esto es arriesgado. Estás calculando el índice "al vuelo" mientras renderizas.
-
-Si por alguna razón el orden de los elementos en editingData es diferente al orden que espera tu lógica original, o si hay duplicados, el findIndex podría apuntar al índice incorrecto.
-
-Aunque esto no suele causar que el formulario aparezca vacío, sí causa que al escribir en el monte "A", el valor aparezca en el monte "B". Es preferible asegurar que el array venga ordenado y usar el index directo del map si estás seguro de la consistencia del orden, o usar useFieldArray para un manejo más robusto de listas dinámicas.
-
-Resumen de acción
-Para que funcione, verifica el paso previo a abrir el modal: El objeto editingData debe tener la estructura completa: [{ monteId: "1", kgRecolectados: 100, nombre: "Norte", edad: 8, hectareas: 10 }, ...]
-
-Si solo le llega: [{ monteId: "1", kgRecolectados: 100 }] El formulario no sabrá que tiene 8 años, el filtro de "Montes Productivos" lo descartará, y no verás nada.
+[
+  { "year": 1, "kg": 0 },
+  { "year": 2, "kg": 0 },
+  { "year": 3, "kg": 0.5 },
+  { "year": 4, "kg": 1.2 },
+  { "year": 5, "kg": 3.0 },
+  ...
+  { "year": 20, "kg": 26.4 }
+]

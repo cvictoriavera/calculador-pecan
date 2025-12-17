@@ -48,7 +48,8 @@ class CCP_Database_Manager {
             $wpdb->prefix . 'pecan_annual_records',
             $wpdb->prefix . 'pecan_montes',
             $wpdb->prefix . 'pecan_campaigns',
-            $wpdb->prefix . 'pecan_projects'
+            $wpdb->prefix . 'pecan_projects',
+            $wpdb->prefix . 'pecan_yield_models'
         ];
 
         foreach ($tables as $table) {
@@ -73,7 +74,8 @@ class CCP_Database_Manager {
             $wpdb->prefix . 'pecan_montes' => 'Montes',
             $wpdb->prefix . 'pecan_annual_records' => 'Registros Anuales',
             $wpdb->prefix . 'pecan_investments' => 'Inversiones',
-            $wpdb->prefix . 'pecan_costs' => 'Costos'
+            $wpdb->prefix . 'pecan_costs' => 'Costos',
+            $wpdb->prefix . 'pecan_yield_models' => 'Modelos de Rendimiento'
         ];
 
         $status = [];
@@ -106,7 +108,8 @@ class CCP_Database_Manager {
             $wpdb->prefix . 'pecan_montes',
             $wpdb->prefix . 'pecan_annual_records',
             $wpdb->prefix . 'pecan_investments',
-            $wpdb->prefix . 'pecan_costs'
+            $wpdb->prefix . 'pecan_costs',
+            $wpdb->prefix . 'pecan_yield_models'
         ];
 
         $all_tables_exist = true;
@@ -275,6 +278,26 @@ class CCP_Database_Manager {
                 ) $charset_collate;";
                 dbDelta($sql_costs);
                 $tables_created[] = 'costs';
+            }
+
+            // Tabla de Modelos de Rendimiento - solo si no existe
+            $table_name_yield_models = $wpdb->prefix . 'pecan_yield_models';
+            if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_yield_models))) {
+                $sql_yield_models = "CREATE TABLE $table_name_yield_models (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    project_id BIGINT UNSIGNED NOT NULL,
+                    variety VARCHAR(50) DEFAULT 'general',
+                    model_name VARCHAR(100) NOT NULL,
+                    yield_data LONGTEXT NOT NULL,
+                    is_active TINYINT(1) DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_project_variety (project_id, variety),
+                    UNIQUE KEY unique_model (project_id, variety, model_name),
+                    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE
+                ) $charset_collate;";
+                dbDelta($sql_yield_models);
+                $tables_created[] = 'yield_models';
             }
 
             // Migrar datos existentes si se crearon nuevas tablas
