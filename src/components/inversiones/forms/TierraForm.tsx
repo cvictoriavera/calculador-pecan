@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,9 @@ interface TierraFormProps {
 }
 
 export default function TierraForm({ onSave, onCancel, initialData }: TierraFormProps) {
-  const [descripcion, setDescripcion] = useState("");
-  const [precio, setPrecio] = useState(0);
-  const [hectareas, setHectareas] = useState(0);
-
-  useEffect(() => {
-    if (initialData) {
-      setDescripcion(initialData.descripcion || "");
-      setPrecio(initialData.precio || 0);
-      setHectareas(initialData.hectareas || 0);
-    }
-  }, [initialData]);
+  const [descripcion, setDescripcion] = useState(() => initialData?.descripcion || "");
+  const [precio, setPrecio] = useState(() => initialData?.precio || 0);
+  const [hectareas, setHectareas] = useState(() => initialData?.hectareas || 0);
 
   const handleSubmit = () => {
     onSave({

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,15 +12,8 @@ interface ImplantacionFormProps {
 }
 
 export default function ImplantacionForm({ onSave, onCancel, initialData }: ImplantacionFormProps) {
-  const [descripcion, setDescripcion] = useState("");
-  const [precio, setPrecio] = useState(0);
-
-  useEffect(() => {
-    if (initialData) {
-      setDescripcion(initialData.descripcion || "");
-      setPrecio(initialData.precio || 0);
-    }
-  }, [initialData]);
+  const [descripcion, setDescripcion] = useState(() => initialData?.descripcion || "");
+  const [precio, setPrecio] = useState(() => initialData?.precio || 0);
 
   const handleSubmit = () => {
     onSave({

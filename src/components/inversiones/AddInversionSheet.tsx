@@ -29,20 +29,14 @@ const categorias = [
   { id: "maquinaria", label: "Máquinas, implementos y herramientas", icon: Cog, color: "bg-warning/10 text-warning" },
 ];
 
-const categoriaLabelToId: Record<string, string> = {
-  "Tierra": "tierra",
-  "Mejoras": "mejoras",
-  "Implantación": "implantacion",
-  "Riego": "riego",
-  "Maquinaria": "maquinaria",
-};
 
 interface InversionRegistro {
-  id: number;
-  año: number;
-  categoria: string;
-  descripcion: string;
-  monto: number;
+  id: string;
+  year: number;
+  category: string;
+  description: string;
+  amount: number;
+  date: Date;
   data?: any;
 }
 
@@ -58,7 +52,7 @@ export default function AddInversionSheet({ open, onOpenChange, onSave, editingI
 
   useEffect(() => {
     if (editingInversion && open) {
-      const categoryId = categoriaLabelToId[editingInversion.categoria];
+      const categoryId = editingInversion.category;
       if (categoryId) {
         setSelectedCategory(categoryId);
       }
