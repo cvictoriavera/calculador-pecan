@@ -323,42 +323,64 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                             )}
                           >
                             {existed ? (
-                              <div className="flex flex-col items-center gap-1">
-                                {produccion !== null ? (
-                                  <>
-                                    <span className="font-medium text-foreground">
-                                      {produccion.toLocaleString()} kg
-                                    </span>
-                                    <div className="flex items-center gap-1 text-xs">
-                                      <span className="text-muted-foreground">
-                                        Est: {yieldData.length > 0 ? estimated.toLocaleString() : 'N/A'} kg
-                                      </span>
-                                    </div>
-                                    {deviation !== null && yieldData.length > 0 && (
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger>
-                                            <div className={cn("flex items-center gap-1 text-xs font-medium", getDeviationColor(deviation))}>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="relative flex flex-col items-center justify-center p-2 min-h-[60px] cursor-help">
+                                      {/* Age indicator in corner */}
+                                      <div className="absolute top-1 right-1 text-xs text-muted-foreground/70 font-medium">
+                                        {calcularEdad(monte.añoPlantacion, year.year)}ª
+                                      </div>
+
+                                      {produccion !== null ? (
+                                        <>
+                                          {/* Main data: Real production (large) */}
+                                          <div className="text-lg font-bold text-foreground">
+                                            {produccion.toLocaleString()} kg
+                                          </div>
+
+                                          {/* Secondary data: Deviation badge */}
+                                          {deviation !== null && yieldData.length > 0 && (
+                                            <div className={cn(
+                                              "px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                                              getDeviationColor(deviation)
+                                            )}>
                                               {getDeviationIcon(deviation)}
                                               {deviation > 0 ? '+' : ''}{deviation.toFixed(1)}%
                                             </div>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <p>Desvío: {deviation > 0 ? 'Superó' : 'Por debajo'} de lo estimado</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    )}
-                                  </>
-                                ) : (
-                                  <div className="flex flex-col items-center gap-1">
-                                    <span className="text-muted-foreground">-</span>
-                                    <div className="text-xs text-muted-foreground">
-                                      Est: {yieldData.length > 0 ? estimated.toLocaleString() : 'N/A'} kg
+                                          )}
+                                        </>
+                                      ) : (
+                                        <>
+                                          {/* Future/estimated data */}
+                                          <div className="text-sm text-blue-600 font-medium">
+                                            {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : 'N/A'}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">(Est.)</div>
+                                        </>
+                                      )}
                                     </div>
-                                  </div>
-                                )}
-                              </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    <div className="space-y-1 text-sm">
+                                      <div className="font-medium">
+                                        Año {year.year} ({calcularEdad(monte.añoPlantacion, year.year)}ª hoja)
+                                      </div>
+                                      {produccion !== null ? (
+                                        <>
+                                          <div>Real: {produccion.toLocaleString()} kg</div>
+                                          <div>Estimado: {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : 'N/A'}</div>
+                                          {deviation !== null && yieldData.length > 0 && (
+                                            <div>Diferencia: {deviation > 0 ? '+' : ''}{(produccion - estimated).toLocaleString()} kg</div>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <div>Estimado: {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : 'N/A'}</div>
+                                      )}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             ) : (
                               <span className="text-muted-foreground/50">-</span>
                             )}
@@ -370,120 +392,46 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                     {/* Expanded Sub-rows */}
                     {isExpanded && (
                       <>
-                        {/* Edad Row */}
+                        {/* Kg/Ha Efficiency Comparison Row */}
                         <tr className="bg-secondary/20 border-b border-border/30">
-                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-1 sm:p-2 text-sm text-muted-foreground border-r border-border">
-                            Edad
-                          </td>
-                          {sortedCampaigns.map((year) => {
-                            const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                            const edad = calcularEdad(monte.añoPlantacion, year.year);
-
-                            return (
-                              <td
-                                key={year.id}
-                                className={cn(
-                                  "text-center p-1 sm:p-2 text-sm",
-                                  !existed && "bg-muted/30"
-                                )}
-                              >
-                                {existed ? (
-                                  <span className="text-muted-foreground">
-                                    {edad} {edad === 1 ? "año" : "años"}
-                                  </span>
-                                ) : (
-                                  <span className="text-muted-foreground/50">-</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-
-                        {/* Producción Real Row */}
-                        <tr className="bg-secondary/20 border-b border-border/30">
-                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-1 sm:p-2 text-sm text-muted-foreground border-r border-border">
-                            Producción Real (Kg)
-                          </td>
-                          {sortedCampaigns.map((year) => {
-                            const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                            const produccion = getProduccion(monte.id, year.year);
-
-                            return (
-                              <td
-                                key={year.id}
-                                className={cn(
-                                  "text-center p-1 sm:p-2 text-sm",
-                                  !existed && "bg-muted/30"
-                                )}
-                              >
-                                {existed ? (
-                                  produccion !== null ? (
-                                    <span className="font-medium text-accent">
-                                      {produccion.toLocaleString()}
-                                    </span>
-                                  ) : (
-                                    <span className="text-muted-foreground">0</span>
-                                  )
-                                ) : (
-                                  <span className="text-muted-foreground/50">-</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-
-                        {/* Producción Estimada Row */}
-                        <tr className="bg-secondary/20 border-b border-border/30">
-                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-1 sm:p-2 text-sm text-muted-foreground border-r border-border">
-                            Producción Estimada (Kg)
-                          </td>
-                          {sortedCampaigns.map((year) => {
-                            const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                            const estimated = existed ? calculateEstimatedProduction(monte, year.year) : 0;
-
-                            return (
-                              <td
-                                key={year.id}
-                                className={cn(
-                                  "text-center p-1 sm:p-2 text-sm",
-                                  !existed && "bg-muted/30"
-                                )}
-                              >
-                                {existed ? (
-                                  <span className="font-medium text-blue-600">
-                                    {yieldData.length > 0 ? estimated.toLocaleString() : 'N/A'}
-                                  </span>
-                                ) : (
-                                  <span className="text-muted-foreground/50">-</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-
-                        {/* Desvío Row */}
-                        <tr className="bg-secondary/20 border-b border-border/30">
-                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-1 sm:p-2 text-sm text-muted-foreground border-r border-border">
-                            Desvío (%)
+                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-3 text-sm text-muted-foreground border-r border-border">
+                            Rendimiento (Kg/Ha)
                           </td>
                           {sortedCampaigns.map((year) => {
                             const existed = monteExistedInYear(monte.añoPlantacion, year.year);
                             const produccion = getProduccion(monte.id, year.year);
                             const estimated = existed ? calculateEstimatedProduction(monte, year.year) : 0;
-                            const deviation = produccion !== null && estimated > 0 ? calculateDeviation(produccion, estimated) : null;
+
+                            const realProductividad = produccion !== null && monte.hectareas > 0
+                              ? Math.round(produccion / monte.hectareas)
+                              : null;
+
+                            const estimatedProductividad = yieldData.length > 0 && monte.hectareas > 0
+                              ? Math.round(estimated / monte.hectareas)
+                              : null;
 
                             return (
                               <td
                                 key={year.id}
                                 className={cn(
-                                  "text-center p-1 sm:p-2 text-sm",
+                                  "text-center p-3",
                                   !existed && "bg-muted/30"
                                 )}
                               >
-                                {existed && deviation !== null && yieldData.length > 0 ? (
-                                  <div className={cn("flex items-center justify-center gap-1 font-medium", getDeviationColor(deviation))}>
-                                    {getDeviationIcon(deviation)}
-                                    {deviation > 0 ? '+' : ''}{deviation.toFixed(1)}%
+                                {existed ? (
+                                  <div className="space-y-1">
+                                    {realProductividad !== null && (
+                                      <div className="text-sm">
+                                        <span className="font-medium text-foreground">
+                                          Real: {realProductividad.toLocaleString()}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {estimatedProductividad !== null && (
+                                      <div className="text-xs text-muted-foreground">
+                                        Est: {estimatedProductividad.toLocaleString()}
+                                      </div>
+                                    )}
                                   </div>
                                 ) : (
                                   <span className="text-muted-foreground/50">-</span>
@@ -493,53 +441,74 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                           })}
                         </tr>
 
-                        {/* Productividad Row */}
-                        <tr className="bg-secondary/20 border-b border-border/50">
-                          <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-1 sm:p-2 text-sm text-muted-foreground border-r border-border">
-                            Productividad (Kg/Ha)
-                          </td>
-                          {sortedCampaigns.map((year) => {
-                            const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                            const produccion = getProduccion(monte.id, year.year);
-                            const productividad =
-                              produccion !== null && monte.hectareas > 0
-                                ? Math.round(produccion / monte.hectareas)
-                                : null;
-
-                            return (
-                              <td
-                                key={year.id}
-                                className={cn(
-                                  "text-center p-2 text-sm",
-                                  !existed && "bg-muted/30"
-                                )}
-                              >
-                                {existed ? (
-                                  productividad !== null ? (
-                                    <span className="font-medium text-primary">
-                                      {productividad.toLocaleString()}
-                                    </span>
-                                  ) : (
-                                    <span className="text-muted-foreground">0</span>
-                                  )
-                                ) : (
-                                  <span className="text-muted-foreground/50">-</span>
-                                )}
+                        {/* Financial Row (Optional) */}
+                        {(() => {
+                          // Check if we have pricing data for any campaign
+                          const hasPricing = campaigns.some(c => c.average_price && parseFloat(c.average_price) > 0);
+                          return hasPricing ? (
+                            <tr className="bg-secondary/20 border-b border-border/50">
+                              <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-3 text-sm text-muted-foreground border-r border-border">
+                                Facturación
                               </td>
-                            );
-                          })}
-                        </tr>
+                              {sortedCampaigns.map((year) => {
+                                const existed = monteExistedInYear(monte.añoPlantacion, year.year);
+                                const produccion = getProduccion(monte.id, year.year);
+                                const estimated = existed ? calculateEstimatedProduction(monte, year.year) : 0;
+                                const campaign = campaigns.find(c => c.year === year.year);
+                                const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
+
+                                const realFacturacion = produccion !== null && precioPromedio > 0
+                                  ? produccion * precioPromedio
+                                  : null;
+
+                                const estimatedFacturacion = yieldData.length > 0 && precioPromedio > 0
+                                  ? estimated * precioPromedio
+                                  : null;
+
+                                return (
+                                  <td
+                                    key={year.id}
+                                    className={cn(
+                                      "text-center p-3",
+                                      !existed && "bg-muted/30"
+                                    )}
+                                  >
+                                    {existed && precioPromedio > 0 ? (
+                                      <div className="space-y-1">
+                                        {realFacturacion !== null && (
+                                          <div className="text-sm">
+                                            <span className="font-medium text-green-600">
+                                              ${realFacturacion.toLocaleString()}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {estimatedFacturacion !== null && (
+                                          <div className="text-xs text-muted-foreground">
+                                            Est: ${estimatedFacturacion.toLocaleString()}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground/50">-</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ) : null;
+                        })()}
                       </>
                     )}
                   </>
                 );
               })}
             </tbody>
-            {/* Totals Row for Billing */}
+            {/* Totals Footer - Two Row Design */}
             <tfoot>
+              {/* Row 1: Total Production (Kg) */}
               <tr className="border-t-2 border-border bg-primary/5">
-                <td className="sticky left-0 z-20 bg-primary/5 p-2 sm:p-3 border-r border-border">
-                  <div className="font-semibold text-foreground">Totales</div>
+                <td className="sticky left-0 z-20 bg-primary/5 p-3 border-r border-border">
+                  <div className="font-semibold text-foreground">∑ Producción</div>
                 </td>
                 {sortedCampaigns.map((year) => {
                   const totalReal = montes.reduce((sum, monte) => {
@@ -555,49 +524,126 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
                   const totalDeviation = totalEstimated > 0 && yieldData.length > 0 ? calculateDeviation(totalReal, totalEstimated) : null;
 
-                  // Get campaign data for pricing
-                  const campaign = campaigns.find(c => c.year === year.year);
-                  const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
-
-                  const facturacionReal = totalReal * precioPromedio;
-                  const facturacionEstimada = totalEstimated * precioPromedio;
-
                   return (
-                    <td key={year.id} className="text-center p-2 sm:p-3">
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="text-sm">
-                          <div className="font-medium text-foreground">
-                            Real: {totalReal.toLocaleString()} kg
-                          </div>
-                          <div className="text-muted-foreground">
-                            Est: {totalEstimated.toLocaleString()} kg
-                          </div>
-                          {totalDeviation !== null && (
-                            <div className={cn("font-medium", getDeviationColor(totalDeviation))}>
-                              {totalDeviation > 0 ? '+' : ''}{totalDeviation.toFixed(1)}%
-                            </div>
-                          )}
-                        </div>
-                        {precioPromedio > 0 && (
-                          <div className="text-xs border-t pt-1 w-full">
-                            <div className="text-green-600">
-                              Fact. Real: ${facturacionReal.toLocaleString()}
-                            </div>
-                            <div className="text-blue-600">
-                              Fact. Est: ${facturacionEstimada.toLocaleString()}
-                            </div>
-                            {facturacionEstimada > facturacionReal && (
-                              <div className="text-red-600 font-medium">
-                                Pérdida: ${(facturacionEstimada - facturacionReal).toLocaleString()}
+                    <td key={year.id} className="text-center p-3">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex flex-col items-center justify-center gap-2 cursor-help">
+                              {/* Main data: Total real production (large) */}
+                              <div className="text-lg font-bold text-foreground">
+                                {totalReal.toLocaleString()} kg
                               </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+
+                              {/* Secondary data: Deviation badge */}
+                              {totalDeviation !== null && (
+                                <div className={cn(
+                                  "px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                                  getDeviationColor(totalDeviation)
+                                )}>
+                                  {getDeviationIcon(totalDeviation)}
+                                  {totalDeviation > 0 ? '+' : ''}{totalDeviation.toFixed(1)}%
+                                </div>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <div className="space-y-1 text-sm">
+                              <div className="font-medium">Total Producción {year.year}</div>
+                              <div>Real: {totalReal.toLocaleString()} kg</div>
+                              <div>Estimado: {yieldData.length > 0 ? `${totalEstimated.toLocaleString()} kg` : 'N/A'}</div>
+                              {totalDeviation !== null && (
+                                <div>Diferencia: {totalDeviation > 0 ? '+' : ''}{(totalReal - totalEstimated).toLocaleString()} kg</div>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </td>
                   );
                 })}
               </tr>
+
+              {/* Row 2: Economic Impact ($) */}
+              {(() => {
+                // Check if we have pricing data for any campaign
+                const hasPricing = campaigns.some(c => c.average_price && parseFloat(c.average_price) > 0);
+                return hasPricing ? (
+                  <tr className="border-t border-border bg-primary/3">
+                    <td className="sticky left-0 z-20 bg-primary/3 p-3 border-r border-border">
+                      <div className="font-semibold text-foreground">∑ Económico</div>
+                    </td>
+                    {sortedCampaigns.map((year) => {
+                      const totalReal = montes.reduce((sum, monte) => {
+                        const existed = monteExistedInYear(monte.añoPlantacion, year.year);
+                        const produccion = getProduccion(monte.id, year.year);
+                        return sum + (existed && produccion ? produccion : 0);
+                      }, 0);
+
+                      const totalEstimated = montes.reduce((sum, monte) => {
+                        const existed = monteExistedInYear(monte.añoPlantacion, year.year);
+                        return sum + (existed ? calculateEstimatedProduction(monte, year.year) : 0);
+                      }, 0);
+
+                      const campaign = campaigns.find(c => c.year === year.year);
+                      const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
+
+                      const facturacionReal = totalReal * precioPromedio;
+                      const facturacionEstimada = totalEstimated * precioPromedio;
+                      const diferenciaEconomica = facturacionEstimada - facturacionReal;
+
+                      // Format currency compactly for large amounts
+                      const formatCurrencyCompact = (amount: number): string => {
+                        if (amount >= 1000000) {
+                          return `$${(amount / 1000000).toFixed(2)} M`;
+                        } else if (amount >= 1000) {
+                          return `$${(amount / 1000).toFixed(0)}k`;
+                        }
+                        return `$${amount.toLocaleString()}`;
+                      };
+
+                      return (
+                        <td key={year.id} className="text-center p-3">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex flex-col items-center justify-center gap-1 cursor-help">
+                                  {/* Main economic data */}
+                                  <div className="text-lg font-bold text-foreground">
+                                    {formatCurrencyCompact(facturacionReal)}
+                                  </div>
+
+                                  {/* Economic difference with semantic colors */}
+                                  {diferenciaEconomica !== 0 && yieldData.length > 0 && (
+                                    <div className={cn(
+                                      "text-sm font-medium",
+                                      diferenciaEconomica > 0 ? "text-red-600" : "text-green-600"
+                                    )}>
+                                      {diferenciaEconomica > 0 ? '-' : '+'}{formatCurrencyCompact(Math.abs(diferenciaEconomica))}
+                                    </div>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1 text-sm">
+                                  <div className="font-medium">Impacto Económico {year.year}</div>
+                                  <div>Facturación Real: ${facturacionReal.toLocaleString()}</div>
+                                  <div>Facturación Estimada: {yieldData.length > 0 ? `$${facturacionEstimada.toLocaleString()}` : 'N/A'}</div>
+                                  {diferenciaEconomica !== 0 && yieldData.length > 0 && (
+                                    <div className={diferenciaEconomica > 0 ? "text-red-600" : "text-green-600"}>
+                                      {diferenciaEconomica > 0 ? 'Pérdida' : 'Ganancia Extra'}: ${Math.abs(diferenciaEconomica).toLocaleString()}
+                                    </div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ) : null;
+              })()}
             </tfoot>
            </table>
          </ScrollArea>

@@ -355,7 +355,7 @@ const Produccion = () => {
         <Card className="border-border/50 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Precio Promedio
+              Precio de Venta
             </CardTitle>
             <TrendingUp className="h-5 w-5 text-accent" />
           </CardHeader>
@@ -370,7 +370,7 @@ const Produccion = () => {
         <Card className="border-border/50 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Facturación Estimada
+              Facturación Real
             </CardTitle>
             <DollarSign className="h-5 w-5 text-accent" />
           </CardHeader>

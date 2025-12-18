@@ -1,118 +1,111 @@
-1. La Estrategia: "Modelo como Documento"
-En lugar de que tu base de datos sea una hoja de cálculo gigante con miles de filas para cada año de cada árbol, trataremos cada "Curva de Productividad" como un Documento Único.
+Limpiar la Celda (El estado "Cerrado")
+Actualmente la celda cerrada tiene 4 líneas de información. Es demasiado. Vamos a reducirlo a Jerarquía Visual.
 
-Hoy (MVP): El proyecto tendrá 1 fila llamada "Modelo General".
+1- Diseño Propuesto para la Celda:
 
-Futuro (Update): El proyecto tendrá N filas: una fila para "Modelo Mahan", otra fila para "Modelo Western", etc.
+Dato Principal (Grande): La Producción Real. Es lo que importa.
 
-2. Estructura SQL (wp_pecan_yield_models)
-Aquí tienes la definición de la tabla preparada para el futuro. La clave es la columna variety y la columna yield_data (JSON).
+Dato Secundario (Semáforo): El % de Desvío.
 
-$table_name_models = $wpdb->prefix . 'pecan_yield_models';
+Dato Terciario (Oculto/Sutil): El Estimado.
 
-$sql_models = "CREATE TABLE $table_name_models (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    
-    project_id BIGINT UNSIGNED NOT NULL,
-    
-    -- PREPARADO PARA EL FUTURO:
-    -- Hoy guardarás 'general' o NULL aquí. 
-    -- Mañana guardarás 'mahan', 'pawnee', etc.
-    variety VARCHAR(50) DEFAULT 'general', 
-    
-    -- Nombre amigable para mostrar en el selector (ej: 'Estándar INTA 2024')
-    model_name VARCHAR(100) NOT NULL,
-    
-    -- EL CORAZÓN DE LA TABLA (JSON):
-    -- Aquí guardas el array completo de los 20 o 30 años.
-    -- Evita tener que hacer 30 inserts/updates.
-    yield_data LONGTEXT NOT NULL, 
-    
-    is_active TINYINT(1) DEFAULT 1,
-    
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    INDEX idx_project_variety (project_id, variety),
-    
-    -- Regla: No puedes tener dos modelos con el mismo nombre para la misma variedad en un proyecto
-    UNIQUE KEY unique_model (project_id, variety, model_name),
-    
-    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE
-) $charset_collate;";
+Cómo se vería:
 
-dbDelta($sql_models);
+Si hay dato Real:
+
+Muestra el número 200.000 grande.
+
+Debajo, la "píldora" (badge con el desvio) 
+
+El estimado NO se muestra en texto. Se infiere por el porcentaje.
+
+Si es Futuro (No hay Real):
+
+Muestra el estimado en color azul/lila (como ya haces): 34.000 (Est).
+
+¿Dónde metemos el detalle? En el Tooltip (Hover). Al pasar el mouse por la celda, muestra una cajita flotante negra con todo el detalle que borraste:
+
+Año 2020 (5ta Hoja)
+Real: 200.000 kg
+Estimado: 34.000 kg
+Diferencia: +166.000 kg
 
 
-3. Estructura del JSON (yield_data)
-Dentro de la columna yield_data, guardarás la curva completa. Esto es lo que tu Frontend (Zustand) enviará y recibirá.
-
-Formato del JSON:
-
-[
-  { "year": 1, "kg": 0 },
-  { "year": 2, "kg": 0 },
-  { "year": 3, "kg": 0.5 },
-  { "year": 4, "kg": 1.2 },
-  { "year": 5, "kg": 3.0 },
-  ...
-  { "year": 20, "kg": 26.4 }
-]
-
-Modificaciones de la tabla Evolución Productiva
-
-Se utilizara un enfoque de "Dato Compuesto". No elijas solo una forma, combina tres niveles de información en la misma celda para que sea útil de un vistazo.
-
-Aquí te presento la mejor forma de mostrar este dato visualmente y la lógica detrás.
-
-Porcentaje de Desvío (Variación)
-Responde: "¿Cuánto me desvié?"
-
-Fórmula: ((Real - Estimado) / Estimado) * 100
-
-Ejemplo: Estimado 1000, Real 800 -> Muestras "-20%" (en rojo).
-
-Lectura: Muy buena para ver pérdidas rápidas.
-
-(Desvío con +/-) coloreada. Es lo que más rápido lee el cerebro: "Estoy 20% arriba" o "Estoy 10% abajo".
 
 
-3. La Lógica del "Semáforo" (Visualización)
-Para que la tabla no sea una sopa de números, usa colores de fondo suaves o colores de texto en el porcentaje basados en reglas de negocio (Logic Gates):
+2- Rediseñar el Desplegable (El estado "Abierto")
+El desplegable actual repite mucha información en filas (Producción Real, Producción Estimada, Desvío). Eso hace la tabla muy alta.
 
-🟢 Verde (Éxito):
+Propuesta: "Mini Cards" o Filas Condensadas
 
-Regla: Real >= 90% del Estimado.
+En lugar de crear una sub-tabla con 5 filas nuevas, usa el espacio expandido para mostrar métricas que no caben en la celda principal, específicamente la Productividad por Hectárea.
 
-Significado: El monte rindió lo esperado o más. Excelente manejo.
+Al abrir el acordeón, muestra solo 2 filas limpias:
 
-🟡 Amarillo (Alerta):
+Fila 1 (Kg/Ha): Aquí comparas la eficiencia.
+"Rendimiento Real: 2.000 kg/ha vs Est: 340 kg/ha".
 
-Regla: Real entre 70% y 89% del Estimado.
+Fila 2 (Financiera - Opcional):
+"Facturación: $5.250 vs $3.000".
 
-Significado: Rendimiento aceptable, pero algo pasó (clima, falta de riego, plaga leve). Hay que investigar.
+Elimina la fila "Edad" del desplegable si implementas el numerito en la esquina de la celda (Punto 1). Es redundante.
 
-🔴 Rojo (Problema):
 
-Regla: Real < 70% del Estimado.
+Resumen de la Propuesta Visual
+Imagina la celda del año 2020 para Montecito Norte así:
++-----------------------+
+| ⁵             (Badge) |  <-- Edad (5ta hoja) discreta en la esquina
+|                       |
+|   200.000 kg          |  <-- Dato Real (Negro, Bold)
+|                       |
+|   [ +488% ]         |  <-- Pill de Desvío (Verde/Rojo)
++-----------------------+
 
-Significado: Fallo grave. El monte no está produciendo lo que su biología dice. Puede haber una enfermedad o un error de manejo crítico.
+Tooltip al pasar el mouse: "Estimado: 34.000 kg | Prod: 2.000 kg/ha".
+Al expandir: Muestras los gráficos o detalles financieros, pero no repites los kilos que ya se ven arriba.
 
-4. Integración con la Facturación (El Bolsillo)
-Mencionaste que calculas la facturación. Aquí aplicas la misma lógica pero con dinero.
 
-Al final de la tabla (o en una fila de "Totales"), cuando sumas la producción de todos los montes, muestras:
 
-Facturación Real: (Kilos Reales Totales * Precio Venta Real).
 
-Facturación Potencial (Lucro Cesante): (Kilos Estimados Totales * Precio Venta Estimado).
+Estrategia: Dividir para la fila de totales 
+En lugar de una fila "Totales" gigante, divide el footer de la tabla en dos filas temáticas. Esto separa visualmente las unidades y facilita el análisis mental.
 
-Esto es poderosísimo. El productor verá: "Facturé $50.000, pero mi monte tenía potencial para $65.000. Dejé de ganar $15.000 por ineficiencias".
+Fila 1: Total Producción (Kg)
 
-IMPLEMENTACIÓN REALIZADA:
-- ✅ Tabla EvolucionProductiva.tsx modificada con datos compuestos
-- ✅ Sistema de semáforo implementado (verde ≥90%, amarillo 70-89%, rojo <70%)
-- ✅ Cálculos de producción estimada usando curva de rendimiento
-- ✅ Fila de totales con facturación real vs potencial
-- ✅ Tooltips explicativos para desvíos
-- ✅ Colores visuales para rápida identificación de problemas
+Sigue la misma estética que ya definimos para las celdas de arriba (Número grande + Píldora de %).
+
+Responde: "¿Llegamos al volumen objetivo?"
+
+Fila 2: Impacto Económico ($)
+
+Se centra exclusivamente en el dinero.
+
+Responde: "¿Cuánto dinero entró y cuánto dejamos sobre la mesa?"
+
+Visualmente se vería así:
+Concepto,2020,...
+∑ Producción,"1.500.000 kg<span style=""background:#f8d7da; color:#721c24; border-radius:10px; padding:2px 6px; font-size:0.8em;"">-0.7%</span>",...
+∑ Económico,**$ 5.250.000**-$ 38.500 (Pérdida)</span>,...
+
+Nota: Fíjate cómo al separar las filas, eliminamos todas las etiquetas "Real", "Est", "Fact". El contexto lo da el título de la fila.
+
+Detalles de UX para los Totales
+Aplica estas reglas:
+
+1. Elimina las Etiquetas Repetitivas
+
+~~Real: 1.500.000 kg~~ -> 1.500.000 (El estilo negrita ya indica que es el Real).
+
+~~Est: 1.511.000 kg~~ -> Ponlo en un Tooltip (al pasar el mouse). El usuario experto compara mentalmente el "Real" contra el "Desvío %" (Pill). No necesita ver el número estimado exacto todo el tiempo.
+
+2. Formato de Moneda Inteligente En tu imagen tienes $ 7.646.400. Es difícil de leer rápido.
+
+Usa formato compacto para millones: $ 7.64 M.
+
+O quita los decimales si no son relevantes en montos grandes.
+
+3. Semántica del Color en el Dinero Para la línea de "Pérdida/Ganancia":
+
+Si es Pérdida (Negativo): Usa Rojo y el signo menos (-$ 38.500).
+Si es Ganancia Extra (Positivo): Usa Verde y el signo más (+$ 12.000).
+La palabra "Pérdida" ocupa mucho espacio. El color rojo y el signo negativo son universales.
