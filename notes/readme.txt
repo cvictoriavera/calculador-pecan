@@ -109,3 +109,46 @@ O quita los decimales si no son relevantes en montos grandes.
 Si es Pérdida (Negativo): Usa Rojo y el signo menos (-$ 38.500).
 Si es Ganancia Extra (Positivo): Usa Verde y el signo más (+$ 12.000).
 La palabra "Pérdida" ocupa mucho espacio. El color rojo y el signo negativo son universales.
+
+
+
+Aquí definimos cómo integrar este Selector de Rango y los estilos visuales para diferenciar el pasado del futuro.
+
+1. El Componente: "Dual Thumb Slider" (Selector de doble tirador)
+No es un selector de fecha común. Necesitas un slider con dos manejadores: uno para el "Desde" y otro para el "Hasta".
+
+Comportamiento UX sugerido:
+
+Ubicación: Justo encima de la tabla, alineado a la derecha o al centro.
+
+Etiquetas Dinámicas: Mientras el usuario arrastra los tiradores, muestra el año en una burbuja encima del dedo/mouse.
+
+Límites (Min/Max):
+
+Mínimo: El año del registro más antiguo (ej: 2010).
+
+Máximo: El año actual + 30 años (ej: 2055).
+
+Snap (Atracción): El slider debe moverse de "año en año" (pasos enteros), no permitir seleccionar "mitad de 2024".
+
+Estado Inicial (Default): Al entrar, el rango debería ser algo manejable, por ejemplo: [Año Actual - 5] a [Año Actual + 5]. Así el usuario ve contexto inmediato sin ver los 40 años de historia de golpe.
+
+2. Tratamiento Visual: La Frontera del "Hoy"
+Ya que el slider permite mezclar pasado y futuro en la misma vista, la tabla debe "gritar" visualmente qué columnas son simulaciones.
+
+Propongo un sistema de "Zonas Visuales" basado en el año calendario:
+
+A. Zona Histórica (Hasta 2025)
+
+Datos: Muestra Real y Desvío.
+Sensación: "Dato Duro".
+
+B. La Frontera (El Divisor)
+Entre la columna 2025 (año/campaña actual) y 2026(proxima campaña), el borde vertical debe ser doble o de un color acentuado (ej: dorado border-r-2 border-yellow-500). Esto marca el "Ahora".
+
+C. Zona Futura (2026 en adelante)
+
+Fondo de Columna: Un patrón sutil (rayado diagonal muy suave) o un color de fondo sólido muy tenue (ej: bg-blue-50/30).
+Encabezados: Agrega un pequeño ícono junto al año, como una varita mágica 🪄 o un gráfico 📈, para indicar "Proyección".
+Opacidad: Los textos pueden tener una opacidad leve (ej: text-gray-600) para que no compitan en peso visual con los datos reales.
+Datos: Muestra solo el valor Estimado (tu valor azul/lila).

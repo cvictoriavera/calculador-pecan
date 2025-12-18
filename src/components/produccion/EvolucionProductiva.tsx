@@ -2,13 +2,14 @@ import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronDown, ChevronRight, Edit, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ChevronDown, ChevronRight, Edit, TrendingUp, TrendingDown, Minus, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditarCurvaRendimientoForm } from "./forms/EditarCurvaRendimientoForm";
 import { type YieldCurveFormData } from "@/lib/validationSchemas";
 import { useApp } from "@/contexts/AppContext";
 import { createYieldModel, updateYieldModel, getYieldModelsByProject } from "@/services/yieldModelService";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
 
 interface ProduccionRecord {
   campanaYear: number;
@@ -22,11 +23,18 @@ interface EvolucionProductivaProps {
 }
 
 export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaProps) {
+
   const { currentProjectId } = useApp();
   const [expandedMontes, setExpandedMontes] = useState<string[]>([]);
   const [yieldCurveOpen, setYieldCurveOpen] = useState(false);
   const [yieldData, setYieldData] = useState<Array<{year: number, kg: number}>>([]);
   const [editingYieldData, setEditingYieldData] = useState<YieldCurveFormData | undefined>(undefined);
+
+  // Year range state - initialized with calculated default range
+  const [yearRange, setYearRange] = useState<[number, number]>(() => {
+    const currentYear = new Date().getFullYear();
+    return [Math.max(2015, currentYear - 5), Math.min(2055, currentYear + 5)];
+  });
 
   // Fetch yield model on component mount and when project changes
   useEffect(() => {
@@ -35,10 +43,8 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
       try {
         const models = await getYieldModelsByProject(currentProjectId);
-        console.log('Yield models found:', models.length, 'models');
 
         const generalModel = models.find((model: any) => model.variety === 'general' && model.is_active == 1);
-        console.log('General model found:', !!generalModel);
 
         if (generalModel) {
           const parsedData = JSON.parse(generalModel.yield_data);
@@ -65,6 +71,36 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
     fetchYieldModel();
   }, [currentProjectId]);
 
+  // Calculate dynamic year range based on montes
+  const yearRangeLimits = useMemo(() => {
+    if (montes.length === 0) return { min: 2020, max: 2030 };
+
+    const currentYear = new Date().getFullYear();
+
+    // Find the oldest planting year
+    const oldestPlantingYear = Math.min(...montes.map((monte: any) => monte.añoPlantacion));
+
+    // Calculate max projection year (oldest monte + max curve years or current + 30)
+    const maxProjectionFromMontes = oldestPlantingYear + (yieldData.length > 0 ? yieldData[yieldData.length - 1].year : 30);
+    const maxProjectionFromCurrent = currentYear + 30;
+    const maxYear = Math.max(maxProjectionFromMontes, maxProjectionFromCurrent);
+
+    return {
+      min: oldestPlantingYear,
+      max: maxYear
+    };
+  }, [montes, yieldData]);
+
+  // Calculate displayed years based on selected range
+  const displayedYears = useMemo(() => {
+    const years = [];
+    for (let year = yearRange[0]; year <= yearRange[1]; year++) {
+      years.push(year);
+    }
+    console.log('displayedYears:', years);
+    return years;
+  }, [yearRange]);
+
   const toggleMonte = (monteId: string) => {
     setExpandedMontes((prev) =>
       prev.includes(monteId)
@@ -75,6 +111,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
   // Compute produccionData from campaigns
   const produccionData = useMemo(() => {
+    console.log('Computing produccionData from campaigns:', campaigns.length, 'campaigns');
     const data: ProduccionRecord[] = [];
     campaigns.forEach(camp => {
       if (camp.montes_production) {
@@ -84,7 +121,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
         }
         Object.entries(prodData).forEach(([monteId, kg]) => {
           data.push({
-            campanaYear: camp.year,
+            campanaYear: Number(camp.year),
             monteId,
             kgRecolectados: kg as number,
           });
@@ -101,7 +138,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
           if (monte && totalArea > 0) {
             const kg = totalProd * (monte.hectareas / totalArea);
             data.push({
-              campanaYear: camp.year,
+              campanaYear: Number(camp.year),
               monteId: id,
               kgRecolectados: kg,
             });
@@ -112,8 +149,10 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
     return data;
   }, [campaigns, montes]);
 
-  // Sort campaigns chronologically
-  const sortedCampaigns = useMemo(() => [...campaigns].sort((a, b) => a.year - b.year), [campaigns]);
+  // Campaigns are used for getting production data and pricing
+
+  // Get current year for visual differentiation
+  const currentYear = new Date().getFullYear();
 
   // Get production for a specific monte and year
   const getProduccion = (monteId: string, year: number): number | null => {
@@ -266,6 +305,33 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
         </div>
       </CardHeader>
       <CardContent>
+        {/* Year Range Selector */}
+        <div className="mb-6 p-4 bg-secondary/20 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Rango de Años</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {yearRange[0]} - {yearRange[1]}
+            </div>
+          </div>
+          <div className="px-2">
+            <Slider
+              value={yearRange}
+              onValueChange={(value) => setYearRange(value as [number, number])}
+              min={yearRangeLimits.min}
+              max={yearRangeLimits.max}
+              step={1}
+              className="w-full"
+            />
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground mt-1 px-2">
+            <span>{yearRangeLimits.min}</span>
+            <span>{yearRangeLimits.max}</span>
+          </div>
+        </div>
+
         <ScrollArea className="max-w-full">
           <table className="w-full border-collapse">
             <thead>
@@ -273,14 +339,33 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                 <th className="sticky left-0 z-20 bg-card text-left p-2 sm:p-3 text-sm font-semibold text-muted-foreground border-r border-border">
                   Monte
                 </th>
-                {sortedCampaigns.map((year) => (
-                  <th
-                    key={year.id}
-                    className="text-center p-2 sm:p-3 text-sm font-semibold text-muted-foreground"
-                  >
-                    {year.year}
-                  </th>
-                ))}
+                {displayedYears.map((year, index) => {
+                  const isHistorical = year <= currentYear;
+                  const isFuture = year > currentYear;
+                  const isCurrentYear = year === currentYear;
+                  const nextYear = displayedYears[index + 1];
+
+                  return (
+                    <th
+                      key={year}
+                      className={cn(
+                        "text-center p-2 sm:p-3 text-sm font-semibold relative",
+                        isHistorical && "bg-slate-50/50",
+                        isFuture && "bg-blue-50/30 text-blue-700",
+                        isCurrentYear && "border-r-2 border-yellow-500"
+                      )}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>{year}</span>
+                        {isFuture && <BarChart3 className="h-3 w-3 text-blue-500" />}
+                      </div>
+                      {/* Visual divider between current year and next year */}
+                      {isCurrentYear && nextYear && (
+                        <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -308,18 +393,20 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                           </span>
                         </div>
                       </td>
-                      {sortedCampaigns.map((year) => {
-                        const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                        const produccion = getProduccion(monte.id, year.year);
-                        const estimated = existed ? calculateEstimatedProduction(monte, year.year) : 0;
+                      {displayedYears.map((year) => {
+                        const existed = monteExistedInYear(monte.añoPlantacion, year);
+                        const produccion = getProduccion(monte.id, year);
+                        const estimated = existed ? calculateEstimatedProduction(monte, year) : 0;
                         const deviation = produccion !== null && estimated > 0 ? calculateDeviation(produccion, estimated) : null;
+                        const isFuture = year > currentYear;
 
                         return (
                           <td
-                            key={year.id}
+                            key={year}
                             className={cn(
                               "text-center p-2 sm:p-3 text-sm",
-                              !existed && "bg-muted/30"
+                              !existed && "bg-muted/30",
+                              isFuture && "bg-blue-50/20"
                             )}
                           >
                             {existed ? (
@@ -329,7 +416,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                     <div className="relative flex flex-col items-center justify-center p-2 min-h-[60px] cursor-help">
                                       {/* Age indicator in corner */}
                                       <div className="absolute top-1 right-1 text-xs text-muted-foreground/70 font-medium">
-                                        {calcularEdad(monte.añoPlantacion, year.year)}ª
+                                        {calcularEdad(monte.añoPlantacion, year)}ª
                                       </div>
 
                                       {produccion !== null ? (
@@ -364,7 +451,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                   <TooltipContent className="max-w-xs">
                                     <div className="space-y-1 text-sm">
                                       <div className="font-medium">
-                                        Año {year.year} ({calcularEdad(monte.añoPlantacion, year.year)}ª hoja)
+                                        Año {year} ({calcularEdad(monte.añoPlantacion, year)}ª hoja)
                                       </div>
                                       {produccion !== null ? (
                                         <>
@@ -397,10 +484,11 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                           <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-3 text-sm text-muted-foreground border-r border-border">
                             Rendimiento (Kg/Ha)
                           </td>
-                          {sortedCampaigns.map((year) => {
-                            const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                            const produccion = getProduccion(monte.id, year.year);
-                            const estimated = existed ? calculateEstimatedProduction(monte, year.year) : 0;
+                          {displayedYears.map((year) => {
+                            const existed = monteExistedInYear(monte.añoPlantacion, year);
+                            const produccion = getProduccion(monte.id, year);
+                            const estimated = existed ? calculateEstimatedProduction(monte, year) : 0;
+                            const isFuture = year > currentYear;
 
                             const realProductividad = produccion !== null && monte.hectareas > 0
                               ? Math.round(produccion / monte.hectareas)
@@ -412,10 +500,11 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
                             return (
                               <td
-                                key={year.id}
+                                key={year}
                                 className={cn(
                                   "text-center p-3",
-                                  !existed && "bg-muted/30"
+                                  !existed && "bg-muted/30",
+                                  isFuture && "bg-blue-50/20"
                                 )}
                               >
                                 {existed ? (
@@ -450,12 +539,13 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                               <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-3 text-sm text-muted-foreground border-r border-border">
                                 Facturación
                               </td>
-                              {sortedCampaigns.map((year) => {
-                                const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                                const produccion = getProduccion(monte.id, year.year);
-                                const estimated = existed ? calculateEstimatedProduction(monte, year.year) : 0;
-                                const campaign = campaigns.find(c => c.year === year.year);
+                              {displayedYears.map((year) => {
+                                const existed = monteExistedInYear(monte.añoPlantacion, year);
+                                const produccion = getProduccion(monte.id, year);
+                                const estimated = existed ? calculateEstimatedProduction(monte, year) : 0;
+                                const campaign = campaigns.find(c => c.year === year);
                                 const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
+                                const isFuture = year > currentYear;
 
                                 const realFacturacion = produccion !== null && precioPromedio > 0
                                   ? produccion * precioPromedio
@@ -467,10 +557,11 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
                                 return (
                                   <td
-                                    key={year.id}
+                                    key={year}
                                     className={cn(
                                       "text-center p-3",
-                                      !existed && "bg-muted/30"
+                                      !existed && "bg-muted/30",
+                                      isFuture && "bg-blue-50/20"
                                     )}
                                   >
                                     {existed && precioPromedio > 0 ? (
@@ -510,22 +601,23 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                 <td className="sticky left-0 z-20 bg-primary/5 p-3 border-r border-border">
                   <div className="font-semibold text-foreground">∑ Producción</div>
                 </td>
-                {sortedCampaigns.map((year) => {
+                {displayedYears.map((year) => {
                   const totalReal = montes.reduce((sum, monte) => {
-                    const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                    const produccion = getProduccion(monte.id, year.year);
+                    const existed = monteExistedInYear(monte.añoPlantacion, year);
+                    const produccion = getProduccion(monte.id, year);
                     return sum + (existed && produccion ? produccion : 0);
                   }, 0);
 
                   const totalEstimated = montes.reduce((sum, monte) => {
-                    const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                    return sum + (existed ? calculateEstimatedProduction(monte, year.year) : 0);
+                    const existed = monteExistedInYear(monte.añoPlantacion, year);
+                    return sum + (existed ? calculateEstimatedProduction(monte, year) : 0);
                   }, 0);
 
                   const totalDeviation = totalEstimated > 0 && yieldData.length > 0 ? calculateDeviation(totalReal, totalEstimated) : null;
+                  const isFuture = year > currentYear;
 
                   return (
-                    <td key={year.id} className="text-center p-3">
+                    <td key={year} className={cn("text-center p-3", isFuture && "bg-blue-50/20")}>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -549,7 +641,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <div className="space-y-1 text-sm">
-                              <div className="font-medium">Total Producción {year.year}</div>
+                              <div className="font-medium">Total Producción {year}</div>
                               <div>Real: {totalReal.toLocaleString()} kg</div>
                               <div>Estimado: {yieldData.length > 0 ? `${totalEstimated.toLocaleString()} kg` : 'N/A'}</div>
                               {totalDeviation !== null && (
@@ -573,24 +665,25 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                     <td className="sticky left-0 z-20 bg-primary/3 p-3 border-r border-border">
                       <div className="font-semibold text-foreground">∑ Económico</div>
                     </td>
-                    {sortedCampaigns.map((year) => {
+                    {displayedYears.map((year) => {
                       const totalReal = montes.reduce((sum, monte) => {
-                        const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                        const produccion = getProduccion(monte.id, year.year);
+                        const existed = monteExistedInYear(monte.añoPlantacion, year);
+                        const produccion = getProduccion(monte.id, year);
                         return sum + (existed && produccion ? produccion : 0);
                       }, 0);
 
                       const totalEstimated = montes.reduce((sum, monte) => {
-                        const existed = monteExistedInYear(monte.añoPlantacion, year.year);
-                        return sum + (existed ? calculateEstimatedProduction(monte, year.year) : 0);
+                        const existed = monteExistedInYear(monte.añoPlantacion, year);
+                        return sum + (existed ? calculateEstimatedProduction(monte, year) : 0);
                       }, 0);
 
-                      const campaign = campaigns.find(c => c.year === year.year);
+                      const campaign = campaigns.find(c => c.year === year);
                       const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
 
                       const facturacionReal = totalReal * precioPromedio;
                       const facturacionEstimada = totalEstimated * precioPromedio;
                       const diferenciaEconomica = facturacionEstimada - facturacionReal;
+                      const isFuture = year > currentYear;
 
                       // Format currency compactly for large amounts
                       const formatCurrencyCompact = (amount: number): string => {
@@ -603,7 +696,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                       };
 
                       return (
-                        <td key={year.id} className="text-center p-3">
+                        <td key={year} className={cn("text-center p-3", isFuture && "bg-blue-50/20")}>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -626,7 +719,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
                                 <div className="space-y-1 text-sm">
-                                  <div className="font-medium">Impacto Económico {year.year}</div>
+                                  <div className="font-medium">Impacto Económico {year}</div>
                                   <div>Facturación Real: ${facturacionReal.toLocaleString()}</div>
                                   <div>Facturación Estimada: {yieldData.length > 0 ? `$${facturacionEstimada.toLocaleString()}` : 'N/A'}</div>
                                   {diferenciaEconomica !== 0 && yieldData.length > 0 && (
