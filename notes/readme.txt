@@ -58,3 +58,61 @@ Formato del JSON:
   ...
   { "year": 20, "kg": 26.4 }
 ]
+
+Modificaciones de la tabla Evolución Productiva
+
+Se utilizara un enfoque de "Dato Compuesto". No elijas solo una forma, combina tres niveles de información en la misma celda para que sea útil de un vistazo.
+
+Aquí te presento la mejor forma de mostrar este dato visualmente y la lógica detrás.
+
+Porcentaje de Desvío (Variación)
+Responde: "¿Cuánto me desvié?"
+
+Fórmula: ((Real - Estimado) / Estimado) * 100
+
+Ejemplo: Estimado 1000, Real 800 -> Muestras "-20%" (en rojo).
+
+Lectura: Muy buena para ver pérdidas rápidas.
+
+(Desvío con +/-) coloreada. Es lo que más rápido lee el cerebro: "Estoy 20% arriba" o "Estoy 10% abajo".
+
+
+3. La Lógica del "Semáforo" (Visualización)
+Para que la tabla no sea una sopa de números, usa colores de fondo suaves o colores de texto en el porcentaje basados en reglas de negocio (Logic Gates):
+
+🟢 Verde (Éxito):
+
+Regla: Real >= 90% del Estimado.
+
+Significado: El monte rindió lo esperado o más. Excelente manejo.
+
+🟡 Amarillo (Alerta):
+
+Regla: Real entre 70% y 89% del Estimado.
+
+Significado: Rendimiento aceptable, pero algo pasó (clima, falta de riego, plaga leve). Hay que investigar.
+
+🔴 Rojo (Problema):
+
+Regla: Real < 70% del Estimado.
+
+Significado: Fallo grave. El monte no está produciendo lo que su biología dice. Puede haber una enfermedad o un error de manejo crítico.
+
+4. Integración con la Facturación (El Bolsillo)
+Mencionaste que calculas la facturación. Aquí aplicas la misma lógica pero con dinero.
+
+Al final de la tabla (o en una fila de "Totales"), cuando sumas la producción de todos los montes, muestras:
+
+Facturación Real: (Kilos Reales Totales * Precio Venta Real).
+
+Facturación Potencial (Lucro Cesante): (Kilos Estimados Totales * Precio Venta Estimado).
+
+Esto es poderosísimo. El productor verá: "Facturé $50.000, pero mi monte tenía potencial para $65.000. Dejé de ganar $15.000 por ineficiencias".
+
+IMPLEMENTACIÓN REALIZADA:
+- ✅ Tabla EvolucionProductiva.tsx modificada con datos compuestos
+- ✅ Sistema de semáforo implementado (verde ≥90%, amarillo 70-89%, rojo <70%)
+- ✅ Cálculos de producción estimada usando curva de rendimiento
+- ✅ Fila de totales con facturación real vs potencial
+- ✅ Tooltips explicativos para desvíos
+- ✅ Colores visuales para rápida identificación de problemas
