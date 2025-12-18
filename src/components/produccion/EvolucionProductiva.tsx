@@ -26,6 +26,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
   const [expandedMontes, setExpandedMontes] = useState<string[]>([]);
   const [yieldCurveOpen, setYieldCurveOpen] = useState(false);
   const [yieldData, setYieldData] = useState<Array<{year: number, kg: number}>>([]);
+  const [editingYieldData, setEditingYieldData] = useState<YieldCurveFormData | undefined>(undefined);
 
   // Fetch yield model on component mount and when project changes
   useEffect(() => {
@@ -42,8 +43,18 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
         if (generalModel) {
           const parsedData = JSON.parse(generalModel.yield_data);
           setYieldData(parsedData);
+
+          // Prepare editing data for the form
+          const formData: YieldCurveFormData = {
+            rows: parsedData.map((item: {year: number, kg: number}) => ({
+              age: item.year,
+              yield_kg: item.kg
+            }))
+          };
+          setEditingYieldData(formData);
         } else {
           setYieldData([]);
+          setEditingYieldData(undefined);
         }
       } catch (error) {
         console.error('Error fetching yield model:', error);
@@ -602,6 +613,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
         open={yieldCurveOpen}
         onOpenChange={setYieldCurveOpen}
         onSave={handleSaveYieldCurve}
+        editingData={editingYieldData}
       />
     </Card>
   );
