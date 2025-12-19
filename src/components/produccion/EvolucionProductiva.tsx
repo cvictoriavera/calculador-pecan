@@ -10,6 +10,7 @@ import { useApp } from "@/contexts/AppContext";
 import { createYieldModel, updateYieldModel, getYieldModelsByProject } from "@/services/yieldModelService";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface ProduccionRecord {
   campanaYear: number;
@@ -44,6 +45,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
   // Users can expand individual montes as needed
   const [yieldData, setYieldData] = useState<Array<{year: number, kg: number}>>([]);
   const [editingYieldData, setEditingYieldData] = useState<YieldCurveFormData | undefined>(undefined);
+  const [projectedPrice, setProjectedPrice] = useState(3.50);
 
   // Year range state - initialized with calculated default range
   const [yearRange, setYearRange] = useState<[number, number]>(() => {
@@ -301,22 +303,39 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
   return (
     <Card className="border-border/50 shadow-md">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-foreground">Evolución Productiva</CardTitle>
-        <div className="flex items-center gap-2">
-          {yieldData.length === 0 && (
-            <span className="text-sm text-amber-600 font-medium">
-              ⚠️ Configure la curva de rendimiento para ver estimaciones
-            </span>
-          )}
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => setYieldCurveOpen(true)}
-          >
-            <Edit className="h-5 w-5" />
-            Editar Curva de Rendimiento
-          </Button>
+      <CardHeader>
+        <div className="flex items-center w-full">
+          <div className="flex-1">
+            <CardTitle className="text-foreground">Evolución Productiva</CardTitle>
+          </div>
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Precio de Venta Proyectado:</label>
+              <CurrencyInput
+                value={projectedPrice}
+                onChange={setProjectedPrice}
+                className="w-24"
+              />
+              <span className="text-sm text-muted-foreground">USD/kg</span>
+            </div>
+          </div>
+          <div className="flex-1 flex justify-end">
+            <div className="flex items-center gap-2">
+              {yieldData.length === 0 && (
+                <span className="text-sm text-amber-600 font-medium">
+                  ⚠️ Configure la curva de rendimiento para ver estimaciones
+                </span>
+              )}
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setYieldCurveOpen(true)}
+              >
+                <Edit className="h-5 w-5" />
+                Editar Curva de Rendimiento
+              </Button>
+            </div>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -433,21 +452,21 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                   <TooltipTrigger asChild>
                                     <div className="relative flex flex-col items-center justify-center p-2 min-h-[60px] cursor-help">
                                       {/* Age indicator in corner */}
-                                      <div className="absolute top-1 right-1 text-xs text-muted-foreground/70 font-medium">
-                                        {calcularEdad(monte.añoPlantacion, year)}ª
+                                      <div className="absolute top-2 right-2 text-xs text-white font-medium bg-green-500 rounded-full px-1">
+                                        {calcularEdad(monte.añoPlantacion, year)}°
                                       </div>
 
                                       {produccion !== null ? (
                                         <>
                                           {/* Main data: Real production (large) */}
-                                          <div className="text-lg font-bold text-foreground">
+                                          <div className="text-lg font-bold text-foreground p">
                                             {produccion.toLocaleString()} kg
                                           </div>
 
                                           {/* Secondary data: Deviation badge */}
                                           {deviation !== null && yieldData.length > 0 && (
                                             <div className={cn(
-                                              "px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                                              "px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 mt-1",
                                               getDeviationColor(deviation)
                                             )}>
                                               {getDeviationIcon(deviation)}
@@ -459,7 +478,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                         <>
                                           {/* Future/estimated data */}
                                           <div className="text-sm text-blue-600 font-medium">
-                                            {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : 'N/A'}
+                                            {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : '0'}
                                           </div>
                                           <div className="text-xs text-muted-foreground">(Est.)</div>
                                         </>
@@ -469,18 +488,18 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                   <TooltipContent className="max-w-xs">
                                     <div className="space-y-1 text-sm">
                                       <div className="font-medium">
-                                        Año {year} ({calcularEdad(monte.añoPlantacion, year)}ª hoja)
+                                        Año {year} ({calcularEdad(monte.añoPlantacion, year)}° año)
                                       </div>
                                       {produccion !== null ? (
                                         <>
                                           <div>Real: {produccion.toLocaleString()} kg</div>
-                                          <div>Estimado: {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : 'N/A'}</div>
+                                          <div>Estimado: {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : '0'}</div>
                                           {deviation !== null && yieldData.length > 0 && (
                                             <div>Diferencia: {deviation > 0 ? '+' : ''}{(produccion - estimated).toLocaleString()} kg</div>
                                           )}
                                         </>
                                       ) : (
-                                        <div>Estimado: {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : 'N/A'}</div>
+                                        <div>Estimado: {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : '0'}</div>
                                       )}
                                     </div>
                                   </TooltipContent>
@@ -564,9 +583,9 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                 const existed = monteExistedInYear(monte.añoPlantacion, year);
                                 const produccion = getProduccion(monte.id, year);
                                 const estimated = existed ? calculateEstimatedProduction(monte, year) : 0;
-                                const campaign = campaigns.find(c => Number(c.year) === year);
-                                const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
                                 const isFuture = year > currentYear;
+                                const campaign = campaigns.find(c => Number(c.year) === year);
+                                const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : (isFuture ? projectedPrice : 0);
 
                                 console.log(`Billing cell for monte ${monte.id}, year ${year}: existed=${existed}, produccion=${produccion}, campaign.average_price=${campaign?.average_price}, precioPromedio=${precioPromedio}`);
 
@@ -627,8 +646,10 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                 {displayedYears.map((year) => {
                   const totalReal = montes.reduce((sum, monte) => {
                     const existed = monteExistedInYear(monte.añoPlantacion, year);
+                    if (!existed) return sum;
                     const produccion = getProduccion(monte.id, year);
-                    return sum + (existed && produccion ? produccion : 0);
+                    const estimated = calculateEstimatedProduction(monte, year);
+                    return sum + (produccion ? produccion : estimated);
                   }, 0);
 
                   const totalEstimated = montes.reduce((sum, monte) => {
@@ -666,7 +687,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                             <div className="space-y-1 text-sm">
                               <div className="font-medium">Total Producción {year}</div>
                               <div>Real: {totalReal.toLocaleString()} kg</div>
-                              <div>Estimado: {yieldData.length > 0 ? `${totalEstimated.toLocaleString()} kg` : 'N/A'}</div>
+                              <div>Estimado: {yieldData.length > 0 ? `${totalEstimated.toLocaleString()} kg` : '0'}</div>
                               {totalDeviation !== null && (
                                 <div>Diferencia: {totalDeviation > 0 ? '+' : ''}{(totalReal - totalEstimated).toLocaleString()} kg</div>
                               )}
@@ -691,24 +712,27 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                       <div className="font-semibold text-foreground">∑ Económico</div>
                     </td>
                     {displayedYears.map((year) => {
-                      const totalReal = montes.reduce((sum, monte) => {
-                        const existed = monteExistedInYear(monte.añoPlantacion, year);
-                        const produccion = getProduccion(monte.id, year);
-                        return sum + (existed && produccion ? produccion : 0);
-                      }, 0);
-
                       const totalEstimated = montes.reduce((sum, monte) => {
                         const existed = monteExistedInYear(monte.añoPlantacion, year);
                         return sum + (existed ? calculateEstimatedProduction(monte, year) : 0);
                       }, 0);
 
-                      const campaign = campaigns.find(c => Number(c.year) === year);
-                      const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
-
-                      const facturacionReal = totalReal * precioPromedio;
-                      const facturacionEstimada = totalEstimated * precioPromedio;
-                      const diferenciaEconomica = facturacionEstimada - facturacionReal;
                       const isFuture = year > currentYear;
+                      const campaign = campaigns.find(c => Number(c.year) === year);
+                      const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : (isFuture ? projectedPrice : 0);
+
+                      const totalFacturacionReal = montes.reduce((sum, monte) => {
+                        const existed = monteExistedInYear(monte.añoPlantacion, year);
+                        if (!existed) return sum;
+                        const produccion = getProduccion(monte.id, year);
+                        const estimated = calculateEstimatedProduction(monte, year);
+                        const actualProduction = produccion || estimated;
+                        const price = precioPromedio || projectedPrice;
+                        return sum + (actualProduction * price);
+                      }, 0);
+
+                      const facturacionEstimada = totalEstimated * (precioPromedio || projectedPrice);
+                      const diferenciaEconomica = facturacionEstimada - totalFacturacionReal;
 
                       // Format currency compactly for large amounts
                       const formatCurrencyCompact = (amount: number): string => {
@@ -728,7 +752,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                 <div className="flex flex-col items-center justify-center gap-1 cursor-help">
                                   {/* Main economic data */}
                                   <div className="text-lg font-bold text-foreground">
-                                    {formatCurrencyCompact(facturacionReal)}
+                                    {formatCurrencyCompact(totalFacturacionReal)}
                                   </div>
 
                                   {/* Economic difference with semantic colors */}
@@ -745,8 +769,8 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                               <TooltipContent className="max-w-xs">
                                 <div className="space-y-1 text-sm">
                                   <div className="font-medium">Impacto Económico {year}</div>
-                                  <div>Facturación Real: ${facturacionReal.toLocaleString()}</div>
-                                  <div>Facturación Estimada: {yieldData.length > 0 ? `$${facturacionEstimada.toLocaleString()}` : 'N/A'}</div>
+                                  <div>Facturación Real: ${totalFacturacionReal.toLocaleString()}</div>
+                                  <div>Facturación Estimada: {yieldData.length > 0 ? `$${facturacionEstimada.toLocaleString()}` : '0'}</div>
                                   {diferenciaEconomica !== 0 && yieldData.length > 0 && (
                                     <div className={diferenciaEconomica > 0 ? "text-red-600" : "text-green-600"}>
                                       {diferenciaEconomica > 0 ? 'Pérdida' : 'Ganancia Extra'}: ${Math.abs(diferenciaEconomica).toLocaleString()}
