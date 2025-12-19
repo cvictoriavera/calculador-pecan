@@ -1,175 +1,328 @@
-getProduccion(2, 2030): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2030 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2030): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2030 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2030): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2030 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2030): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2020 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2020): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2020 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2020): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2020 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2020): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2020 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2020): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2020 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2020): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2021 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2021): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2021 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2021): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2021 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2021): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2021 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2021): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2021 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2021): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2022 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2022): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2022 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2022): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2022 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2022): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2022 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2022): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2022 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2022): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2023 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2023): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2023 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2023): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2023 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2023): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2023 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2023): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2023 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2023): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2024 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2024): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2024 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2024): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2024 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2024): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2024 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2024): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2024 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2024): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2025 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2025): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2025 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2025): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2025 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2025): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2025 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2025): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2025 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2025): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2026 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2026): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2026 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2026): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2026 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2026): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2026 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2026): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2026 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2026): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2027 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2027): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2027 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2027): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2027 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2027): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2027 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2027): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2027 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2027): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2028 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2028): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2028 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2028): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2028 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2028): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2028 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2028): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2028 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2028): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2029 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2029): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2029 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2029): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2029 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2029): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2029 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2029): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2029 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2029): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 1 (type: string), year: 2030 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(1, 2030): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 2 (type: string), year: 2030 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)0: {campanaYear: '2016', monteId: '2', kgRecolectados: 1200}1: {campanaYear: '2017', monteId: '2', kgRecolectados: 1250}2: {campanaYear: '2020', monteId: '1', kgRecolectados: 214286}3: {campanaYear: '2020', monteId: '7', kgRecolectados: 428571}4: {campanaYear: '2020', monteId: '9', kgRecolectados: 857143}5: {campanaYear: '2022', monteId: '1', kgRecolectados: 220933}6: {campanaYear: '2022', monteId: '7', kgRecolectados: 441867}7: {campanaYear: '2022', monteId: '8', kgRecolectados: 110467}8: {campanaYear: '2022', monteId: '9', kgRecolectados: 883733}9: {campanaYear: '2025', monteId: '1', kgRecolectados: 265000}10: {campanaYear: '2025', monteId: '2', kgRecolectados: 132500}11: {campanaYear: '2025', monteId: '7', kgRecolectados: 530000}12: {campanaYear: '2025', monteId: '8', kgRecolectados: 132500}13: {campanaYear: '2025', monteId: '9', kgRecolectados: 1060000}length: 14[[Prototype]]: Array(0)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(2, 2030): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 7 (type: string), year: 2030 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(7, 2030): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 8 (type: string), year: 2030 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(8, 2030): null
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion called with monteId: 9 (type: string), year: 2030 (type: number)
-index-SkcXgYpa.js?ver=1.0.0:1 Available produccionData: Array(14)
-index-SkcXgYpa.js?ver=1.0.0:1 getProduccion(9, 2030): null
+=== EvolucionProductiva Debug ===
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns received: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns length: 11
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns is array: true
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns type: object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign: Object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign average_price: 0.00 type: string
+index-CpTSEvgV.js?ver=1.0.0:1 ================================
+index-CpTSEvgV.js?ver=1.0.0:1 displayedYears: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Computing produccionData from campaigns: 11 campaigns
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Has pricing data: true
+index-CpTSEvgV.js?ver=1.0.0:1 === EvolucionProductiva Debug ===
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns received: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns length: 11
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns is array: true
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns type: object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign: Object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign average_price: 0.00 type: string
+index-CpTSEvgV.js?ver=1.0.0:1 ================================
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Has pricing data: true
+index-CpTSEvgV.js?ver=1.0.0:1 === EvolucionProductiva Debug ===
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns received: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns length: 11
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns is array: true
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns type: object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign: Object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign average_price: 0.00 type: string
+index-CpTSEvgV.js?ver=1.0.0:1 ================================
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 1 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2020: existed=true, produccion=214286, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2022: existed=true, produccion=220933, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2023: existed=true, produccion=200000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2024: existed=true, produccion=240000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2025: existed=true, produccion=265000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 2 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2020: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2022: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2023: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2024: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2025: existed=true, produccion=132500, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 7 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2020: existed=true, produccion=428571, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2022: existed=true, produccion=441867, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2023: existed=true, produccion=400000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2024: existed=true, produccion=480000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2025: existed=true, produccion=530000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 8 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2020: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2022: existed=true, produccion=110467, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2023: existed=true, produccion=100000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2024: existed=true, produccion=120000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2025: existed=true, produccion=132500, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 9 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2020: existed=true, produccion=857143, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2022: existed=true, produccion=883733, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2023: existed=true, produccion=800000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2024: existed=true, produccion=960000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2025: existed=true, produccion=1060000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Has pricing data: true
+index-CpTSEvgV.js?ver=1.0.0:1 === EvolucionProductiva Debug ===
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns received: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns length: 11
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns is array: true
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns type: object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign: Object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign average_price: 0.00 type: string
+index-CpTSEvgV.js?ver=1.0.0:1 ================================
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 1 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2020: existed=true, produccion=214286, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2022: existed=true, produccion=220933, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2023: existed=true, produccion=200000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2024: existed=true, produccion=240000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2025: existed=true, produccion=265000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 2 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2020: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2022: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2023: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2024: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2025: existed=true, produccion=132500, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 7 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2020: existed=true, produccion=428571, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2022: existed=true, produccion=441867, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2023: existed=true, produccion=400000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2024: existed=true, produccion=480000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2025: existed=true, produccion=530000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 8 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2020: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2022: existed=true, produccion=110467, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2023: existed=true, produccion=100000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2024: existed=true, produccion=120000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2025: existed=true, produccion=132500, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 9 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2020: existed=true, produccion=857143, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2022: existed=true, produccion=883733, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2023: existed=true, produccion=800000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2024: existed=true, produccion=960000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2025: existed=true, produccion=1060000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Has pricing data: true
+index-CpTSEvgV.js?ver=1.0.0:1 === EvolucionProductiva Debug ===
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns received: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns length: 11
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns is array: true
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns type: object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign: Object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign average_price: 0.00 type: string
+index-CpTSEvgV.js?ver=1.0.0:1 ================================
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 1 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2020: existed=true, produccion=214286, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2022: existed=true, produccion=220933, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2023: existed=true, produccion=200000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2024: existed=true, produccion=240000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2025: existed=true, produccion=265000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 7 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2020: existed=true, produccion=428571, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2022: existed=true, produccion=441867, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2023: existed=true, produccion=400000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2024: existed=true, produccion=480000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2025: existed=true, produccion=530000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 8 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2020: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2022: existed=true, produccion=110467, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2023: existed=true, produccion=100000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2024: existed=true, produccion=120000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2025: existed=true, produccion=132500, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 9 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2020: existed=true, produccion=857143, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2022: existed=true, produccion=883733, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2023: existed=true, produccion=800000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2024: existed=true, produccion=960000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2025: existed=true, produccion=1060000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Has pricing data: true
+index-CpTSEvgV.js?ver=1.0.0:1 === EvolucionProductiva Debug ===
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns received: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns length: 11
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns is array: true
+index-CpTSEvgV.js?ver=1.0.0:1 Campaigns type: object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign: Object
+index-CpTSEvgV.js?ver=1.0.0:1 Sample campaign average_price: 0.00 type: string
+index-CpTSEvgV.js?ver=1.0.0:1 ================================
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 1 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2020: existed=true, produccion=214286, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2022: existed=true, produccion=220933, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2023: existed=true, produccion=200000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2024: existed=true, produccion=240000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2025: existed=true, produccion=265000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 1, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 2 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2020: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2022: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2023: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2024: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2025: existed=true, produccion=132500, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 2, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 7 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2020: existed=true, produccion=428571, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2022: existed=true, produccion=441867, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2023: existed=true, produccion=400000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2024: existed=true, produccion=480000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2025: existed=true, produccion=530000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 7, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 8 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2020: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2022: existed=true, produccion=110467, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2023: existed=true, produccion=100000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2024: existed=true, produccion=120000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2025: existed=true, produccion=132500, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 8, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Has pricing data: true Campaigns with prices: Array(5)
+index-CpTSEvgV.js?ver=1.0.0:1 Rendering billing row for monte: 9 hasPricing: true
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2020: existed=true, produccion=857143, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2021: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2022: existed=true, produccion=883733, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2023: existed=true, produccion=800000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2024: existed=true, produccion=960000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2025: existed=true, produccion=1060000, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2026: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2027: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2028: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2029: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Billing cell for monte 9, year 2030: existed=true, produccion=null, campaign.average_price=undefined, precioPromedio=0
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Checking pricing for campaigns: Array(11)
+index-CpTSEvgV.js?ver=1.0.0:1 Footer - Has pricing data: true

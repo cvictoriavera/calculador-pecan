@@ -23,10 +23,25 @@ interface EvolucionProductivaProps {
 }
 
 export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaProps) {
+  console.log('=== EvolucionProductiva Debug ===');
+  console.log('Campaigns received:', campaigns);
+  console.log('Campaigns length:', campaigns?.length || 0);
+  console.log('Campaigns is array:', Array.isArray(campaigns));
+  console.log('Campaigns type:', typeof campaigns);
+  if (campaigns && Array.isArray(campaigns) && campaigns.length > 0) {
+    console.log('Sample campaign:', campaigns[0]);
+    console.log('Sample campaign average_price:', campaigns[0]?.average_price, 'type:', typeof campaigns[0]?.average_price);
+  } else {
+    console.log('No campaigns available or not an array');
+  }
+  console.log('================================');
 
   const { currentProjectId } = useApp();
   const [expandedMontes, setExpandedMontes] = useState<string[]>([]);
   const [yieldCurveOpen, setYieldCurveOpen] = useState(false);
+
+  // Keep montes collapsed by default for better initial load performance
+  // Users can expand individual montes as needed
   const [yieldData, setYieldData] = useState<Array<{year: number, kg: number}>>([]);
   const [editingYieldData, setEditingYieldData] = useState<YieldCurveFormData | undefined>(undefined);
 
@@ -533,7 +548,10 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                         {/* Financial Row (Optional) */}
                         {(() => {
                           // Check if we have pricing data for any campaign
+                          console.log('Checking pricing for campaigns:', campaigns.map(c => ({ year: c.year, average_price: c.average_price, type: typeof c.average_price })));
                           const hasPricing = campaigns.some(c => c.average_price && parseFloat(c.average_price) > 0);
+                          console.log('Has pricing data:', hasPricing, 'Campaigns with prices:', campaigns.filter(c => c.average_price && parseFloat(c.average_price) > 0));
+                          console.log('Rendering billing row for monte:', monte.id, 'hasPricing:', hasPricing);
                           return hasPricing ? (
                             <tr className="bg-secondary/20 border-b border-border/50">
                               <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-3 text-sm text-muted-foreground border-r border-border">
@@ -543,9 +561,11 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                 const existed = monteExistedInYear(monte.añoPlantacion, year);
                                 const produccion = getProduccion(monte.id, year);
                                 const estimated = existed ? calculateEstimatedProduction(monte, year) : 0;
-                                const campaign = campaigns.find(c => c.year === year);
+                                const campaign = campaigns.find(c => Number(c.year) === year);
                                 const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
                                 const isFuture = year > currentYear;
+
+                                console.log(`Billing cell for monte ${monte.id}, year ${year}: existed=${existed}, produccion=${produccion}, campaign.average_price=${campaign?.average_price}, precioPromedio=${precioPromedio}`);
 
                                 const realFacturacion = produccion !== null && precioPromedio > 0
                                   ? produccion * precioPromedio
@@ -659,7 +679,9 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
               {/* Row 2: Economic Impact ($) */}
               {(() => {
                 // Check if we have pricing data for any campaign
+                console.log('Footer - Checking pricing for campaigns:', campaigns.map(c => ({ year: c.year, average_price: c.average_price, type: typeof c.average_price })));
                 const hasPricing = campaigns.some(c => c.average_price && parseFloat(c.average_price) > 0);
+                console.log('Footer - Has pricing data:', hasPricing);
                 return hasPricing ? (
                   <tr className="border-t border-border bg-primary/3">
                     <td className="sticky left-0 z-20 bg-primary/3 p-3 border-r border-border">
@@ -677,7 +699,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                         return sum + (existed ? calculateEstimatedProduction(monte, year) : 0);
                       }, 0);
 
-                      const campaign = campaigns.find(c => c.year === year);
+                      const campaign = campaigns.find(c => Number(c.year) === year);
                       const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : 0;
 
                       const facturacionReal = totalReal * precioPromedio;
