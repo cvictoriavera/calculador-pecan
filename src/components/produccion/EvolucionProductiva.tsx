@@ -334,7 +334,10 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
           <div className="px-2">
             <Slider
               value={yearRange}
-              onValueChange={(value) => setYearRange(value as [number, number])}
+              onValueChange={(value) => {
+                console.log('onValueChange called with:', value);
+                setYearRange(value as [number, number]);
+              }}
               min={yearRangeLimits.min}
               max={yearRangeLimits.max}
               step={1}
