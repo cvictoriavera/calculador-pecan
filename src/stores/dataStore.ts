@@ -88,6 +88,7 @@ interface DataState {
   deleteCampaign: (id: number) => void;
 
   loadCosts: (projectId: number, campaignId: number) => Promise<void>;
+  loadAllCosts: (projectId: number, campaigns: Campaign[]) => Promise<void>;
   addCost: (costData: { project_id: number; campaign_id: number; category: string; details?: any; total_amount: number }) => Promise<void>;
   addCostBatch: (costDataArray: Array<{ project_id: number; campaign_id: number; category: string; details?: any; total_amount: number }>) => Promise<void>;
   updateCost: (id: number, updates: { category?: string; details?: any; total_amount?: number }) => Promise<void>;
@@ -234,6 +235,20 @@ export const useDataStore = create<DataState>()(
       set({ costs });
     } catch (error) {
       console.error('Error loading costs:', error);
+      throw error;
+    }
+  },
+
+  loadAllCosts: async (projectId, campaigns) => {
+    try {
+      const allCosts: CostRecord[] = [];
+      for (const campaign of campaigns) {
+        const campaignCosts = await getCostsByCampaign(projectId, campaign.id);
+        allCosts.push(...campaignCosts);
+      }
+      set({ costs: allCosts });
+    } catch (error) {
+      console.error('Error loading all costs:', error);
       throw error;
     }
   },

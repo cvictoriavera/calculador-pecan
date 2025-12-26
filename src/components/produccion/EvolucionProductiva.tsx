@@ -641,7 +641,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
               {/* Row 1: Total Production (Kg) */}
               <tr className="border-t-2 border-border bg-primary/5">
                 <td className="sticky left-0 z-20 bg-primary/5 p-3 border-r border-border">
-                  <div className="font-semibold text-foreground">∑ Producción</div>
+                  <div className="font-semibold text-foreground">∑ Kg</div>
                 </td>
                 {displayedYears.map((year) => {
                   const totalReal = montes.reduce((sum, monte) => {
@@ -709,7 +709,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                 return hasPricing ? (
                   <tr className="border-t border-border bg-primary/3">
                     <td className="sticky left-0 z-20 bg-primary/3 p-3 border-r border-border">
-                      <div className="font-semibold text-foreground">∑ Económico</div>
+                      <div className="font-semibold text-foreground">∑ U$D</div>
                     </td>
                     {displayedYears.map((year) => {
                       const totalEstimated = montes.reduce((sum, monte) => {

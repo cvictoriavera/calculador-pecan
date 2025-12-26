@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, TrendingUp, Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -13,11 +14,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import { useDataStore } from "@/stores";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const categoriaLabels: Record<string, string> = {
   insumos: "Insumos",
@@ -44,9 +46,29 @@ const categoriaColors: Record<string, string> = {
 
 const Costos = () => {
   const { currentProjectId, campaigns, currentCampaign } = useApp();
-  const { costs, loadCosts, addCost, updateCost, deleteCost } = useDataStore();
+  const { costs, loadAllCosts, addCost, updateCost, deleteCost } = useDataStore();
 
-  console.log('Costos page - currentCampaign:', currentCampaign);
+  // Calculate displayed years - only campaign years from initial to current
+  const displayedYears = useMemo(() => {
+    if (campaigns.length === 0) return [];
+
+    const years = campaigns.map(c => c.year).sort((a, b) => a - b);
+    return years;
+  }, [campaigns]);
+
+  // Get current year for visual differentiation
+  const currentYear = new Date().getFullYear();
+
+  // Get cost for a specific category and year
+  const getCostForCategoryAndYear = (category: string, year: number): number => {
+    const campaign = campaigns.find(c => c.year === year);
+    if (!campaign) return 0;
+
+    return costs
+      .filter(cost => cost.campaign_id === campaign.id && cost.category === category)
+      .reduce((sum, cost) => sum + parseFloat(String(cost.total_amount || 0)), 0);
+  };
+
 
   // Función para obtener la descripción específica del costo
   const getCostoDescription = (costo: any) => {
@@ -72,24 +94,20 @@ const Costos = () => {
     return categoriaLabels[costo.category] || costo.category;
   };
 
-  // Load costs when component mounts or campaign changes
+  // Load costs when component mounts or campaigns change
   useEffect(() => {
     const loadCostsData = async () => {
-      if (currentProjectId) {
-        // Find the current campaign
-        const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
-        if (currentCamp) {
-          try {
-            await loadCosts(currentProjectId, currentCamp.id);
-          } catch (error) {
-            console.error("Error loading costs:", error);
-          }
+      if (currentProjectId && campaigns.length > 0) {
+        try {
+          await loadAllCosts(currentProjectId, campaigns as any);
+        } catch (error) {
+          console.error("Error loading costs:", error);
         }
       }
     };
 
     loadCostsData();
-  }, [currentProjectId, campaigns, currentCampaign, loadCosts]);
+  }, [currentProjectId, campaigns, loadAllCosts]);
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCosto, setEditingCosto] = useState<any>(null);
@@ -228,6 +246,23 @@ const Costos = () => {
     return acc;
   }, [] as { name: string; value: number }[]);
 
+  // Prepare data for stacked bar chart - costs by year and category
+  const chartData = campaigns
+    .sort((a, b) => a.year - b.year)
+    .map((campaign) => {
+      const year = campaign.year;
+      const yearCosts = costs.filter((cost) => cost.campaign_id === campaign.id);
+
+      const yearData: any = { year };
+      Object.keys(categoriaLabels).forEach((category) => {
+        const categoryCosts = yearCosts.filter((cost) => cost.category === category);
+        const total = categoryCosts.reduce((sum, cost) => sum + parseFloat(String(cost.total_amount || 0)), 0);
+        yearData[category] = total;
+      });
+
+      return yearData;
+    });
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -305,6 +340,155 @@ const Costos = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Evolution Chart */}
+      <Card className="border-border/50 shadow-md">
+        <CardHeader>
+          <CardTitle className="text-foreground">Evolución de Costos por Categoría</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    `$${value.toLocaleString()}`,
+                    categoriaLabels[name] || name
+                  ]}
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Legend />
+                {Object.keys(categoriaLabels).map((category) => (
+                  <Bar
+                    key={category}
+                    dataKey={category}
+                    stackId="a"
+                    fill={categoriaColors[category] || "#cccccc"}
+                    name={categoriaLabels[category]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+              Sin datos para mostrar
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Year Range Selector and Cost Evolution Table */}
+      <Card className="border-border/50 shadow-md">
+        <CardHeader>
+          <CardTitle className="text-foreground">Tabla de Evolución de Costos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="max-w-full">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="sticky left-0 z-20 bg-card text-left p-2 sm:p-3 text-sm font-semibold text-muted-foreground border-r border-border">
+                    Categoría
+                  </th>
+                  {displayedYears.map((year, index) => {
+                    const isHistorical = year < currentYear;
+                    const isCurrentYear = year === currentYear;
+                    const nextYear = displayedYears[index + 1];
+
+                    return (
+                      <th
+                        key={year}
+                        className={cn(
+                          "text-center p-2 sm:p-3 text-sm font-semibold relative",
+                          isHistorical && "bg-slate-50/50",
+                          isCurrentYear && "border-r-2 border-yellow-500"
+                        )}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <span>{year}</span>
+                        </div>
+                        {/* Visual divider between current year and next year */}
+                        {isCurrentYear && nextYear && (
+                          <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
+                        )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(categoriaLabels).map(([categoryKey, categoryName]) => (
+                  <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30">
+                    <td className="sticky left-0 z-10 bg-card p-2 sm:p-3 border-r border-border">
+                      <Badge
+                        style={{
+                          backgroundColor: categoriaColors[categoryKey] || "#cccccc",
+                          color: "white",
+                        }}
+                      >
+                        {categoryName}
+                      </Badge>
+                    </td>
+                    {displayedYears.map((year) => {
+                      const amount = getCostForCategoryAndYear(categoryKey, year);
+                      const isHistorical = year < currentYear;
+
+                      return (
+                        <td
+                          key={year}
+                          className={cn(
+                            "text-center p-2 sm:p-3 text-sm font-semibold text-foreground",
+                            isHistorical && "bg-slate-50/20"
+                          )}
+                        >
+                          ${amount.toLocaleString()}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-border bg-primary/5">
+                  <td className="sticky left-0 z-20 bg-primary/5 p-3 border-r border-border">
+                    <div className="font-semibold text-foreground">Total U$D</div>
+                  </td>
+                  {displayedYears.map((year) => {
+                    const total = Object.keys(categoriaLabels).reduce((sum, category) =>
+                      sum + getCostForCategoryAndYear(category, year), 0);
+                    const isHistorical = year < currentYear;
+
+                    return (
+                      <td
+                        key={year}
+                        className={cn(
+                          "text-center p-3 font-bold text-foreground",
+                          isHistorical && "bg-slate-50/20"
+                        )}
+                      >
+                        ${total.toLocaleString()}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tfoot>
+            </table>
+          </ScrollArea>
+
+          {campaigns.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay campañas disponibles para mostrar la evolución de costos.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Costs Table */}
       <Card className="border-border/50 shadow-md">

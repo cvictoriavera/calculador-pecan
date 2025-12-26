@@ -27,12 +27,20 @@ import GastosAdminForm from "./forms/GastosAdminForm";
 import MantenimientosForm from "./forms/MantenimientosForm";
 import CostosOportunidadForm from "./forms/CostosOportunidadForm";
 
-const categorias = [
+interface Categoria {
+  id: string;
+  label: string;
+  icon: any;
+  color: string;
+  disabled?: boolean;
+}
+
+const categorias: Categoria[] = [
   { id: "insumos", label: "Insumos (Agroquímicos)", icon: Beaker, color: "bg-primary/10 text-primary" },
   { id: "combustible", label: "Combustible", icon: Fuel, color: "bg-warning/10 text-warning" },
   { id: "mano-obra", label: "Mano de Obra", icon: Users, color: "bg-cocoa/10 text-cocoa" },
   { id: "energia", label: "Energía Eléctrica", icon: Zap, color: "bg-camel/10 text-camel" },
-  { id: "cosecha", label: "Cosecha y Poscosecha", icon: Wheat, color: "bg-primary/10 text-primary", disabled: true },
+  { id: "cosecha", label: "Cosecha y Poscosecha", icon: Wheat, color: "bg-primary/10 text-primary" },
   { id: "gastos-admin", label: "Gastos Administrativos", icon: FileText, color: "bg-muted-foreground/10 text-muted-foreground" },
   { id: "mantenimientos", label: "Mantenimientos", icon: Wrench, color: "bg-cocoa/10 text-cocoa" },
   { id: "costos-oportunidad", label: "Costos de Oportunidad", icon: TrendingUp, color: "bg-warning/10 text-warning" },
