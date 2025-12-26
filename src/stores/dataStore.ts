@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getCostsByCampaign, createCost, createCostBatch, updateCost as updateCostApi, deleteCost as deleteCostApi } from '../services/costService';
+import { getInvestmentsByCampaign } from '../services/investmentService';
 
 // Interfaces base
 export interface Project {
@@ -89,6 +90,7 @@ interface DataState {
 
   loadCosts: (projectId: number, campaignId: number) => Promise<void>;
   loadAllCosts: (projectId: number, campaigns: Campaign[]) => Promise<void>;
+  loadAllInvestments: (projectId: number, campaigns: Campaign[]) => Promise<void>;
   addCost: (costData: { project_id: number; campaign_id: number; category: string; details?: any; total_amount: number }) => Promise<void>;
   addCostBatch: (costDataArray: Array<{ project_id: number; campaign_id: number; category: string; details?: any; total_amount: number }>) => Promise<void>;
   updateCost: (id: number, updates: { category?: string; details?: any; total_amount?: number }) => Promise<void>;
@@ -249,6 +251,29 @@ export const useDataStore = create<DataState>()(
       set({ costs: allCosts });
     } catch (error) {
       console.error('Error loading all costs:', error);
+      throw error;
+    }
+  },
+
+  loadAllInvestments: async (projectId, campaigns) => {
+    try {
+      const allInvestments: InvestmentRecord[] = [];
+      for (const campaign of campaigns) {
+        const campaignInvestments = await getInvestmentsByCampaign(projectId, campaign.id);
+        const formattedInvestments = campaignInvestments.map(inv => ({
+          id: inv.id.toString(),
+          year: campaign.year,
+          category: inv.category,
+          description: inv.description,
+          amount: Number(inv.total_value) || 0,
+          date: new Date(inv.created_at),
+          data: inv.details,
+        }));
+        allInvestments.push(...formattedInvestments);
+      }
+      set({ investments: allInvestments });
+    } catch (error) {
+      console.error('Error loading all investments:', error);
       throw error;
     }
   },

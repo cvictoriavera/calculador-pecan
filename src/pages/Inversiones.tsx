@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, DollarSign, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +19,9 @@ import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
 import { formatCurrency } from "@/lib/calculations";
 import { useDataStore } from "@/stores";
 import { useApp } from "@/contexts/AppContext";
-import { getInvestmentsByCampaign, createInvestment, updateInvestment as updateInvestmentApi, deleteInvestment as deleteInvestmentApi } from "@/services/investmentService";
+import { createInvestment, updateInvestment as updateInvestmentApi, deleteInvestment as deleteInvestmentApi } from "@/services/investmentService";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface InversionRegistro {
   id: string;
@@ -39,66 +42,84 @@ const categoriaLabels: Record<string, string> = {
 };
 
 const categoriaColors: Record<string, string> = {
-  tierra: "bg-green-600",
-  mejoras: "bg-blue-600",
-  implantacion: "bg-purple-600",
-  riego: "bg-cyan-600",
-  maquinaria: "bg-orange-600",
+  tierra: "#22c55e", // green-500
+  mejoras: "#3b82f6", // blue-500
+  implantacion: "#a855f7", // purple-500
+  riego: "#06b6d4", // cyan-500
+  maquinaria: "#f97316", // orange-500
 };
 
 const Inversiones = () => {
   const { currentProjectId, campaigns, currentCampaign } = useApp();
-  const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
+  const { investments, loadAllInvestments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
+
+  // Calculate displayed years - only campaign years
+  const displayedYears = useMemo(() => {
+    if (campaigns.length === 0) return [];
+    const years = campaigns.map(c => c.year).sort((a, b) => a - b);
+    return years;
+  }, [campaigns]);
+
+  // Get current year for visual differentiation
+  const currentYear = new Date().getFullYear();
+
+  // Get investment for a specific category and year
+  const getInvestmentForCategoryAndYear = (category: string, year: number): number => {
+    const campaign = campaigns.find(c => c.year === year);
+    if (!campaign) return 0;
+
+    return investments
+      .filter(inv => inv.year === year && inv.category === category)
+      .reduce((sum, inv) => sum + inv.amount, 0);
+  };
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingInversion, setEditingInversion] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [inversionToDelete, setInversionToDelete] = useState<any>(null);
 
-  // Filter investments by current campaign year
-  const inversionesFiltered = investments.filter((inv) => inv.year === currentCampaign);
+  // All investments are already filtered by campaigns (similar to how costs work)
+  const inversionesFiltered = investments;
   const totalInversionesCampaña = inversionesFiltered.reduce((acc, inv) => acc + inv.amount, 0);
 
-  // Load investments from database when project or campaign changes
+
+  // Prepare data for stacked bar chart - investments by year and category
+  const chartData = campaigns
+    .sort((a, b) => a.year - b.year)
+    .map((campaign) => {
+      const year = campaign.year;
+      const yearInvestments = investments.filter((inv) => inv.year === year);
+
+      const yearData: any = { year };
+      Object.keys(categoriaLabels).forEach((category) => {
+        const categoryInvestments = yearInvestments.filter((inv) => inv.category === category);
+        const total = categoryInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+        yearData[category] = total;
+      });
+
+      return yearData;
+    });
+
+
+  // Load investments from database when project or campaigns change
   useEffect(() => {
     const loadInvestments = async () => {
-      if (currentProjectId) {
-        // Find the current campaign
-        const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
-        if (currentCamp) {
-          try {
-            const dbInvestments = await getInvestmentsByCampaign(currentProjectId, currentCamp.id);
-
-            // Create investments with correct year
-            const newInvestments = dbInvestments.map(inv => ({
-              id: inv.id.toString(),
-              year: currentCampaign, // Use the current campaign year
-              category: inv.category,
-              description: inv.description,
-              amount: Number(inv.total_value) || 0,
-              date: new Date(inv.created_at),
-              data: inv.details,
-            }));
-
-          // Update the store directly using Zustand's setState
-          useDataStore.setState({ investments: newInvestments });
+      if (currentProjectId && campaigns.length > 0) {
+        try {
+          await loadAllInvestments(currentProjectId, campaigns as any);
         } catch (error) {
           console.error("Error loading investments:", error);
           // Clear investments on error
           useDataStore.setState({ investments: [] });
         }
-        } else {
-          // Clear investments if no campaign found
-          useDataStore.setState({ investments: [] });
-        }
       } else {
-        // Clear investments if no project
+        // Clear investments if no project or campaigns
         useDataStore.setState({ investments: [] });
       }
     };
 
     loadInvestments();
-  }, [currentProjectId, campaigns, currentCampaign]);
+  }, [currentProjectId, campaigns, loadAllInvestments]);
 
 
   const handleSaveInversion = async (categoria: string, data: any) => {
@@ -226,6 +247,155 @@ const Inversiones = () => {
         </CardContent>
       </Card>
 
+      {/* Evolution Chart */}
+      <Card className="border-border/50 shadow-md">
+        <CardHeader>
+          <CardTitle className="text-foreground">Evolución de Inversiones por Categoría</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    `$${value.toLocaleString()}`,
+                    categoriaLabels[name] || name
+                  ]}
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Legend />
+                {Object.keys(categoriaLabels).map((category) => (
+                  <Bar
+                    key={category}
+                    dataKey={category}
+                    stackId="a"
+                    fill={categoriaColors[category] || "#cccccc"}
+                    name={categoriaLabels[category]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+              Sin datos para mostrar
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Year Range Selector and Investment Evolution Table */}
+      <Card className="border-border/50 shadow-md">
+        <CardHeader>
+          <CardTitle className="text-foreground">Tabla de Evolución de Inversiones</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="max-w-full">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="sticky left-0 z-20 bg-card text-left p-2 sm:p-3 text-sm font-semibold text-muted-foreground border-r border-border">
+                    Categoría
+                  </th>
+                  {displayedYears.map((year, index) => {
+                    const isHistorical = year < currentYear;
+                    const isCurrentYear = year === currentYear;
+                    const nextYear = displayedYears[index + 1];
+
+                    return (
+                      <th
+                        key={year}
+                        className={cn(
+                          "text-center p-2 sm:p-3 text-sm font-semibold relative",
+                          isHistorical && "bg-slate-50/50",
+                          isCurrentYear && "border-r-2 border-yellow-500"
+                        )}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <span>{year}</span>
+                        </div>
+                        {/* Visual divider between current year and next year */}
+                        {isCurrentYear && nextYear && (
+                          <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
+                        )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(categoriaLabels).map(([categoryKey, categoryName]) => (
+                  <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30">
+                    <td className="sticky left-0 z-10 bg-card p-2 sm:p-3 border-r border-border">
+                      <Badge
+                        style={{
+                          backgroundColor: categoriaColors[categoryKey] || "#cccccc",
+                          color: "white",
+                        }}
+                      >
+                        {categoryName}
+                      </Badge>
+                    </td>
+                    {displayedYears.map((year) => {
+                      const amount = getInvestmentForCategoryAndYear(categoryKey, year);
+                      const isHistorical = year < currentYear;
+
+                      return (
+                        <td
+                          key={year}
+                          className={cn(
+                            "text-center p-2 sm:p-3 text-sm font-semibold text-foreground",
+                            isHistorical && "bg-slate-50/20"
+                          )}
+                        >
+                          ${amount.toLocaleString()}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-border bg-primary/5">
+                  <td className="sticky left-0 z-20 bg-primary/5 p-3 border-r border-border">
+                    <div className="font-semibold text-foreground">Total</div>
+                  </td>
+                  {displayedYears.map((year) => {
+                    const total = Object.keys(categoriaLabels).reduce((sum, category) =>
+                      sum + getInvestmentForCategoryAndYear(category, year), 0);
+                    const isHistorical = year < currentYear;
+
+                    return (
+                      <td
+                        key={year}
+                        className={cn(
+                          "text-center p-3 font-bold text-foreground",
+                          isHistorical && "bg-slate-50/20"
+                        )}
+                      >
+                        ${total.toLocaleString()}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tfoot>
+            </table>
+          </ScrollArea>
+
+          {campaigns.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay campañas disponibles para mostrar la evolución de inversiones.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Investments Table */}
       {inversionesFiltered.length > 0 ? (
         <Card className="border-border/50 shadow-md">
@@ -247,12 +417,13 @@ const Inversiones = () => {
                 <tbody>
                   {inversionesFiltered.map((inversion) => (
                     <tr key={inversion.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                      <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
+                      <td className="p-3 text-sm font-medium text-foreground">{inversion.year}</td>
                       <td className="p-3 text-sm">
                         <Badge
-                          className={`${
-                            categoriaColors[inversion.category] || "bg-muted"
-                          } text-white hover:opacity-90`}
+                          style={{
+                            backgroundColor: categoriaColors[inversion.category] || "#cccccc",
+                            color: "white",
+                          }}
                         >
                           {categoriaLabels[inversion.category] || inversion.category}
                         </Badge>
