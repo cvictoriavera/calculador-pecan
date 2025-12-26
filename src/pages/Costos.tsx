@@ -14,12 +14,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
+// IMPORTANTE: Importar desde @/stores, no desde ./dataStore
 import { useDataStore } from "@/stores";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useCalculationsStore } from "@/stores/calculationsStore";
+
+
 
 const categoriaLabels: Record<string, string> = {
   insumos: "Insumos",
@@ -43,58 +47,11 @@ const categoriaColors: Record<string, string> = {
   "costos-oportunidad": "#846761",
 };
 
-
 const Costos = () => {
   const { currentProjectId, campaigns, currentCampaign } = useApp();
   const { costs, loadAllCosts, addCost, updateCost, deleteCost } = useDataStore();
+  const { getCostByCategory, getTotalCostsByCampaign } = useCalculationsStore();
 
-  // Calculate displayed years - only campaign years from initial to current
-  const displayedYears = useMemo(() => {
-    if (campaigns.length === 0) return [];
-
-    const years = campaigns.map(c => c.year).sort((a, b) => a - b);
-    return years;
-  }, [campaigns]);
-
-  // Get current year for visual differentiation
-  const currentYear = new Date().getFullYear();
-
-  // Get cost for a specific category and year
-  const getCostForCategoryAndYear = (category: string, year: number): number => {
-    const campaign = campaigns.find(c => c.year === year);
-    if (!campaign) return 0;
-
-    return costs
-      .filter(cost => cost.campaign_id === campaign.id && cost.category === category)
-      .reduce((sum, cost) => sum + parseFloat(String(cost.total_amount || 0)), 0);
-  };
-
-
-  // Función para obtener la descripción específica del costo
-  const getCostoDescription = (costo: any) => {
-    // Si tiene detalles y es de tipo insumos o combustible, mostrar el tipo específico
-    if (costo.details && typeof costo.details === 'object') {
-      if (costo.details.type) {
-        return costo.details.type;
-      }
-      // Para compatibilidad con datos antiguos que usan subtype
-      if (costo.details.subtype) {
-        // Para combustible - mapear subtipos a nombres legibles
-        const subtypeLabels: Record<string, string> = {
-          'machinery': 'Tractores',
-          'vehicles': 'Vehículos/Rodados',
-          'irrigation': 'Riego',
-          'other': 'Otros'
-        };
-        return subtypeLabels[costo.details.subtype] || costo.details.subtype;
-      }
-    }
-
-    // Para otros tipos de costos, mostrar la categoría genérica
-    return categoriaLabels[costo.category] || costo.category;
-  };
-
-  // Load costs when component mounts or campaigns change
   useEffect(() => {
     const loadCostsData = async () => {
       if (currentProjectId && campaigns.length > 0) {
@@ -105,9 +62,69 @@ const Costos = () => {
         }
       }
     };
-
     loadCostsData();
   }, [currentProjectId, campaigns, loadAllCosts]);
+
+  // Selección segura de la campaña
+  const currentCampaignObj = useMemo(() => {
+    return campaigns.find((c) => Number(c.year) === Number(currentCampaign));
+  }, [campaigns, currentCampaign]);
+
+  // Total usando el store de cálculos
+  const totalCostos = currentCampaignObj ? getTotalCostsByCampaign(currentCampaignObj.id) : 0;
+
+  // Filtrado de lista (Tabla inferior)
+  const costosFiltered = useMemo(() => {
+    if (!currentCampaignObj) return [];
+    return costs.filter((c: any) => String(c.campaign_id) === String(currentCampaignObj.id));
+  }, [costs, currentCampaignObj]);
+
+  const currentYear = new Date().getFullYear();
+
+  // Datos para el gráfico
+  const chartData = useMemo(() => {
+    if (campaigns.length === 0) return [];
+
+    return campaigns
+      .sort((a, b) => Number(a.year) - Number(b.year))
+      .map((campaign) => {
+        const year = Number(campaign.year);
+        
+        const costsByCategory = getCostByCategory(campaign.id);
+
+        const yearData: any = { year };
+        
+        Object.keys(categoriaLabels).forEach((category) => {
+          yearData[category] = costsByCategory[category] || 0;
+        });
+
+        return yearData;
+      });
+  }, [campaigns, getCostByCategory, costs]);
+
+  // Helper para la tabla de evolución
+  const getCostForCategoryAndYear = (category: string, year: number): number => {
+    const campaign = campaigns.find((c) => Number(c.year) === year);
+    if (!campaign) return 0;
+    const costsByCategory = getCostByCategory(campaign.id);
+    return costsByCategory[category] || 0;
+  };
+
+  const getCostoDescription = (costo: any) => {
+    if (costo.details && typeof costo.details === 'object') {
+      if (costo.details.type) return costo.details.type;
+      if (costo.details.subtype) {
+        const subtypeLabels: Record<string, string> = {
+          'machinery': 'Tractores',
+          'vehicles': 'Vehículos/Rodados',
+          'irrigation': 'Riego',
+          'other': 'Otros'
+        };
+        return subtypeLabels[costo.details.subtype] || costo.details.subtype;
+      }
+    }
+    return categoriaLabels[costo.category] || costo.category;
+  };
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCosto, setEditingCosto] = useState<any>(null);
@@ -139,68 +156,56 @@ const Costos = () => {
   };
 
   const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
-    console.log('handleUpdateCosto called with:', categoriaOrData, formData);
     if (!currentProjectId) {
       toast.error("No hay proyecto activo");
       return;
     }
-
-    // Find the current campaign
-    const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
-    if (!currentCamp) {
+    
+    if (!currentCampaignObj) {
       toast.error("No se pudo encontrar la campaña actual");
       return;
     }
 
     try {
-      // Check if this is the new format (object with category, details, total_amount) - direct from forms like InsumosForm
       if (typeof categoriaOrData === 'object' && categoriaOrData.category) {
         const costData = categoriaOrData;
-        console.log('Processing new format cost data:', costData);
-
-        // Check if this is an update to existing record
         if (costData.existingId) {
-          console.log('Updating existing cost ID:', costData.existingId);
           await updateCost(costData.existingId, {
             category: costData.category,
             details: costData.details,
             total_amount: costData.total_amount,
           });
-          toast.success("Costo actualizado correctamente");
+          toast.success("Costo actualizado");
         } else {
-          console.log('Adding new cost');
           await addCost({
             project_id: currentProjectId,
-            campaign_id: currentCamp.id,
+            campaign_id: currentCampaignObj.id,
             category: costData.category,
             details: costData.details,
             total_amount: costData.total_amount,
           });
-          toast.success("Costo registrado correctamente");
+          toast.success("Costo registrado");
         }
       }
-      // Check if formData is the new format (when called from AddCostoSheet with category string + new format data)
       else if (typeof formData === 'object' && formData.category) {
-        // Check if this is an update to existing record
-        if (formData.existingId) {
+         if (formData.existingId) {
           await updateCost(formData.existingId, {
             category: formData.category,
             details: formData.details,
             total_amount: formData.total_amount,
           });
-          toast.success("Costo actualizado correctamente");
+          toast.success("Costo actualizado");
         } else {
           await addCost({
             project_id: currentProjectId,
-            campaign_id: currentCamp.id,
+            campaign_id: currentCampaignObj.id,
             category: formData.category,
             details: formData.details,
             total_amount: formData.total_amount,
           });
-          toast.success("Costo registrado correctamente");
+          toast.success("Costo registrado");
         }
       }
-      // Legacy format for editing or other forms
       else if (editingCosto) {
         const categoria = categoriaOrData as string;
         await updateCost(editingCosto.id, {
@@ -208,20 +213,19 @@ const Costos = () => {
           details: formData,
           total_amount: formData?.total || formData?.total_amount || 0,
         });
-        toast.success("Costo actualizado correctamente");
+        toast.success("Costo actualizado");
         setEditingCosto(null);
       }
-      // Legacy format for single cost creation
       else {
         const categoria = categoriaOrData as string;
         await addCost({
           project_id: currentProjectId,
-          campaign_id: currentCamp.id,
+          campaign_id: currentCampaignObj.id,
           category: categoria,
           details: formData,
           total_amount: formData?.total || formData?.total_amount || 0,
         });
-        toast.success("Costo registrado correctamente");
+        toast.success("Costo registrado");
       }
     } catch (error) {
       toast.error("Error al guardar el costo");
@@ -229,39 +233,10 @@ const Costos = () => {
     }
   };
 
-
-  // All costs are already filtered by current campaign
-  const costosFiltered = costs;
-  const totalCostos = costosFiltered.reduce((acc, c) => acc + parseFloat(String(c.total_amount || 0)), 0);
-
-  // Prepare data for pie chart
-  const costoPorCategoria = costosFiltered.reduce((acc, cost) => {
-    const costValue = parseFloat(String(cost.total_amount || 0));
-    const existing = acc.find((item) => item.name === cost.category);
-    if (existing) {
-      existing.value += costValue;
-    } else {
-      acc.push({ name: cost.category, value: costValue });
-    }
-    return acc;
-  }, [] as { name: string; value: number }[]);
-
-  // Prepare data for stacked bar chart - costs by year and category
-  const chartData = campaigns
-    .sort((a, b) => a.year - b.year)
-    .map((campaign) => {
-      const year = campaign.year;
-      const yearCosts = costs.filter((cost) => cost.campaign_id === campaign.id);
-
-      const yearData: any = { year };
-      Object.keys(categoriaLabels).forEach((category) => {
-        const categoryCosts = yearCosts.filter((cost) => cost.category === category);
-        const total = categoryCosts.reduce((sum, cost) => sum + parseFloat(String(cost.total_amount || 0)), 0);
-        yearData[category] = total;
-      });
-
-      return yearData;
-    });
+  const displayedYears = useMemo(() => {
+    if (campaigns.length === 0) return [];
+    return campaigns.map(c => Number(c.year)).sort((a, b) => a - b);
+  }, [campaigns]);
 
   return (
     <div className="space-y-6">
@@ -281,67 +256,23 @@ const Costos = () => {
         </Button>
       </div>
 
-      {/* Summary and Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
-          <CardHeader>
-            <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-full bg-warning/10">
-                <TrendingUp className="h-8 w-8 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Costos Operativos</p>
-                <p className="text-4xl font-bold text-foreground">${totalCostos.toLocaleString()}</p>
-              </div>
+      <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
+        <CardHeader>
+          <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="p-4 rounded-full bg-warning/10">
+              <TrendingUp className="h-8 w-8 text-warning" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Costos Operativos</p>
+              <p className="text-4xl font-bold text-foreground">${totalCostos.toLocaleString()}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="border-border/50 shadow-md">
-          <CardHeader>
-            <CardTitle className="text-foreground">Distribución por Categoría</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {costoPorCategoria.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={costoPorCategoria}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={(entry) => `${categoriaLabels[entry.name] || entry.name}: $${entry.value.toLocaleString()}`}
-                  >
-                    {costoPorCategoria.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={categoriaColors[entry.name] || "#cccccc"} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                Sin datos para mostrar
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Evolution Chart */}
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="text-foreground">Evolución de Costos por Categoría</CardTitle>
@@ -384,7 +315,6 @@ const Costos = () => {
         </CardContent>
       </Card>
 
-      {/* Year Range Selector and Cost Evolution Table */}
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="text-foreground">Tabla de Evolución de Costos</CardTitle>
@@ -414,7 +344,6 @@ const Costos = () => {
                         <div className="flex items-center justify-center gap-1">
                           <span>{year}</span>
                         </div>
-                        {/* Visual divider between current year and next year */}
                         {isCurrentYear && nextYear && (
                           <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
                         )}
@@ -481,16 +410,9 @@ const Costos = () => {
               </tfoot>
             </table>
           </ScrollArea>
-
-          {campaigns.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay campañas disponibles para mostrar la evolución de costos.
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Costs Table */}
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="text-foreground">Registro de Costos</CardTitle>
@@ -509,7 +431,7 @@ const Costos = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {costosFiltered.map((costo) => (
+                  {costosFiltered.map((costo: any) => (
                     <tr key={costo.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
                       <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
                       <td className="p-3 text-sm">
@@ -524,7 +446,7 @@ const Costos = () => {
                       </td>
                       <td className="p-3 text-sm text-foreground">{getCostoDescription(costo)}</td>
                       <td className="p-3 text-sm text-right font-semibold text-foreground">
-                        ${costo.total_amount.toLocaleString()}
+                        ${Number(costo.total_amount).toLocaleString()}
                       </td>
                       <td className="p-3 text-sm text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -554,8 +476,7 @@ const Costos = () => {
             </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
-              <p>No hay costos registrados para esta campaña.</p>
-              <p className="text-sm mt-1">Haz clic en "Nuevo Costo" para comenzar.</p>
+              <p>No hay costos registrados para la campaña {currentCampaign}.</p>
             </div>
           )}
         </CardContent>
@@ -577,7 +498,7 @@ const Costos = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar este costo?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el registro de {categoriaLabels[costoToDelete?.category] || costoToDelete?.category}.
+              Se eliminará permanentemente el registro.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -592,4 +513,5 @@ const Costos = () => {
   );
 };
 
+// ESTE EXPORT ES CRÍTICO PARA EL ERROR DE APP.TSX
 export default Costos;

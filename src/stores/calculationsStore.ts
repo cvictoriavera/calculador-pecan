@@ -1,31 +1,21 @@
 // Calculations Store - Selectores y cálculos memoizados
 import { create } from 'zustand';
 import { useDataStore } from './dataStore';
-import { useUiStore } from './uiStore';
 
-// Función auxiliar para memoización simple
-const memoize = <TArgs extends readonly unknown[], TReturn>(
-  fn: (...args: TArgs) => TReturn
-): (...args: TArgs) => TReturn => {
-  const cache = new Map<string, TReturn>();
-  return (...args: TArgs) => {
-    const key = JSON.stringify(args);
-    if (cache.has(key)) {
-      return cache.get(key)!;
-    }
-    const result = fn(...args);
-    cache.set(key, result);
-    return result;
-  };
-};
+
 
 interface CalculationsState {
-  // Selectores memoizados
+  // Selectores por año (para Campanas)
   getTotalCosts: (year: number) => number;
   getTotalInvestments: (year: number) => number;
-  getCostByCategory: (year: number) => Record<string, number>;
-  getInvestmentByCategory: (year: number) => Record<string, number>;
-  getProfitabilityRatio: (year: number) => number;
+
+  // Selectores por campaignId (para Costos y Campanas)
+  getCostByCategory: (campaignId: number | string) => Record<string, number>;
+  getInvestmentByCategory: (campaignId: number | string) => Record<string, number>;
+  getTotalCostsByCampaign: (campaignId: number | string) => number;
+  getTotalInvestmentsByCampaign: (campaignId: number | string) => number;
+
+  getProfitabilityRatio: (campaignId: number | string) => number;
 
   // Production selectors
   getTotalProduction: (year: number) => number;
@@ -35,62 +25,83 @@ interface CalculationsState {
 }
 
 export const useCalculationsStore = create<CalculationsState>((_, get) => ({
-  // Selector para costos totales por año
-  getTotalCosts: memoize((year: number): number => {
+  // Selectores por año
+  getTotalCosts: (year: number): number => {
+    const { costs, campaigns } = useDataStore.getState();
+    const campaign = campaigns.find(c => c.year === year);
+    if (!campaign) return 0;
+
+    return costs
+      .filter(cost => cost.campaign_id === campaign.id)
+      .reduce((sum, cost) => sum + (Number(cost.total_amount) || 0), 0);
+  },
+
+  getTotalInvestments: (year: number): number => {
+    const { investments } = useDataStore.getState();
+    return investments
+      .filter(inv => inv.year === year)
+      .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+  },
+
+  // ELIMINAR memoize()
+  getCostByCategory: (campaignId: number | string): Record<string, number> => {
     const { costs } = useDataStore.getState();
-    const { currentCampaign } = useUiStore.getState();
+    const targetId = Number(campaignId);
 
-    // Only return costs if they match the requested year
-    if (currentCampaign !== year) {
-      return 0;
-    }
+    return costs
+      .filter(cost => Number(cost.campaign_id) === targetId)
+      .reduce((acc, cost) => {
+        const amount = Number(cost.total_amount) || 0;
+        acc[cost.category] = (acc[cost.category] || 0) + amount;
+        return acc;
+      }, {} as Record<string, number>);
+  },
 
-    return costs.reduce((sum, cost) => sum + cost.total_amount, 0);
-  }),
+  getInvestmentByCategory: (campaignId: number | string): Record<string, number> => {
+    const { investments } = useDataStore.getState();
+    const targetYear = Number(campaignId);
 
-  // Selector para inversiones totales por año
-  getTotalInvestments: memoize((year: number): number => {
-    const investments = useDataStore.getState().investments
-      .filter(i => i.year === year);
-    return investments.reduce((sum, inv) => sum + inv.amount, 0);
-  }),
+    return investments
+      .filter(inv => inv.year === targetYear)
+      .reduce((acc, inv) => {
+        const amount = Number(inv.amount) || 0;
+        acc[inv.category] = (acc[inv.category] || 0) + amount;
+        return acc;
+      }, {} as Record<string, number>);
+  },
 
-  // Selector para costos por categoría
-  getCostByCategory: memoize((year: number): Record<string, number> => {
+  // 1. Costos Totales por CAMPAÑA (ID)
+  getTotalCostsByCampaign: (campaignId: number | string): number => {
     const { costs } = useDataStore.getState();
-    const { currentCampaign } = useUiStore.getState();
+    const targetId = Number(campaignId);
 
-    // Only return costs if they match the requested year
-    if (currentCampaign !== year) {
-      return {};
-    }
+    if (!targetId) return 0;
 
-    return costs.reduce((acc, cost) => {
-      acc[cost.category] = (acc[cost.category] || 0) + cost.total_amount;
-      return acc;
-    }, {} as Record<string, number>);
-  }),
+    return costs
+      .filter(cost => Number(cost.campaign_id) === targetId)
+      .reduce((sum, cost) => sum + (Number(cost.total_amount) || 0), 0);
+  },
 
-  // Selector para inversiones por categoría
-  getInvestmentByCategory: memoize((year: number): Record<string, number> => {
-    const investments = useDataStore.getState().investments
-      .filter(i => i.year === year);
+  // 2. Inversiones Totales por CAMPAÑA (ID) - Nota: usa year como campaignId
+  getTotalInvestmentsByCampaign:(campaignId: number | string): number => {
+    const { investments } = useDataStore.getState();
+    const targetYear = Number(campaignId);
 
-    return investments.reduce((acc, inv) => {
-      acc[inv.category] = (acc[inv.category] || 0) + inv.amount;
-      return acc;
-    }, {} as Record<string, number>);
-  }),
+    if (!targetYear) return 0;
 
-  // Selector para ratio de rentabilidad
-  getProfitabilityRatio: memoize((year: number): number => {
-    const totalCosts = get().getTotalCosts(year);
-    const totalInvestments = get().getTotalInvestments(year);
+    return investments
+      .filter(inv => Number(inv.year) === targetYear)
+      .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+  },
+
+  // Ratio de Rentabilidad (Por ID)
+  getProfitabilityRatio: (campaignId: number | string): number => {
+    const totalCosts = get().getTotalCostsByCampaign(campaignId);
+    const totalInvestments = get().getTotalInvestmentsByCampaign(campaignId);
 
     if (totalInvestments === 0) return 0;
     return (totalCosts - totalInvestments) / totalInvestments;
-  }),
-
+  },
   // Production selectors
   getTotalProduction: (year: number): number => {
     const productions = useDataStore.getState().productions
