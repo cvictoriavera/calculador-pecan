@@ -61,6 +61,7 @@ interface AppContextType {
   deleteMonte: (id: string) => void;
   updateCampaign: (campaignId: number, data: any) => Promise<any>;
   changeProject: (projectId: number) => void;
+  loadCampaigns: () => Promise<void>;
   isOnboardingComplete: boolean;
   isLoading: boolean;
   completeOnboarding: (name: string, year: number, projectId: number) => Promise<void>;
@@ -139,32 +140,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [currentCampaign]);
 
 
+  // Load campaigns function
+  const loadCampaigns = async () => {
+    if (!currentProjectId) {
+      setCampaigns([]);
+      return;
+    }
+
+    setCampaignsLoading(true);
+    try {
+
+      const data = await getCampaignsByProject(currentProjectId);
+
+      const campaignsData = Array.isArray(data) ? data : [];
+      setCampaigns(campaignsData);
+
+      // Set current campaign ID
+      updateCurrentCampaignId(campaignsData);
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+      setCampaigns([]);
+    } finally {
+      setCampaignsLoading(false);
+    }
+  };
+
   // Load campaigns when project changes
   useEffect(() => {
-    const loadCampaigns = async () => {
-      if (!currentProjectId) {
-        setCampaigns([]);
-        return;
-      }
-
-      setCampaignsLoading(true);
-      try {
-    
-        const data = await getCampaignsByProject(currentProjectId);
-       
-        const campaignsData = Array.isArray(data) ? data : [];
-        setCampaigns(campaignsData);
-
-        // Set current campaign ID
-        updateCurrentCampaignId(campaignsData);
-      } catch (error) {
-        console.error('Error loading campaigns:', error);
-        setCampaigns([]);
-      } finally {
-        setCampaignsLoading(false);
-      }
-    };
-
     loadCampaigns();
   }, [currentProjectId]);
 
@@ -448,6 +450,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteMonte: deleteMonteContext,
         updateCampaign: updateCampaignInContext,
         changeProject,
+        loadCampaigns,
         isOnboardingComplete,
         isLoading,
         completeOnboarding,

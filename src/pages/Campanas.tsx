@@ -7,6 +7,8 @@ import { useApp } from "@/contexts/AppContext";
 import { formatCurrency } from "@/lib/calculations";
 import { useCalculationsStore } from "@/stores/calculationsStore";
 import { useDataStore } from "@/stores";
+import { createCampaign } from "@/services/campaignService";
+import { useToast } from "@/components/ui/use-toast";
 
 
 interface Campaign {
@@ -29,7 +31,9 @@ interface Campaign {
 
 const Campanas = () => {
 
-  const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading } = useApp();
+  const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign } = useApp();
+
+  const { toast } = useToast();
 
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
 
@@ -41,6 +45,56 @@ const Campanas = () => {
       console.log(`Inversión: ID=${inv.id}, campaign_id=${inv.campaign_id}, amount=${inv.amount}`);
     });
   }, [costs, investments]);
+
+  const handleNuevaCampana = async () => {
+    const nextYear = currentCampaign + 1;
+    const existing = safeCampaigns.find(c => c.year === nextYear);
+    if (existing) {
+      toast({
+        title: "Error",
+        description: `Ya existe una campaña para el año ${nextYear}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Close all other campaigns and set is_current to 0
+      for (const camp of safeCampaigns) {
+        if (camp.status !== 'closed' || camp.is_current !== 0) {
+          await updateCampaign(camp.id, { status: 'closed', is_current: 0 });
+        }
+      }
+
+      // Create the new campaign as open and current
+      await createCampaign({
+        project_id: currentProjectId!,
+        campaign_name: `Campaña ${nextYear}`,
+        year: nextYear,
+        start_date: `${nextYear}-01-01`,
+        end_date: undefined,
+        status: 'open',
+        is_current: 1,
+      });
+
+      // Update the current campaign year
+      setCurrentCampaign(nextYear);
+
+      toast({
+        title: "Éxito",
+        description: `Campaña ${nextYear} creada exitosamente`,
+      });
+      // Reload campaigns
+      await loadCampaigns();
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la campaña",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Ensure campaigns is always an array
   const safeCampaigns = campaigns || [];
@@ -92,7 +146,7 @@ const Campanas = () => {
           <h1 className="text-3xl font-bold text-foreground mb-2">Campañas</h1>
           <p className="text-muted-foreground">Gestión de ciclos anuales de producción</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+        <Button onClick={handleNuevaCampana} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
           <Plus className="h-5 w-5" />
           Nueva Campaña
         </Button>
