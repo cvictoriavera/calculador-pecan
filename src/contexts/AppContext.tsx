@@ -96,7 +96,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const isOnboardingComplete = !!currentProjectId;
 
-  const { loadAllCosts } = useDataStore();
+  const { loadAllCosts, loadAllInvestments } = useDataStore();
 
   // Sincronizar Contexto con Zustand
   useEffect(() => {
@@ -109,11 +109,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         name: c.campaign_name    // Mapeamos campaign_name -> name
       }));
 
-      // Usamos 'as any' para calmar a TypeScript ya que ahora tenemos las props requeridas
-      // más las originales.
-      loadAllCosts(currentProjectId, campaignsForStore as any);
+      // Cargar Costos
+    loadAllCosts(currentProjectId, campaignsForStore as any);
+    
+    // Cargar Inversiones
+    loadAllInvestments(currentProjectId, campaignsForStore as any);
     }
-  }, [currentProjectId, campaigns, loadAllCosts]);
+  }, [currentProjectId, campaigns, loadAllCosts, loadAllInvestments]);
 
   useEffect(() => {
     localStorage.setItem("projectName", projectName);

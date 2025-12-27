@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,15 +23,6 @@ import { createInvestment, updateInvestment as updateInvestmentApi, deleteInvest
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-interface InversionRegistro {
-  id: string;
-  year: number;
-  category: string;
-  description: string;
-  amount: number;
-  date: Date;
-  data?: any;
-}
 
 const categoriaLabels: Record<string, string> = {
   tierra: "Tierra",
@@ -51,7 +42,7 @@ const categoriaColors: Record<string, string> = {
 
 const Inversiones = () => {
   const { currentProjectId, campaigns, currentCampaign } = useApp();
-  const { investments, loadAllInvestments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
+  const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
 
   // Calculate displayed years - only campaign years
   const displayedYears = useMemo(() => {
@@ -65,12 +56,20 @@ const Inversiones = () => {
 
   // Get investment for a specific category and year
   const getInvestmentForCategoryAndYear = (category: string, year: number): number => {
-    const campaign = campaigns.find(c => c.year === year);
+    // 1. Aseguramos que el año objetivo sea un número
+    const targetYear = Number(year);
+    
+    const campaign = campaigns.find(c => Number(c.year) === targetYear);
     if (!campaign) return 0;
 
     return investments
-      .filter(inv => inv.year === year && inv.category === category)
-      .reduce((sum, inv) => sum + inv.amount, 0);
+      .filter(inv => 
+        // 2. CAMBIO CLAVE: Convertimos ambos lados a Number
+        Number(inv.year) === targetYear && 
+        inv.category === category
+      )
+      // 3. Aseguramos sumar números
+      .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
   };
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -78,48 +77,38 @@ const Inversiones = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [inversionToDelete, setInversionToDelete] = useState<any>(null);
 
-  // All investments are already filtered by campaigns (similar to how costs work)
-  const inversionesFiltered = investments;
+  // Filtrado de lista (Tabla inferior)
+  const inversionesFiltered = useMemo(() => {
+    // CAMBIO: Usamos Number() en ambos lados para evitar errores de tipo (string vs number)
+    return investments.filter((inv: any) => Number(inv.year) === Number(currentCampaign));
+  }, [investments, currentCampaign]);
+
   const totalInversionesCampaña = inversionesFiltered.reduce((acc, inv) => acc + inv.amount, 0);
 
 
   // Prepare data for stacked bar chart - investments by year and category
-  const chartData = campaigns
-    .sort((a, b) => a.year - b.year)
-    .map((campaign) => {
-      const year = campaign.year;
-      const yearInvestments = investments.filter((inv) => inv.year === year);
+  const chartData = useMemo(() => {
+    return campaigns
+      .sort((a, b) => Number(a.year) - Number(b.year))
+      .map((campaign) => {
+        const year = Number(campaign.year); // Forzamos número
+        
+        // CAMBIO: Convertimos ambos lados a Number para comparar
+        const yearInvestments = investments.filter((inv) => Number(inv.year) === year);
 
-      const yearData: any = { year };
-      Object.keys(categoriaLabels).forEach((category) => {
-        const categoryInvestments = yearInvestments.filter((inv) => inv.category === category);
-        const total = categoryInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-        yearData[category] = total;
+        const yearData: any = { year };
+        Object.keys(categoriaLabels).forEach((category) => {
+          const categoryInvestments = yearInvestments.filter((inv) => inv.category === category);
+          
+          // Aseguramos que amount sea número al sumar
+          const total = categoryInvestments.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+          yearData[category] = total;
+        });
+
+        return yearData;
       });
-
-      return yearData;
-    });
-
-
-  // Load investments from database when project or campaigns change
-  useEffect(() => {
-    const loadInvestments = async () => {
-      if (currentProjectId && campaigns.length > 0) {
-        try {
-          await loadAllInvestments(currentProjectId, campaigns as any);
-        } catch (error) {
-          console.error("Error loading investments:", error);
-          // Clear investments on error
-          useDataStore.setState({ investments: [] });
-        }
-      } else {
-        // Clear investments if no project or campaigns
-        useDataStore.setState({ investments: [] });
-      }
-    };
-
-    loadInvestments();
-  }, [currentProjectId, campaigns, loadAllInvestments]);
+  }, [campaigns, investments]);
+  
 
 
   const handleSaveInversion = async (categoria: string, data: any) => {
@@ -128,37 +117,44 @@ const Inversiones = () => {
       return;
     }
 
+    const categoriaLabel = categoriaLabels[categoria];
+    const descripcion = data.descripcion || data.items?.map((i: any) => i.tipo).join(", ") || categoriaLabel;
+    
+    // --- Convertir monto a Number explícitamente ---
+    // Esto evita que se guarde como string ("1000") y rompa las sumas
+    const monto = Number(data.total || data.precio || 0);
+
     // Find the current campaign
-    const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
+    // Aseguramos comparar números con números
+    const currentCamp = campaigns.find(c => Number(c.year) === Number(currentCampaign));
+
     if (!currentCamp) {
       toast.error("No se pudo encontrar la campaña actual");
       return;
     }
 
-    const categoriaLabel = categoriaLabels[categoria];
-    const descripcion = data.descripcion || data.items?.map((i: any) => i.tipo).join(", ") || categoriaLabel;
-    const monto = data.total || data.precio || 0;
-
     try {
       if (editingInversion) {
-        // Update existing investment
+        // Update existing investment (API)
         await updateInvestmentApi(parseInt(editingInversion.id), {
           category: categoria,
           description: descripcion,
           total_value: monto,
           details: data,
         });
-        // Update local state
+        
+        // Update local state (Store)
         updateInvestment(editingInversion.id, {
           category: categoria,
           description: descripcion,
-          amount: monto,
+          amount: monto, // Enviamos el número limpio
           data,
         });
+        
         toast.success("Inversión actualizada correctamente");
         setEditingInversion(null);
       } else {
-        // Create new investment
+        // Create new investment (API)
         const result = await createInvestment({
           project_id: currentProjectId,
           campaign_id: currentCamp.id,
@@ -167,16 +163,20 @@ const Inversiones = () => {
           total_value: monto,
           details: data,
         });
-        // Add to local state
+
+        // Add to local state (Store)
         addInvestment({
           id: result.id.toString(),
-          year: currentCampaign,
+          // --- Asegurar que el año sea Number ---
+          // Esto es vital para que coincida con el filtro del gráfico (inv.year === year)
+          year: Number(currentCampaign), 
           category: categoria,
           description: descripcion,
-          amount: monto,
+          amount: monto, // Enviamos el número limpio
           date: new Date(),
           data,
         });
+        
         toast.success("Inversión registrada correctamente");
       }
     } catch (error) {
@@ -185,7 +185,7 @@ const Inversiones = () => {
     }
   };
 
-  const handleEditInversion = (inversion: InversionRegistro) => {
+  const handleEditInversion = (inversion: any) => {
     setEditingInversion(inversion);
     setSheetOpen(true);
   };
@@ -417,7 +417,7 @@ const Inversiones = () => {
                 <tbody>
                   {inversionesFiltered.map((inversion) => (
                     <tr key={inversion.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                      <td className="p-3 text-sm font-medium text-foreground">{inversion.year}</td>
+                      <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
                       <td className="p-3 text-sm">
                         <Badge
                           style={{

@@ -27,19 +27,17 @@ interface Campaign {
   montes_production?: string;
 }
 
-
-
 const Campanas = () => {
+
   const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading } = useApp();
 
-  const { getTotalCostsByCampaign } = useCalculationsStore();
+  const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
 
-  const { costs } = useDataStore();
+  const { costs, investments } = useDataStore();
 
   useEffect(() => {
-    // Esto no afecta la lógica, solo satisface al compilador y ayuda a depurar
-    console.log(`Datos actualizados en Campañas: ${costs.length} costos cargados`);
-  }, [costs]);
+    console.log(`Datos: ${costs.length} costos, ${investments.length} inversiones`);
+  }, [costs, investments]);
 
   // Ensure campaigns is always an array
   const safeCampaigns = campaigns || [];
@@ -153,7 +151,7 @@ const Campanas = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="flex items-center gap-3">
                       <div className="p-3 rounded-lg bg-secondary">
                         <Calendar className="h-6 w-6 text-accent" />
@@ -191,6 +189,16 @@ const Campanas = () => {
                       <div>
                         <p className="text-sm text-muted-foreground">Costos</p>
                         <p className="text-lg font-semibold text-accent"> {campaign ? formatCurrency(getTotalCostsByCampaign(campaign.id), true) : '$0'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-lg bg-secondary">
+                        <TrendingUp className="h-6 w-6 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Invertido</p>
+                        <p className="text-lg font-semibold text-accent"> {campaign ? formatCurrency(getTotalInvestmentsByCampaign(campaign.year), true) : '$0'}</p>
                       </div>
                     </div>
                   </div>
