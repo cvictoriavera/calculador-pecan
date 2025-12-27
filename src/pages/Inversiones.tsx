@@ -41,7 +41,7 @@ const categoriaColors: Record<string, string> = {
 };
 
 const Inversiones = () => {
-  const { currentProjectId, campaigns, currentCampaign } = useApp();
+  const { currentProjectId, campaigns, currentCampaign, currentCampaignId } = useApp();
   const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
 
   // Calculate displayed years - only campaign years
@@ -56,19 +56,15 @@ const Inversiones = () => {
 
   // Get investment for a specific category and year
   const getInvestmentForCategoryAndYear = (category: string, year: number): number => {
-    // 1. Aseguramos que el año objetivo sea un número
-    const targetYear = Number(year);
-    
-    const campaign = campaigns.find(c => Number(c.year) === targetYear);
+    // Find the campaign for this year
+    const campaign = campaigns.find(c => c.year === year);
     if (!campaign) return 0;
 
     return investments
-      .filter(inv => 
-        // 2. CAMBIO CLAVE: Convertimos ambos lados a Number
-        Number(inv.year) === targetYear && 
+      .filter(inv =>
+        inv.campaign_id === campaign.id &&
         inv.category === category
       )
-      // 3. Aseguramos sumar números
       .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
   };
 
@@ -79,9 +75,9 @@ const Inversiones = () => {
 
   // Filtrado de lista (Tabla inferior)
   const inversionesFiltered = useMemo(() => {
-    // CAMBIO: Usamos Number() en ambos lados para evitar errores de tipo (string vs number)
-    return investments.filter((inv: any) => Number(inv.year) === Number(currentCampaign));
-  }, [investments, currentCampaign]);
+    // Usar campaign_id para filtrar inversiones de la campaña actual
+    return investments.filter((inv: any) => inv.campaign_id === currentCampaignId);
+  }, [investments, currentCampaignId]);
 
   const totalInversionesCampaña = inversionesFiltered.reduce((acc, inv) => acc + inv.amount, 0);
 
@@ -89,17 +85,17 @@ const Inversiones = () => {
   // Prepare data for stacked bar chart - investments by year and category
   const chartData = useMemo(() => {
     return campaigns
-      .sort((a, b) => Number(a.year) - Number(b.year))
+      .sort((a, b) => a.year - b.year)
       .map((campaign) => {
-        const year = Number(campaign.year); // Forzamos número
-        
-        // CAMBIO: Convertimos ambos lados a Number para comparar
-        const yearInvestments = investments.filter((inv) => Number(inv.year) === year);
+        const year = campaign.year;
+
+        // Filter investments by campaign_id
+        const campaignInvestments = investments.filter((inv) => inv.campaign_id === campaign.id);
 
         const yearData: any = { year };
         Object.keys(categoriaLabels).forEach((category) => {
-          const categoryInvestments = yearInvestments.filter((inv) => inv.category === category);
-          
+          const categoryInvestments = campaignInvestments.filter((inv) => inv.category === category);
+
           // Aseguramos que amount sea número al sumar
           const total = categoryInvestments.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
           yearData[category] = total;
@@ -167,9 +163,7 @@ const Inversiones = () => {
         // Add to local state (Store)
         addInvestment({
           id: result.id.toString(),
-          // --- Asegurar que el año sea Number ---
-          // Esto es vital para que coincida con el filtro del gráfico (inv.year === year)
-          year: Number(currentCampaign), 
+          campaign_id: currentCamp.id,
           category: categoria,
           description: descripcion,
           amount: monto, // Enviamos el número limpio

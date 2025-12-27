@@ -37,6 +37,9 @@ const Campanas = () => {
 
   useEffect(() => {
     console.log(`Datos: ${costs.length} costos, ${investments.length} inversiones`);
+    investments.forEach(inv => {
+      console.log(`Inversión: ID=${inv.id}, campaign_id=${inv.campaign_id}, amount=${inv.amount}`);
+    });
   }, [costs, investments]);
 
   // Ensure campaigns is always an array
@@ -113,9 +116,11 @@ const Campanas = () => {
       ) : (
         <div className="space-y-4">
           {campaignYears.map((year) => {
-            
-            const campaign = getCampaignForYear(year);
-            const isCurrentYear = year === currentCampaign;
+
+             const campaign = getCampaignForYear(year);
+             const isCurrentYear = year === currentCampaign;
+
+             console.log(`Renderizando campaña ${year}: campaign=${campaign ? `ID=${campaign.id}` : 'null'}`);
 
             return (
               <Card
@@ -198,7 +203,13 @@ const Campanas = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Invertido</p>
-                        <p className="text-lg font-semibold text-accent"> {campaign ? formatCurrency(getTotalInvestmentsByCampaign(campaign.year), true) : '$0'}</p>
+                        <p className="text-lg font-semibold text-accent">
+                          {(() => {
+                            const total = campaign ? getTotalInvestmentsByCampaign(campaign.id) : 0;
+                            console.log(`Campaña ${campaign?.id}: Total inversiones = ${total}`);
+                            return formatCurrency(total, true);
+                          })()}
+                        </p>
                       </div>
                     </div>
                   </div>

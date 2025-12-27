@@ -33,7 +33,7 @@ export interface CostRecord {
 
 export interface InvestmentRecord {
   id: string;
-  year: number;
+  campaign_id: number;
   category: string;
   description: string;
   amount: number;
@@ -262,7 +262,7 @@ export const useDataStore = create<DataState>()(
         const campaignInvestments = await getInvestmentsByCampaign(projectId, campaign.id);
         const formattedInvestments = campaignInvestments.map(inv => ({
           id: inv.id.toString(),
-          year: campaign.year,
+          campaign_id: campaign.id,
           category: inv.category,
           description: inv.description,
           amount: Number(inv.total_value) || 0,
@@ -349,9 +349,9 @@ export const useDataStore = create<DataState>()(
 
   // Investment actions - Now using API
   addInvestment: async (investment) => {
-    // Validación: Año válido
-    if (!investment.year || investment.year < 2000 || investment.year > 2100) {
-      throw new Error('Valid year is required for investment');
+    // Validación: Campaign ID válido
+    if (!investment.campaign_id || investment.campaign_id <= 0) {
+      throw new Error('Valid campaign ID is required for investment');
     }
 
     // Validación: Monto positivo
@@ -371,6 +371,7 @@ export const useDataStore = create<DataState>()(
     // TODO: Call API to save to database
     // const result = await createInvestment({
     //   project_id: currentProjectId,
+    //   campaign_id: investment.campaign_id,
     //   category: investment.category,
     //   description: investment.description,
     //   total_value: investment.amount,
@@ -384,9 +385,9 @@ export const useDataStore = create<DataState>()(
       throw new Error(`Investment with ID ${id} not found`);
     }
 
-    // Validación: Año válido si se cambia
-    if (updates.year !== undefined && (updates.year < 2000 || updates.year > 2100)) {
-      throw new Error('Valid year is required for investment');
+    // Validación: Campaign ID válido si se cambia
+    if (updates.campaign_id !== undefined && (updates.campaign_id <= 0)) {
+      throw new Error('Valid campaign ID is required for investment');
     }
 
     // Validación: Monto positivo si se cambia

@@ -32,7 +32,7 @@ const categorias = [
 
 interface InversionRegistro {
   id: string;
-  year: number;
+  campaign_id: number;
   category: string;
   description: string;
   amount: number;

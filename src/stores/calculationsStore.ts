@@ -37,9 +37,12 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
   },
 
   getTotalInvestments: (year: number): number => {
-    const { investments } = useDataStore.getState();
+    const { investments, campaigns } = useDataStore.getState();
+    const campaign = campaigns.find(c => c.year === year);
+    if (!campaign) return 0;
+
     return investments
-      .filter(inv => inv.year === year)
+      .filter(inv => inv.campaign_id === campaign.id)
       .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
   },
 
@@ -59,10 +62,10 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
 
   getInvestmentByCategory: (campaignId: number | string): Record<string, number> => {
     const { investments } = useDataStore.getState();
-    const targetYear = Number(campaignId);
+    const targetId = Number(campaignId);
 
     return investments
-      .filter(inv => inv.year === targetYear)
+      .filter(inv => inv.campaign_id === targetId)
       .reduce((acc, inv) => {
         const amount = Number(inv.amount) || 0;
         acc[inv.category] = (acc[inv.category] || 0) + amount;
@@ -82,16 +85,19 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
       .reduce((sum, cost) => sum + (Number(cost.total_amount) || 0), 0);
   },
 
-  // 2. Inversiones Totales por CAMPAÑA (ID) - Nota: usa year como campaignId
+  // 2. Inversiones Totales por CAMPAÑA (ID)
   getTotalInvestmentsByCampaign:(campaignId: number | string): number => {
     const { investments } = useDataStore.getState();
-    const targetYear = Number(campaignId);
+    const targetId = Number(campaignId);
 
-    if (!targetYear) return 0;
+    if (!targetId) return 0;
 
-    return investments
-      .filter(inv => Number(inv.year) === targetYear)
-      .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+    const filteredInvestments = investments.filter(inv => Number(inv.campaign_id) === targetId);
+    const total = filteredInvestments.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+
+    console.log(`getTotalInvestmentsByCampaign(${campaignId}): targetId=${targetId}, filtered=${filteredInvestments.length}, total=${total}, investments:`, investments.map(inv => ({id: inv.id, campaign_id: inv.campaign_id, amount: inv.amount})));
+
+    return total;
   },
 
   // Ratio de Rentabilidad (Por ID)
