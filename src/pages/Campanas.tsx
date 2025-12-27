@@ -1,9 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar, TrendingUp, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/contexts/AppContext";
 import { formatCurrency } from "@/lib/calculations";
+import { useCalculationsStore } from "@/stores/calculationsStore";
+import { useDataStore } from "@/stores";
+
 
 interface Campaign {
   id: number;
@@ -28,8 +32,14 @@ interface Campaign {
 const Campanas = () => {
   const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading } = useApp();
 
-  // AGREGA ESTO PARA VER QUÉ TIENE EL ARRAY REALMENTE
-  console.log("Array completo de campañas:", campaigns);
+  const { getTotalCostsByCampaign } = useCalculationsStore();
+
+  const { costs } = useDataStore();
+
+  useEffect(() => {
+    // Esto no afecta la lógica, solo satisface al compilador y ayuda a depurar
+    console.log(`Datos actualizados en Campañas: ${costs.length} costos cargados`);
+  }, [costs]);
 
   // Ensure campaigns is always an array
   const safeCampaigns = campaigns || [];
@@ -143,7 +153,7 @@ const Campanas = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="flex items-center gap-3">
                       <div className="p-3 rounded-lg bg-secondary">
                         <Calendar className="h-6 w-6 text-accent" />
@@ -171,6 +181,16 @@ const Campanas = () => {
                       <div>
                         <p className="text-sm text-muted-foreground">Ingresos</p>
                         <p className="text-lg font-semibold text-accent">{campaign ? formatCurrency((parseFloat(campaign.total_production || '0')) * (parseFloat(campaign.average_price || '0')), true) : '$0'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-lg bg-secondary">
+                        <TrendingUp className="h-6 w-6 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Costos</p>
+                        <p className="text-lg font-semibold text-accent"> {campaign ? formatCurrency(getTotalCostsByCampaign(campaign.id), true) : '$0'}</p>
                       </div>
                     </div>
                   </div>

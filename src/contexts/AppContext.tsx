@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { createCampaign, getCampaignsByProject, updateCampaign } from "@/services/campaignService";
 import { getProjects } from "@/services/projectService";
 import { getMontesByProject, createMonte, updateMonte as updateMonteAPI, deleteMonte } from "@/services/monteService";
+import { useDataStore } from "@/stores"; 
 
 export interface Monte {
   id: string;
@@ -68,6 +69,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  
   const [projectName, setProjectName] = useState(() =>
     localStorage.getItem("projectName") || ""
   );
@@ -93,6 +95,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const isOnboardingComplete = !!currentProjectId;
+
+  const { loadAllCosts } = useDataStore();
+
+  // Sincronizar Contexto con Zustand
+  useEffect(() => {
+    if (currentProjectId && campaigns.length > 0) {
+      
+      // Mapeamos las campañas para adaptar las propiedades que faltan
+      const campaignsForStore = campaigns.map(c => ({
+        ...c,
+        projectId: c.project_id, // Mapeamos project_id -> projectId
+        name: c.campaign_name    // Mapeamos campaign_name -> name
+      }));
+
+      // Usamos 'as any' para calmar a TypeScript ya que ahora tenemos las props requeridas
+      // más las originales.
+      loadAllCosts(currentProjectId, campaignsForStore as any);
+    }
+  }, [currentProjectId, campaigns, loadAllCosts]);
 
   useEffect(() => {
     localStorage.setItem("projectName", projectName);

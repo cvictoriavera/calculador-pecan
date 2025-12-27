@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,7 +16,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
-// IMPORTANTE: Importar desde @/stores, no desde ./dataStore
 import { useDataStore } from "@/stores";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
@@ -49,21 +48,10 @@ const categoriaColors: Record<string, string> = {
 
 const Costos = () => {
   const { currentProjectId, campaigns, currentCampaign } = useApp();
-  const { costs, loadAllCosts, addCost, updateCost, deleteCost } = useDataStore();
+  const { costs, addCost, updateCost, deleteCost } = useDataStore();
   const { getCostByCategory, getTotalCostsByCampaign } = useCalculationsStore();
 
-  useEffect(() => {
-    const loadCostsData = async () => {
-      if (currentProjectId && campaigns.length > 0) {
-        try {
-          await loadAllCosts(currentProjectId, campaigns as any);
-        } catch (error) {
-          console.error("Error loading costs:", error);
-        }
-      }
-    };
-    loadCostsData();
-  }, [currentProjectId, campaigns, loadAllCosts]);
+  
 
   // Selección segura de la campaña
   const currentCampaignObj = useMemo(() => {
