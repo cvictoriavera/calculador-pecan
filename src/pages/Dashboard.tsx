@@ -1,26 +1,103 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, Sprout, BarChart3 } from "lucide-react";
+import { TrendingUp, DollarSign, Sprout, BarChart3, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
-
-const productionData = [
-  { year: "2020", produccion: 1200, ingresos: 84000 },
-  { year: "2021", produccion: 1800, ingresos: 126000 },
-  { year: "2022", produccion: 2100, ingresos: 147000 },
-  { year: "2023", produccion: 2500, ingresos: 175000 },
-  { year: "2024", produccion: 2800, ingresos: 196000 },
-  { year: "2025", produccion: 3200, ingresos: 224000 },
-];
-
-const paybackData = [
-  { year: "2020", ingresos: 84000, costos: 45000, inversiones: 120000, flujoAcumulado: -81000 },
-  { year: "2021", ingresos: 126000, costos: 52000, inversiones: 30000, flujoAcumulado: -37000 },
-  { year: "2022", ingresos: 147000, costos: 58000, inversiones: 20000, flujoAcumulado: 32000 },
-  { year: "2023", ingresos: 175000, costos: 62000, inversiones: 15000, flujoAcumulado: 130000 },
-  { year: "2024", ingresos: 196000, costos: 68000, inversiones: 10000, flujoAcumulado: 248000 },
-  { year: "2025", ingresos: 224000, costos: 72000, inversiones: 8000, flujoAcumulado: 392000 },
-];
+import { useApp } from "@/contexts/AppContext";
+import { useCalculationsStore } from "@/stores/calculationsStore";
+import { formatCurrency } from "@/lib/calculations"; 
+import { useDataStore } from "@/stores"; 
 
 const Dashboard = () => {
+  // 1. Traemos las campañas
+  const { campaigns, campaignsLoading } = useApp();
+  
+  // 2. IMPORTANTE: Nos suscribimos a los datos crudos para que el componente
+  // se actualice cuando terminen de cargarse desde el servidor.
+  const { costs, investments } = useDataStore(); 
+
+  // 3. Traemos las funciones de cálculo
+  const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
+
+  // 4. Calculamos los datos. Agregamos 'costs' e 'investments' a las dependencias.
+  const dashboardData = useMemo(() => {
+    if (!campaigns || campaigns.length === 0) return [];
+
+    const sortedCampaigns = [...campaigns].sort((a, b) => a.year - b.year);
+    let acumulado = 0;
+
+    return sortedCampaigns.map((camp) => {
+      const production = parseFloat(camp.total_production || "0");
+      const price = parseFloat(camp.average_price || "0");
+      const ingresos = production * price;
+
+      // Ahora sí, estas funciones tendrán datos frescos
+      const costosCamp = getTotalCostsByCampaign(camp.id);
+      const inversionesCamp = getTotalInvestmentsByCampaign(camp.id);
+
+      const flujoCaja = ingresos - costosCamp - inversionesCamp;
+      acumulado += flujoCaja;
+
+      return {
+        year: camp.year.toString(),
+        produccion: production,
+        ingresos: ingresos,
+        costos: costosCamp,
+        inversiones: inversionesCamp,
+        flujoCaja: flujoCaja,
+        flujoAcumulado: acumulado,
+        id: camp.id
+      };
+    });
+  // AGREGAMOS costs E investments AQUÍ ABAJO PARA RECALCULAR CUANDO LLEGUEN
+  }, [campaigns, getTotalCostsByCampaign, getTotalInvestmentsByCampaign, costs, investments]);
+
+  // 3. Calculamos KPIs Generales (Totales o del año actual)
+  const kpis = useMemo(() => {
+    if (dashboardData.length === 0) return null;
+
+    // Último año registrado (normalmente el actual o proyección futura)
+    const currentYearData = dashboardData[dashboardData.length - 1];
+    const previousYearData = dashboardData.length > 1 ? dashboardData[dashboardData.length - 2] : null;
+
+    // Cálculo simple de variaciones (evitando división por cero)
+    const getVariation = (current: number, previous: number) => {
+      if (!previous) return 0;
+      return ((current - previous) / previous) * 100;
+    };
+
+    // Año de Payback (primer año donde el acumulado se vuelve positivo)
+    const paybackYearObj = dashboardData.find(d => d.flujoAcumulado >= 0);
+    const paybackYear = paybackYearObj ? paybackYearObj.year : "N/A";
+
+    return {
+      produccionTotal: currentYearData.produccion,
+      produccionVar: previousYearData ? getVariation(currentYearData.produccion, previousYearData.produccion) : 0,
+      ingresosTotal: currentYearData.ingresos,
+      ingresosVar: previousYearData ? getVariation(currentYearData.ingresos, previousYearData.ingresos) : 0,
+      costosTotal: currentYearData.costos,
+      costosRatio: currentYearData.ingresos ? (currentYearData.costos / currentYearData.ingresos) * 100 : 0,
+      paybackYear
+    };
+  }, [dashboardData]);
+
+  if (campaignsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Si no hay datos, mostrar estado vacío
+  if (dashboardData.length === 0) {
+     return (
+        <div className="text-center py-10">
+           <h2 className="text-xl font-semibold">No hay datos registrados</h2>
+           <p className="text-muted-foreground">Comienza creando una campaña y registrando movimientos.</p>
+        </div>
+     )
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -29,51 +106,57 @@ const Dashboard = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Producción Total</CardTitle>
-            <Sprout className="h-5 w-5 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">3,200 kg</div>
-            <p className="text-xs text-accent mt-1">+14.3% vs. año anterior</p>
-          </CardContent>
-        </Card>
+      {kpis && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Producción {dashboardData[dashboardData.length - 1].year}</CardTitle>
+              <Sprout className="h-5 w-5 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{kpis.produccionTotal.toLocaleString()} kg</div>
+              <p className={`text-xs mt-1 ${kpis.produccionVar >= 0 ? "text-accent" : "text-destructive"}`}>
+                {kpis.produccionVar > 0 ? "+" : ""}{kpis.produccionVar.toFixed(1)}% vs. año anterior
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos 2025</CardTitle>
-            <DollarSign className="h-5 w-5 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">$224,000</div>
-            <p className="text-xs text-accent mt-1">+14.3% vs. 2024</p>
-          </CardContent>
-        </Card>
+          <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos {dashboardData[dashboardData.length - 1].year}</CardTitle>
+              <DollarSign className="h-5 w-5 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">${kpis.ingresosTotal.toLocaleString()}</div>
+              <p className={`text-xs mt-1 ${kpis.ingresosVar >= 0 ? "text-accent" : "text-destructive"}`}>
+                 {kpis.ingresosVar > 0 ? "+" : ""}{kpis.ingresosVar.toFixed(1)}% vs. año anterior
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Costos Operativos</CardTitle>
-            <TrendingUp className="h-5 w-5 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">$72,000</div>
-            <p className="text-xs text-muted-foreground mt-1">32% de los ingresos</p>
-          </CardContent>
-        </Card>
+          <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Costos Operativos</CardTitle>
+              <TrendingUp className="h-5 w-5 text-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">${kpis.costosTotal.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground mt-1">{kpis.costosRatio.toFixed(1)}% de los ingresos</p>
+            </CardContent>
+          </Card>
 
-        <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Payback</CardTitle>
-            <BarChart3 className="h-5 w-5 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-accent">2022</div>
-            <p className="text-xs text-muted-foreground mt-1">Recupero de inversión</p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Payback Estimado</CardTitle>
+              <BarChart3 className="h-5 w-5 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-accent">{kpis.paybackYear}</div>
+              <p className="text-xs text-muted-foreground mt-1">Recupero de inversión</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -83,7 +166,8 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={productionData}>
+              {/* Usamos dashboardData en lugar de productionData */}
+              <BarChart data={dashboardData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -93,8 +177,9 @@ const Dashboard = () => {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
                   }}
+                  formatter={(value) => [`${value} kg`, "Producción"]}
                 />
-                <Bar dataKey="produccion" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="produccion" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} name="Producción" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -106,7 +191,8 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={paybackData}>
+               {/* Usamos dashboardData en lugar de paybackData */}
+              <LineChart data={dashboardData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -116,6 +202,7 @@ const Dashboard = () => {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
                   }}
+                  formatter={(value) => [`$${value.toLocaleString()}`, ""]}
                 />
                 <Legend />
                 <Line type="monotone" dataKey="ingresos" stroke="hsl(var(--accent))" strokeWidth={2} name="Ingresos" />
@@ -152,25 +239,28 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {paybackData.map((row) => {
-                  const flujoCaja = row.ingresos - row.costos - row.inversiones;
+                {dashboardData.map((row) => {
                   return (
                     <tr key={row.year} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
                       <td className="p-3 text-sm font-medium text-foreground">{row.year}</td>
                       <td className="p-3 text-sm text-right text-accent font-semibold">
-                        ${row.ingresos.toLocaleString()}
+                      {formatCurrency(row.ingresos)}
                       </td>
-                      <td className="p-3 text-sm text-right text-foreground">${row.costos.toLocaleString()}</td>
-                      <td className="p-3 text-sm text-right text-foreground">${row.inversiones.toLocaleString()}</td>
+                      <td className="p-3 text-sm text-right text-foreground">
+                      {formatCurrency(row.costos)}
+                      </td>
+                      <td className="p-3 text-sm text-right text-foreground">
+                        ${row.inversiones.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
                       <td className="p-3 text-sm text-right text-foreground font-medium">
-                        ${flujoCaja.toLocaleString()}
+                        ${row.flujoCaja.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </td>
                       <td
                         className={`p-3 text-sm text-right font-bold ${
                           row.flujoAcumulado >= 0 ? "text-accent" : "text-destructive"
                         }`}
                       >
-                        ${row.flujoAcumulado.toLocaleString()}
+                        ${row.flujoAcumulado.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </td>
                     </tr>
                   );
