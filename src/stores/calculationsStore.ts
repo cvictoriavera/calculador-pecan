@@ -95,7 +95,6 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
     const filteredInvestments = investments.filter(inv => Number(inv.campaign_id) === targetId);
     const total = filteredInvestments.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
 
-    console.log(`getTotalInvestmentsByCampaign(${campaignId}): targetId=${targetId}, filtered=${filteredInvestments.length}, total=${total}, investments:`, investments.map(inv => ({id: inv.id, campaign_id: inv.campaign_id, amount: inv.amount})));
 
     return total;
   },

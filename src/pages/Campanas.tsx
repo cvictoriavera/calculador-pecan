@@ -1,12 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar, TrendingUp, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/contexts/AppContext";
 import { formatCurrency } from "@/lib/calculations";
 import { useCalculationsStore } from "@/stores/calculationsStore";
-import { useDataStore } from "@/stores";
 import { createCampaign } from "@/services/campaignService";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -37,18 +35,15 @@ const Campanas = () => {
 
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
 
-  const { costs, investments } = useDataStore();
 
-  useEffect(() => {
-    console.log(`Datos: ${costs.length} costos, ${investments.length} inversiones`);
-    investments.forEach(inv => {
-      console.log(`Inversión: ID=${inv.id}, campaign_id=${inv.campaign_id}, amount=${inv.amount}`);
-    });
-  }, [costs, investments]);
+  
+     
+   
 
   const handleNuevaCampana = async () => {
     const nextYear = currentCampaign + 1;
     const existing = safeCampaigns.find(c => c.year === nextYear);
+    
     if (existing) {
       toast({
         title: "Error",
@@ -59,14 +54,15 @@ const Campanas = () => {
     }
 
     try {
-      // Close all other campaigns and set is_current to 0
+      // 1. Cerrar campañas anteriores
       for (const camp of safeCampaigns) {
         if (camp.status !== 'closed' || camp.is_current !== 0) {
+          // Usamos updateCampaign del contexto
           await updateCampaign(camp.id, { status: 'closed', is_current: 0 });
         }
       }
 
-      // Create the new campaign as open and current
+      // 2. Crear la nueva campaña (Petición única)
       await createCampaign({
         project_id: currentProjectId!,
         campaign_name: `Campaña ${nextYear}`,
@@ -77,15 +73,19 @@ const Campanas = () => {
         is_current: 1,
       });
 
-      // Update the current campaign year
-      setCurrentCampaign(nextYear);
-
       toast({
         title: "Éxito",
         description: `Campaña ${nextYear} creada exitosamente`,
       });
-      // Reload campaigns
-      await loadCampaigns();
+
+      // 3. CAMBIO CLAVE: Primero recargamos los datos del servidor
+      await loadCampaigns(); 
+      
+      // 4. Y SOLO DESPUÉS cambiamos el año actual.
+      // Al hacerlo en este orden, el AppContext verá que la campaña 
+      // ya existe en la lista recién cargada y no disparará el error 500.
+      setCurrentCampaign(nextYear);
+
     } catch (error) {
       console.error('Error creating campaign:', error);
       toast({
@@ -174,7 +174,6 @@ const Campanas = () => {
              const campaign = getCampaignForYear(year);
              const isCurrentYear = year === currentCampaign;
 
-             console.log(`Renderizando campaña ${year}: campaign=${campaign ? `ID=${campaign.id}` : 'null'}`);
 
             return (
               <Card
@@ -260,7 +259,6 @@ const Campanas = () => {
                         <p className="text-lg font-semibold text-accent">
                           {(() => {
                             const total = campaign ? getTotalInvestmentsByCampaign(campaign.id) : 0;
-                            console.log(`Campaña ${campaign?.id}: Total inversiones = ${total}`);
                             return formatCurrency(total, true);
                           })()}
                         </p>
