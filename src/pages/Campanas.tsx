@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar, TrendingUp, Loader2 } from "lucide-react";
@@ -30,26 +31,27 @@ interface Campaign {
 const Campanas = () => {
 
   const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign } = useApp();
-
   const { toast } = useToast();
-
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
+  const [isCreating, setIsCreating] = useState(false);
 
 
   
-     
-   
-
   const handleNuevaCampana = async () => {
+    // Activamos el modo carga inmediatamente
+    setIsCreating(true);
+
     const nextYear = currentCampaign + 1;
-    const existing = safeCampaigns.find(c => c.year === nextYear);
     
+    // ... validación de existente ...
+    const existing = safeCampaigns.find(c => c.year === nextYear);
     if (existing) {
       toast({
         title: "Error",
         description: `Ya existe una campaña para el año ${nextYear}`,
         variant: "destructive",
       });
+      setIsCreating(false); // Importante: desactivar si hay error temprano
       return;
     }
 
@@ -57,12 +59,11 @@ const Campanas = () => {
       // 1. Cerrar campañas anteriores
       for (const camp of safeCampaigns) {
         if (camp.status !== 'closed' || camp.is_current !== 0) {
-          // Usamos updateCampaign del contexto
           await updateCampaign(camp.id, { status: 'closed', is_current: 0 });
         }
       }
 
-      // 2. Crear la nueva campaña (Petición única)
+      // 2. Crear la nueva campaña
       await createCampaign({
         project_id: currentProjectId!,
         campaign_name: `Campaña ${nextYear}`,
@@ -78,12 +79,10 @@ const Campanas = () => {
         description: `Campaña ${nextYear} creada exitosamente`,
       });
 
-      // 3. CAMBIO CLAVE: Primero recargamos los datos del servidor
-      await loadCampaigns(); 
+      // 3. Recargar datos (Esperamos a que termine)
+      await loadCampaigns();
       
-      // 4. Y SOLO DESPUÉS cambiamos el año actual.
-      // Al hacerlo en este orden, el AppContext verá que la campaña 
-      // ya existe en la lista recién cargada y no disparará el error 500.
+      // 4. Cambiar el año actual
       setCurrentCampaign(nextYear);
 
     } catch (error) {
@@ -93,6 +92,9 @@ const Campanas = () => {
         description: "No se pudo crear la campaña",
         variant: "destructive",
       });
+    } finally {
+      // 5. Desactivar carga SIEMPRE (haya éxito o error)
+      setIsCreating(false);
     }
   };
 
@@ -146,9 +148,22 @@ const Campanas = () => {
           <h1 className="text-3xl font-bold text-foreground mb-2">Campañas</h1>
           <p className="text-muted-foreground">Gestión de ciclos anuales de producción</p>
         </div>
-        <Button onClick={handleNuevaCampana} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-          <Plus className="h-5 w-5" />
-          Nueva Campaña
+        <Button 
+          onClick={handleNuevaCampana} 
+          disabled={isCreating} // Deshabilita el botón mientras crea
+          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+        >
+          {isCreating ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Creando...
+            </>
+          ) : (
+            <>
+              <Plus className="h-5 w-5" />
+              Nueva Campaña
+            </>
+          )}
         </Button>
       </div>
 
