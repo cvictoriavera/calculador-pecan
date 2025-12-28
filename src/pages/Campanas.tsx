@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
 import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
 import { useDataStore } from "@/stores/dataStore";
+import AddCostoSheet from "@/components/costos/AddCostoSheet";
 
 
 interface Campaign {
@@ -42,11 +43,16 @@ const Campanas = () => {
   const addProductionCampaign = useDataStore((state) => state.addProductionCampaign);
   const updateProductionCampaign = useDataStore((state) => state.updateProductionCampaign);
   const deleteProduction = useDataStore((state) => state.deleteProduction);
+  const costs = useDataStore((state) => state.costs);
+  const addCost = useDataStore((state) => state.addCost);
+  const updateCost = useDataStore((state) => state.updateCost);
   const [isCreating, setIsCreating] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [costoSheetOpen, setCostoSheetOpen] = useState(false);
+  const [editingCosto, setEditingCosto] = useState<any>(null);
 
 
   
@@ -212,6 +218,114 @@ const Campanas = () => {
     } catch (error) {
       console.error('Error saving production:', error);
       // TODO: Show error message to user
+    }
+  };
+
+  const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
+    if (!currentProjectId) {
+      toast({
+        title: "Error",
+        description: "No hay proyecto activo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentCampaignId) {
+      toast({
+        title: "Error",
+        description: "No se pudo encontrar la campaña actual",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (typeof categoriaOrData === 'object' && categoriaOrData.category) {
+        const costData = categoriaOrData;
+        if (costData.existingId) {
+          await updateCost(costData.existingId, {
+            category: costData.category,
+            details: costData.details,
+            total_amount: costData.total_amount,
+          });
+          toast({
+            title: "Éxito",
+            description: "Costo actualizado",
+          });
+        } else {
+          await addCost({
+            project_id: currentProjectId,
+            campaign_id: currentCampaignId,
+            category: costData.category,
+            details: costData.details,
+            total_amount: costData.total_amount,
+          });
+          toast({
+            title: "Éxito",
+            description: "Costo registrado",
+          });
+        }
+      }
+      else if (typeof formData === 'object' && formData.category) {
+         if (formData.existingId) {
+          await updateCost(formData.existingId, {
+            category: formData.category,
+            details: formData.details,
+            total_amount: formData.total_amount,
+          });
+          toast({
+            title: "Éxito",
+            description: "Costo actualizado",
+          });
+        } else {
+          await addCost({
+            project_id: currentProjectId,
+            campaign_id: currentCampaignId,
+            category: formData.category,
+            details: formData.details,
+            total_amount: formData.total_amount,
+          });
+          toast({
+            title: "Éxito",
+            description: "Costo registrado",
+          });
+        }
+      }
+      else if (editingCosto) {
+        const categoria = categoriaOrData as string;
+        await updateCost(editingCosto.id, {
+          category: categoria,
+          details: formData,
+          total_amount: formData?.total || formData?.total_amount || 0,
+        });
+        toast({
+          title: "Éxito",
+          description: "Costo actualizado",
+        });
+        setEditingCosto(null);
+      }
+      else {
+        const categoria = categoriaOrData as string;
+        await addCost({
+          project_id: currentProjectId,
+          campaign_id: currentCampaignId,
+          category: categoria,
+          details: formData,
+          total_amount: formData?.total || formData?.total_amount || 0,
+        });
+        toast({
+          title: "Éxito",
+          description: "Costo registrado",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al guardar el costo",
+        variant: "destructive",
+      });
+      console.error("Error saving cost:", error);
     }
   };
 
@@ -451,8 +565,15 @@ const Campanas = () => {
                     >
                       {campaign && parseFloat(campaign.total_production || '0') > 0 ? 'Editar Producción' : 'Cargar Producción'}
                     </Button>
-                    <Button variant="outline" className="flex-1">
-                      Ver Costos
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        setCurrentCampaign(year);
+                        setCostoSheetOpen(true);
+                      }}
+                    >
+                      {campaign && getTotalCostsByCampaign(campaign.id) > 0 ? 'Editar Costos' : 'Registrar Costos'}
                     </Button>
                     <Button variant="outline" className="flex-1">
                       Ver Inversiones
@@ -477,6 +598,17 @@ const Campanas = () => {
         onOpenChange={setEditOpen}
         onSave={handleSaveProduccion}
         editingData={editData}
+      />
+
+      <AddCostoSheet
+        open={costoSheetOpen}
+        onOpenChange={(open) => {
+          setCostoSheetOpen(open);
+          if (!open) setEditingCosto(null);
+        }}
+        onSave={handleUpdateCosto}
+        editingCosto={editingCosto}
+        existingCosts={costs.filter((c: any) => String(c.campaign_id) === String(currentCampaignId))}
       />
     </div>
   );
