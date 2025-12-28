@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar, TrendingUp, Loader2 } from "lucide-react";
@@ -12,7 +13,16 @@ import { RegistrarProduccionForm } from "@/components/produccion/forms/Registrar
 import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
 import { useDataStore } from "@/stores/dataStore";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
+import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
+import { createInvestment, updateInvestment as updateInvestmentApi } from "@/services/investmentService";
 
+const categoriaLabels: Record<string, string> = {
+  tierra: "Tierra",
+  mejoras: "Mejoras",
+  implantacion: "Implantación",
+  riego: "Riego",
+  maquinaria: "Maquinaria",
+};
 
 interface Campaign {
   id: number;
@@ -36,6 +46,7 @@ const Campanas = () => {
 
   const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign, currentCampaignId, montes } = useApp();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
   const productions = useDataStore((state) => state.productions);
   const productionCampaigns = useDataStore((state) => state.productionCampaigns);
@@ -46,6 +57,9 @@ const Campanas = () => {
   const costs = useDataStore((state) => state.costs);
   const addCost = useDataStore((state) => state.addCost);
   const updateCost = useDataStore((state) => state.updateCost);
+  const investments = useDataStore((state) => state.investments);
+  const addInvestment = useDataStore((state) => state.addInvestment);
+  const updateInvestment = useDataStore((state) => state.updateInvestment);
   const [isCreating, setIsCreating] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
@@ -53,6 +67,8 @@ const Campanas = () => {
   const [editData, setEditData] = useState<any>(null);
   const [costoSheetOpen, setCostoSheetOpen] = useState(false);
   const [editingCosto, setEditingCosto] = useState<any>(null);
+  const [inversionSheetOpen, setInversionSheetOpen] = useState(false);
+  const [editingInversion, setEditingInversion] = useState<any>(null);
 
 
   
@@ -329,6 +345,72 @@ const Campanas = () => {
     }
   };
 
+  const handleSaveInversion = async (categoria: string, data: any) => {
+    if (!currentProjectId) {
+      toast({
+        title: "Error",
+        description: "No hay proyecto activo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const categoriaLabel = categoriaLabels[categoria];
+    const descripcion = data.descripcion || data.items?.map((i: any) => i.tipo).join(", ") || categoriaLabel;
+    const monto = Number(data.total || data.precio || 0);
+
+    try {
+      if (editingInversion) {
+        await updateInvestmentApi(parseInt(editingInversion.id), {
+          category: categoria,
+          description: descripcion,
+          total_value: monto,
+          details: data,
+        });
+        updateInvestment(editingInversion.id, {
+          category: categoria,
+          description: descripcion,
+          amount: monto,
+          data,
+        });
+        toast({
+          title: "Éxito",
+          description: "Inversión actualizada correctamente",
+        });
+        setEditingInversion(null);
+      } else {
+        const result = await createInvestment({
+          project_id: currentProjectId,
+          campaign_id: currentCampaignId as number,
+          category: categoria,
+          description: descripcion,
+          total_value: monto,
+          details: data,
+        });
+        addInvestment({
+          id: result.id.toString(),
+          campaign_id: currentCampaignId as number,
+          category: categoria,
+          description: descripcion,
+          amount: monto,
+          date: new Date(),
+          data,
+        });
+        toast({
+          title: "Éxito",
+          description: "Inversión registrada correctamente",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving investment:", error);
+      toast({
+        title: "Error",
+        description: "Error al guardar la inversión",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!initialYear) {
     return (
       <div className="space-y-6">
@@ -575,8 +657,19 @@ const Campanas = () => {
                     >
                       {campaign && getTotalCostsByCampaign(campaign.id) > 0 ? 'Editar Costos' : 'Registrar Costos'}
                     </Button>
-                    <Button variant="outline" className="flex-1">
-                      Ver Inversiones
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        setCurrentCampaign(year);
+                        if (campaign && investments.filter(inv => inv.campaign_id === campaign.id).length > 0) {
+                          navigate('/inversiones');
+                        } else {
+                          setInversionSheetOpen(true);
+                        }
+                      }}
+                    >
+                      {campaign && investments.filter(inv => inv.campaign_id === campaign.id).length > 0 ? 'Ver Inversiones' : 'Registrar Inversiones'}
                     </Button>
                   </div>
                 </CardContent>
@@ -609,6 +702,16 @@ const Campanas = () => {
         onSave={handleUpdateCosto}
         editingCosto={editingCosto}
         existingCosts={costs.filter((c: any) => String(c.campaign_id) === String(currentCampaignId))}
+      />
+
+      <AddInversionSheet
+        open={inversionSheetOpen}
+        onOpenChange={(open) => {
+          setInversionSheetOpen(open);
+          if (!open) setEditingInversion(null);
+        }}
+        onSave={handleSaveInversion}
+        editingInversion={editingInversion}
       />
     </div>
   );
