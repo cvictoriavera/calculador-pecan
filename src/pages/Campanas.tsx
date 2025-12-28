@@ -8,6 +8,9 @@ import { formatCurrency } from "@/lib/calculations";
 import { useCalculationsStore } from "@/stores/calculationsStore";
 import { createCampaign } from "@/services/campaignService";
 import { useToast } from "@/components/ui/use-toast";
+import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
+import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
+import { useDataStore } from "@/stores/dataStore";
 
 
 interface Campaign {
@@ -30,10 +33,20 @@ interface Campaign {
 
 const Campanas = () => {
 
-  const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign } = useApp();
+  const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign, currentCampaignId, montes } = useApp();
   const { toast } = useToast();
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
+  const productions = useDataStore((state) => state.productions);
+  const productionCampaigns = useDataStore((state) => state.productionCampaigns);
+  const addProduction = useDataStore((state) => state.addProduction);
+  const addProductionCampaign = useDataStore((state) => state.addProductionCampaign);
+  const updateProductionCampaign = useDataStore((state) => state.updateProductionCampaign);
+  const deleteProduction = useDataStore((state) => state.deleteProduction);
   const [isCreating, setIsCreating] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editingData, setEditingData] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
 
 
   
@@ -119,6 +132,89 @@ const Campanas = () => {
   };
 
   const campaignYears = generateCampaignYears();
+
+  const handleSaveProduccion = async (data: any) => {
+    try {
+      // Calculate total production
+      const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
+
+      // Update local Zustand stores
+      // Remove existing records for current campaign
+      productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
+
+      // Add new production records
+      data.produccionPorMonte.forEach((p: any) => {
+        addProduction({
+          id: `${currentCampaign}-${p.monteId}`,
+          year: currentCampaign,
+          monteId: p.monteId,
+          kgHarvested: p.kgRecolectados,
+          date: new Date(),
+        });
+      });
+
+      // Prepare montes data for DB (IDs de los que aportaron algo)
+      const montesContribuyentes = (data as any).produccionPorMonte
+        .filter((p: any) => p.kgRecolectados > 0)
+        .map((p: any) => p.monteId);
+      
+      // 1. CREAMOS EL DICCIONARIO DE PRODUCCIÓN (ID: Kilos)
+      const produccionDiccionario = (data as any).produccionPorMonte.reduce((acc: any, p: any) => {
+        if (p.kgRecolectados > 0) acc[p.monteId] = p.kgRecolectados;
+        return acc;
+      }, {});
+
+      // 2. CREAMOS EL OBJETO ESTRUCTURADO CON METADATOS
+      // Aquí guardamos el método ("total" o "detallado") para respetarlo al editar
+      const montesProductionJSON = {
+        metodo: data.metodo,
+        distribucion: produccionDiccionario
+      };
+
+      // Update campaign in database
+      if (currentCampaignId) {
+        await updateCampaign(currentCampaignId, {
+          average_price: data.precioPromedio,
+          total_production: totalKg,
+          montes_contribuyentes: JSON.stringify(montesContribuyentes),
+          // Guardamos la nueva estructura JSON
+          montes_production: JSON.stringify(montesProductionJSON),
+        });
+        console.log('Campaign updated with method:', data.metodo);
+        // Reload campaigns to reflect changes
+        await loadCampaigns();
+      } else {
+         console.log('No currentCampaignId, skipping DB update');
+      }
+
+      // Update local productionCampaigns
+      const existingCampaign = productionCampaigns.find(pc => pc.year === currentCampaign);
+      if (existingCampaign) {
+        updateProductionCampaign(existingCampaign.id, {
+          averagePrice: data.precioPromedio,
+          totalProduction: totalKg,
+          date: new Date(),
+        });
+      } else {
+        addProductionCampaign({
+          id: `campaign-${currentCampaign}`,
+          year: currentCampaign,
+          averagePrice: data.precioPromedio,
+          totalProduction: totalKg,
+          date: new Date(),
+        });
+      }
+
+      setEditingData(null);
+      setWizardOpen(false);
+      setEditData(null);
+      setEditOpen(false);
+    } catch (error) {
+      console.error('Error saving production:', error);
+      // TODO: Show error message to user
+    }
+  };
+
   if (!initialYear) {
     return (
       <div className="space-y-6">
@@ -282,8 +378,78 @@ const Campanas = () => {
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-border flex gap-2">
-                    <Button variant="outline" className="flex-1">
-                      Ver Producción
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        const hasProduction = campaign && parseFloat(campaign.total_production || '0') > 0;
+                        setCurrentCampaign(year);
+                        if (hasProduction) {
+                          // Prepare editing data
+                          const campana = campaign;
+                          const totalProduccionRegistrada = campana?.total_production ? Number(campana.total_production) : 0;
+                          let prodByMonte: Record<string, number> = {};
+                          let metodoDetectado: "detallado" | "total" = "detallado";
+
+                          if (campana && (campana as any).montes_production) {
+                            try {
+                              const rawData = (campana as any).montes_production;
+                              let parsedData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                              if (parsedData && typeof parsedData === 'object' && parsedData.metodo) {
+                                metodoDetectado = parsedData.metodo;
+                                prodByMonte = parsedData.distribucion || {};
+                              } else {
+                                metodoDetectado = "detallado";
+                                prodByMonte = parsedData;
+                              }
+                            } catch (e) {
+                              console.error("Error parseando JSON de producción:", e);
+                            }
+                          } else if (campana && (campana as any).montes_contribuyentes && totalProduccionRegistrada > 0) {
+                            metodoDetectado = "total";
+                            try {
+                              const rawContrib = (campana as any).montes_contribuyentes;
+                              const idsContribuyentes: string[] = (typeof rawContrib === 'string' ? JSON.parse(rawContrib) : rawContrib).map(String);
+                              const montesQueAportaron = montes.filter(m => idsContribuyentes.includes(String(m.id)));
+                              const totalHectareas = montesQueAportaron.reduce((sum, m) => sum + m.hectareas, 0);
+                              if (totalHectareas > 0) {
+                                const rendimientoPromedio = totalProduccionRegistrada / totalHectareas;
+                                montesQueAportaron.forEach(m => {
+                                  prodByMonte[String(m.id)] = Math.round(m.hectareas * rendimientoPromedio);
+                                });
+                              }
+                            } catch (e) {
+                              console.error("Error recalculando distribución proporcional:", e);
+                            }
+                          }
+
+                          const montesDisponibles = montes
+                            .filter((m) => m.añoPlantacion <= year)
+                            .map((m) => ({
+                              ...m,
+                              edad: Number(year) - Number(m.añoPlantacion),
+                            }));
+
+                          const produccionPorMonte = montesDisponibles.map(monte => ({
+                            monteId: monte.id,
+                            nombre: monte.nombre,
+                            hectareas: monte.hectareas,
+                            edad: monte.edad,
+                            kgRecolectados: prodByMonte[String(monte.id)] || 0,
+                          }));
+
+                          setEditData({
+                            precioPromedio: campana?.average_price ? Number(campana.average_price) : 0,
+                            metodo: metodoDetectado,
+                            produccionPorMonte,
+                          });
+                          setEditOpen(true);
+                        } else {
+                          setWizardOpen(true);
+                        }
+                      }}
+                    >
+                      {campaign && parseFloat(campaign.total_production || '0') > 0 ? 'Editar Producción' : 'Cargar Producción'}
                     </Button>
                     <Button variant="outline" className="flex-1">
                       Ver Costos
@@ -298,6 +464,20 @@ const Campanas = () => {
           })}
         </div>
       )}
+
+      <RegistrarProduccionForm
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSave={handleSaveProduccion}
+        editingData={editingData}
+      />
+
+      <EditarProduccionForm
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSave={handleSaveProduccion}
+        editingData={editData}
+      />
     </div>
   );
 };
