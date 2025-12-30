@@ -288,9 +288,12 @@ export const useDataStore = create<DataState>()(
         total_amount: costData.total_amount,
       });
 
-      // Reload costs to get updated list
-      const { loadCosts } = get();
-      await loadCosts(costData.project_id, costData.campaign_id);
+      // Reload costs for this campaign, keeping others
+      const updatedCosts = await getCostsByCampaign(costData.project_id, costData.campaign_id);
+      set((state) => {
+        const otherCosts = state.costs.filter(c => c.campaign_id !== costData.campaign_id);
+        return { costs: [...otherCosts, ...updatedCosts] };
+      });
     } catch (error) {
       console.error('Error creating cost:', error);
       throw error;
@@ -321,11 +324,14 @@ export const useDataStore = create<DataState>()(
         total_amount: updates.total_amount,
       });
 
-      // Reload costs to get updated list
+      // Reload costs for this campaign, keeping others
       const currentCost = get().costs.find(c => c.id === id);
       if (currentCost) {
-        const { loadCosts } = get();
-        await loadCosts(currentCost.project_id, currentCost.campaign_id);
+        const updatedCosts = await getCostsByCampaign(currentCost.project_id, currentCost.campaign_id);
+        set((state) => {
+          const otherCosts = state.costs.filter(c => c.campaign_id !== currentCost.campaign_id);
+          return { costs: [...otherCosts, ...updatedCosts] };
+        });
       }
     } catch (error) {
       console.error('Error updating cost:', error);
@@ -337,10 +343,15 @@ export const useDataStore = create<DataState>()(
     try {
       await deleteCostApi(id);
 
-      // Remove from local state
-      set((state) => ({
-        costs: state.costs.filter((c: CostRecord) => c.id !== id),
-      }));
+      // Reload costs for this campaign, keeping others
+      const currentCost = get().costs.find(c => c.id === id);
+      if (currentCost) {
+        const updatedCosts = await getCostsByCampaign(currentCost.project_id, currentCost.campaign_id);
+        set((state) => {
+          const otherCosts = state.costs.filter(c => c.campaign_id !== currentCost.campaign_id);
+          return { costs: [...otherCosts, ...updatedCosts] };
+        });
+      }
     } catch (error) {
       console.error('Error deleting cost:', error);
       throw error;
