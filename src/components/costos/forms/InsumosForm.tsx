@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, ArrowLeft, Sprout, Leaf, Bug, Zap, Pill, MoreHorizontal } from "lucide-react";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
@@ -88,20 +89,39 @@ interface InsumosFormProps {
 }
 
 export default function InsumosForm({ onSave, onCancel, initialData, existingCosts }: InsumosFormProps) {
+  const [isQuickMode, setIsQuickMode] = useState<boolean>(() => {
+    // Default to quick mode, but respect initialData if editing
+    if (initialData) {
+      return initialData.quickMode !== undefined ? initialData.quickMode : true;
+    }
+    return true;
+  });
+  const [quickSubtotals, setQuickSubtotals] = useState<Record<string, number>>(() => {
+    // Initialize with initialData subtotals if available
+    if (initialData?.subtotals) {
+      return initialData.subtotals;
+    }
+    // Initialize all to 0
+    const initial: Record<string, number> = {};
+    tiposInsumo.forEach(tipo => {
+      initial[tipo.id] = 0;
+    });
+    return initial;
+  });
   const [currentStep, setCurrentStep] = useState<'selection' | 'form'>(() => {
-    // If we have initialData, start directly in form mode
-    return initialData ? 'form' : 'selection';
+    // If we have initialData and not quick mode, start directly in form mode
+    return (initialData && !initialData.quickMode) ? 'form' : 'selection';
   });
   const [selectedType, setSelectedType] = useState<typeof tiposInsumo[0] | null>(() => {
-    // If we have initialData, find the matching type
-    if (initialData?.type) {
+    // If we have initialData and not quick mode, find the matching type
+    if (initialData?.type && !initialData.quickMode) {
       return tiposInsumo.find(t => t.label === initialData.type) || null;
     }
     return null;
   });
   const [items, setItems] = useState<InsumoItem[]>(() => {
-    // Initialize with initialData if available
-    if (initialData?.items && Array.isArray(initialData.items)) {
+    // Initialize with initialData if available and not quick mode
+    if (initialData?.items && Array.isArray(initialData.items) && !initialData.quickMode) {
       return initialData.items.map((item: any, index: number) => ({
         id: item.id || `item_${index + 1}`,
         product: item.product || "",
@@ -290,9 +310,124 @@ export default function InsumosForm({ onSave, onCancel, initialData, existingCos
     onSave(costData);
   };
 
+  // Calculate total for quick mode
+  const quickTotal = Object.values(quickSubtotals).reduce((sum, val) => sum + val, 0);
+
+  // Handle quick subtotal change
+  const handleQuickSubtotalChange = (tipoId: string, value: number) => {
+    setQuickSubtotals(prev => ({
+      ...prev,
+      [tipoId]: value
+    }));
+  };
+
+  // Handle save for quick mode
+  const handleQuickSave = () => {
+    // Validate at least one subtotal > 0
+    const hasValidSubtotal = Object.values(quickSubtotals).some(val => val > 0);
+    if (!hasValidSubtotal) {
+      alert('Por favor ingresa al menos un subtotal mayor a 0.');
+      return;
+    }
+
+    const costData = {
+      category: "insumos",
+      details: {
+        quickMode: true,
+        subtotals: quickSubtotals,
+        total: quickTotal,
+      },
+      total_amount: quickTotal,
+      existingId: initialData?.existingId,
+    };
+
+    onSave(costData);
+  };
+
+  if (isQuickMode) {
+    return (
+      <div className="space-y-6">
+        {/* Mode switch */}
+        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+          <div>
+            <Label className="text-sm font-medium">Modo de Carga</Label>
+            <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+          </div>
+          <Switch
+            checked={isQuickMode}
+            onCheckedChange={setIsQuickMode}
+          />
+        </div>
+
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Carga Rápida de Insumos</h3>
+          <p className="text-sm text-muted-foreground">
+            Ingresa los subtotales para cada tipo de insumo
+          </p>
+        </div>
+
+        {/* Quick form */}
+        <div className="space-y-4">
+          {tiposInsumo.map((tipo) => {
+            const IconComponent = tipo.icon;
+            return (
+              <div key={tipo.id} className="flex items-center gap-4 p-4 border border-border rounded-lg">
+                <div className={`p-2 rounded-lg ${tipo.color} text-white flex-shrink-0`}>
+                  <IconComponent className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-sm font-medium">{tipo.label}</Label>
+                </div>
+                <div className="w-32">
+                  <CurrencyInput
+                    value={quickSubtotals[tipo.id] || ""}
+                    onChange={(value) => handleQuickSubtotalChange(tipo.id, value)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Total */}
+        <div className="p-4 bg-primary/10 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Total Insumos:</span>
+            <span className="text-xl font-bold text-primary">
+              {formatCurrency(quickTotal, true)}
+            </span>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+            Cancelar
+          </Button>
+          <Button onClick={handleQuickSave} className="flex-1" disabled={quickTotal === 0}>
+            Guardar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (currentStep === 'selection') {
     return (
       <div className="space-y-6">
+        {/* Mode switch */}
+        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+          <div>
+            <Label className="text-sm font-medium">Modo de Carga</Label>
+            <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+          </div>
+          <Switch
+            checked={isQuickMode}
+            onCheckedChange={setIsQuickMode}
+          />
+        </div>
+
         <div className="text-center">
           <h3 className="text-lg font-semibold mb-2">Seleccionar Tipo de Insumo</h3>
           <p className="text-sm text-muted-foreground">
@@ -333,6 +468,18 @@ export default function InsumosForm({ onSave, onCancel, initialData, existingCos
 
   return (
     <div className="space-y-6">
+      {/* Mode switch */}
+      <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+        <div>
+          <Label className="text-sm font-medium">Modo de Carga</Label>
+          <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+        </div>
+        <Switch
+          checked={isQuickMode}
+          onCheckedChange={setIsQuickMode}
+        />
+      </div>
+
       {/* Header with back button */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={handleBack}>
