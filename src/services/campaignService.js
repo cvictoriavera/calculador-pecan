@@ -67,3 +67,17 @@ export const updateCampaign = (campaignId, campaignData) => {
 		body: JSON.stringify(campaignData),
 	});
 };
+
+/**
+ * Closes the currently active campaign for a project.
+ *
+ * @param {object} data - The data for closing the active campaign.
+ * @param {number} data.project_id - The ID of the project.
+ * @returns {Promise<object>} A promise that resolves to the response.
+ */
+export const closeActiveCampaign = (data) => {
+	return apiRequest(`${BASE_ENDPOINT}/close-active`, {
+		method: 'POST',
+		body: JSON.stringify(data),
+	});
+};

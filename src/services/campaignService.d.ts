@@ -39,8 +39,18 @@ interface CampaignUpdateData {
   total_production?: number;
 }
 
+interface CloseActiveCampaignData {
+  project_id: number;
+}
+
+interface CloseActiveCampaignResponse {
+  success: boolean;
+  closed: boolean;
+}
+
 declare module '@/services/campaignService' {
   export function getCampaignsByProject(projectId: number): Promise<Campaign[]>;
   export function createCampaign(campaignData: CampaignData): Promise<Campaign>;
   export function updateCampaign(campaignId: number, campaignData: CampaignUpdateData): Promise<Campaign>;
+  export function closeActiveCampaign(data: CloseActiveCampaignData): Promise<CloseActiveCampaignResponse>;
 }

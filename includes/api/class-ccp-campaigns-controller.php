@@ -91,6 +91,26 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/close-active',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'close_active_campaign' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+					'args'                => array(
+						'project_id' => array(
+							'validate_callback' => function( $param, $request, $key ) {
+								return is_numeric( $param );
+							},
+							'required' => true,
+						),
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -276,6 +296,27 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 		$campaign = $this->campaigns_db->get_by_id( $campaign_id, $user_id );
 
 		$response = rest_ensure_response( $campaign );
+		return $response;
+	}
+
+	/**
+	 * Close the currently active campaign for a project.
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+	 */
+	public function close_active_campaign( $request ) {
+		$user_id = get_current_user_id();
+
+		$project_id = (int) $request->get_param( 'project_id' );
+
+		$result = $this->campaigns_db->close_active_campaign( $project_id, $user_id );
+
+		if ( false === $result ) {
+			return new WP_Error( 'campaign_close_failed', 'Failed to close active campaign.', array( 'status' => 500 ) );
+		}
+
+		$response = rest_ensure_response( array( 'success' => true, 'closed' => $result > 0 ) );
 		return $response;
 	}
 }

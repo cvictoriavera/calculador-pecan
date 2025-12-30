@@ -324,4 +324,44 @@ class CCP_Campaigns_DB {
 		// Stub: Implementation to be added later.
 		return false;
 	}
+
+	/**
+	 * Close the currently active campaign for a project.
+	 *
+	 * @param int $project_id The ID of the project.
+	 * @param int $user_id    The ID of the user.
+	 * @return int|false The number of campaigns closed or false on failure.
+	 */
+	public function close_active_campaign( $project_id, $user_id ) {
+		if ( ! is_numeric( $project_id ) || ! is_numeric( $user_id ) ) {
+			return false;
+		}
+
+		// Verify the user owns the project.
+		$project_owner = $this->wpdb->get_var(
+			$this->wpdb->prepare( "SELECT user_id FROM {$this->table_projects} WHERE id = %d", $project_id )
+		);
+
+		if ( absint( $project_owner ) !== absint( $user_id ) ) {
+			return false; // User does not own the project.
+		}
+
+		// Close only the currently active campaign (is_current = 1)
+		$result = $this->wpdb->update(
+			$this->table_campaigns,
+			array(
+				'status'     => 'closed',
+				'is_current' => 0,
+				'updated_at' => current_time( 'mysql', 1 ),
+			),
+			array(
+				'project_id' => absint( $project_id ),
+				'is_current' => 1,
+			),
+			array( '%s', '%d', '%s' ),
+			array( '%d', '%d' )
+		);
+
+		return $result;
+	}
 }

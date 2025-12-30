@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/contexts/AppContext";
 import { formatCurrency } from "@/lib/calculations";
 import { useCalculationsStore } from "@/stores/calculationsStore";
-import { createCampaign } from "@/services/campaignService";
+import { createCampaign, closeActiveCampaign } from "@/services/campaignService";
 import { useToast } from "@/components/ui/use-toast";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
 import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
@@ -76,9 +76,11 @@ const Campanas = () => {
     // Activamos el modo carga inmediatamente
     setIsCreating(true);
 
-    const nextYear = currentCampaign + 1;
-    
-    // ... validación de existente ...
+    // Encontrar el año más alto entre todas las campañas existentes
+    const maxYear = safeCampaigns.length > 0 ? Math.max(...safeCampaigns.map(c => c.year)) : (initialYear || new Date().getFullYear());
+    const nextYear = maxYear + 1;
+
+    // ... validación de existente (aunque debería ser redundante ahora) ...
     const existing = safeCampaigns.find(c => c.year === nextYear);
     if (existing) {
       toast({
@@ -91,12 +93,10 @@ const Campanas = () => {
     }
 
     try {
-      // 1. Cerrar campañas anteriores
-      for (const camp of safeCampaigns) {
-        if (camp.status !== 'closed' || camp.is_current !== 0) {
-          await updateCampaign(camp.id, { status: 'closed', is_current: 0 });
-        }
-      }
+      // 1. Cerrar la campaña actualmente activa (si existe)
+      await closeActiveCampaign({
+        project_id: currentProjectId!,
+      });
 
       // 2. Crear la nueva campaña
       await createCampaign({
@@ -114,9 +114,9 @@ const Campanas = () => {
         description: `Campaña ${nextYear} creada exitosamente`,
       });
 
-      // 3. Recargar datos (Esperamos a que termine)
+      // 3. Recargar datos
       await loadCampaigns();
-      
+
       // 4. Cambiar el año actual
       setCurrentCampaign(nextYear);
 
