@@ -90,9 +90,10 @@ interface InsumosFormProps {
 
 export default function InsumosForm({ onSave, onCancel, initialData, existingCosts }: InsumosFormProps) {
   const [isQuickMode, setIsQuickMode] = useState<boolean>(() => {
-    // Default to quick mode, but respect initialData if editing
+    // For new loads, start with quick mode (true)
+    // For editing, use the mode from initialData (true if quick, false if detailed)
     if (initialData) {
-      return initialData.quickMode !== undefined ? initialData.quickMode : true;
+      return initialData.quickMode || false;
     }
     return true;
   });
@@ -347,17 +348,19 @@ export default function InsumosForm({ onSave, onCancel, initialData, existingCos
   if (isQuickMode) {
     return (
       <div className="space-y-6">
-        {/* Mode switch */}
-        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
-          <div>
-            <Label className="text-sm font-medium">Modo de Carga</Label>
-            <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+        {/* Mode switch - only show for new entries */}
+        {!initialData && (
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+            <div>
+              <Label className="text-sm font-medium">Modo de Carga</Label>
+              <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+            </div>
+            <Switch
+              checked={isQuickMode}
+              onCheckedChange={setIsQuickMode}
+            />
           </div>
-          <Switch
-            checked={isQuickMode}
-            onCheckedChange={setIsQuickMode}
-          />
-        </div>
+        )}
 
         <div className="text-center">
           <h3 className="text-lg font-semibold mb-2">Carga Rápida de Insumos</h3>
@@ -416,17 +419,19 @@ export default function InsumosForm({ onSave, onCancel, initialData, existingCos
   if (currentStep === 'selection') {
     return (
       <div className="space-y-6">
-        {/* Mode switch */}
-        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
-          <div>
-            <Label className="text-sm font-medium">Modo de Carga</Label>
-            <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+        {/* Mode switch - only show for new entries */}
+        {!initialData && (
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+            <div>
+              <Label className="text-sm font-medium">Modo de Carga</Label>
+              <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+            </div>
+            <Switch
+              checked={isQuickMode}
+              onCheckedChange={setIsQuickMode}
+            />
           </div>
-          <Switch
-            checked={isQuickMode}
-            onCheckedChange={setIsQuickMode}
-          />
-        </div>
+        )}
 
         <div className="text-center">
           <h3 className="text-lg font-semibold mb-2">Seleccionar Tipo de Insumo</h3>
@@ -468,17 +473,19 @@ export default function InsumosForm({ onSave, onCancel, initialData, existingCos
 
   return (
     <div className="space-y-6">
-      {/* Mode switch */}
-      <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
-        <div>
-          <Label className="text-sm font-medium">Modo de Carga</Label>
-          <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+      {/* Mode switch - only show for new entries */}
+      {!initialData && (
+        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+          <div>
+            <Label className="text-sm font-medium">Modo de Carga</Label>
+            <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+          </div>
+          <Switch
+            checked={isQuickMode}
+            onCheckedChange={setIsQuickMode}
+          />
         </div>
-        <Switch
-          checked={isQuickMode}
-          onCheckedChange={setIsQuickMode}
-        />
-      </div>
+      )}
 
       {/* Header with back button */}
       <div className="flex items-center gap-3">
