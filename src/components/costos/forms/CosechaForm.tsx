@@ -20,22 +20,21 @@ const itemsCosecha = [
 ];
 
 interface CosechaFormProps {
-  onSave: (data: CosechaFormData) => void;
+  onSave: (data: any) => void;
   onCancel: () => void;
-  initialData?: Partial<CosechaFormData>;
+  initialData?: any;
   existingCosts?: any[];
 }
 
 export default function CosechaForm({ onSave, onCancel, initialData }: CosechaFormProps) {
   const {
     control,
-    handleSubmit,
+    getValues,
     watch,
   } = useForm<CosechaFormData>({
     resolver: zodResolver(cosechaFormSchema),
     defaultValues: {
-      type: "cosecha",
-      valores: initialData?.valores || {},
+      valores: initialData?.data?.valores || {},
       total: 0,
     },
   });
@@ -44,21 +43,31 @@ export default function CosechaForm({ onSave, onCancel, initialData }: CosechaFo
   const totalGeneral = calcularTotalCosecha(watchedValores || {});
 
   const onSubmit = (data: CosechaFormData) => {
+    console.log('CosechaForm onSubmit called with data:', data);
     // Validate that at least one field has a value > 0
     const hasValidValue = Object.values(data.valores || {}).some(value => value && value > 0);
+    console.log('hasValidValue:', hasValidValue);
     if (!hasValidValue) {
       alert('Por favor ingresa al menos un costo válido mayor a 0.');
       return;
     }
 
-    onSave({
-      ...data,
-      total: totalGeneral,
-    });
+    const costData = {
+      category: "cosecha",
+      details: {
+        type: "Cosecha y Poscosecha",
+        data: { valores: data.valores },
+        breakdown: { total: totalGeneral }
+      },
+      total_amount: totalGeneral
+    };
+
+    console.log('Calling onSave with costData:', costData);
+    onSave(costData);
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(getValues()); }} className="space-y-4">
       {itemsCosecha.map((item) => (
         <div key={item.key} className="space-y-1">
           <Label className="text-sm">{item.label}</Label>
@@ -87,7 +96,7 @@ export default function CosechaForm({ onSave, onCancel, initialData }: CosechaFo
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button type="submit" className="flex-1" disabled={totalGeneral <= 0}>
+        <Button type="submit" className="flex-1">
           Guardar
         </Button>
       </div>

@@ -144,11 +144,12 @@ const Costos = () => {
   };
 
   const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
+    console.log('handleUpdateCosto called with:', categoriaOrData, formData);
     if (!currentProjectId) {
       toast.error("No hay proyecto activo");
       return;
     }
-    
+
     if (!currentCampaignObj) {
       toast.error("No se pudo encontrar la campaña actual");
       return;

@@ -128,9 +128,8 @@ export const costosOportunidadFormSchema = z.object({
 
 // ============= COSECHA =============
 export const cosechaFormSchema = z.object({
-  type: z.literal("cosecha"),
-  valores: z.record(z.number().min(0.01, "Valor debe ser mayor a 0")),
-  total: z.number().min(0.01, "Total debe ser mayor a 0"),
+  valores: z.record(z.number().min(0, "Valor no puede ser negativo")),
+  total: z.number().min(0, "Total no puede ser negativo"),
 });
 
 // ============= ENERGÍA =============
