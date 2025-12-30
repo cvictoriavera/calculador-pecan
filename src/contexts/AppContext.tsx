@@ -56,6 +56,7 @@ interface AppContextType {
   currentCampaignId: number | null;
   montes: Monte[];
   montesLoading: boolean;
+  costsLoading: boolean;
   addMonte: (monte: Omit<Monte, "id">) => void;
   updateMonte: (id: string, monte: Omit<Monte, "id">) => void;
   deleteMonte: (id: string) => void;
@@ -93,6 +94,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentCampaignId, setCurrentCampaignId] = useState<number | null>(null);
   const [montes, setMontes] = useState<Monte[]>([]);
   const [montesLoading, setMontesLoading] = useState(false);
+  const [costsLoading, setCostsLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const isOnboardingComplete = !!currentProjectId;
@@ -102,7 +104,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Sincronizar Contexto con Zustand
   useEffect(() => {
     if (currentProjectId && campaigns.length > 0) {
-      
+
       // Mapeamos las campañas para adaptar las propiedades que faltan
       const campaignsForStore = campaigns.map(c => ({
         ...c,
@@ -111,10 +113,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }));
 
       // Cargar Costos
-    loadAllCosts(currentProjectId, campaignsForStore as any);
-    
-    // Cargar Inversiones
-    loadAllInvestments(currentProjectId, campaignsForStore as any);
+      setCostsLoading(true);
+      loadAllCosts(currentProjectId, campaignsForStore as any).finally(() => setCostsLoading(false));
+
+      // Cargar Inversiones
+      loadAllInvestments(currentProjectId, campaignsForStore as any);
     }
   }, [currentProjectId, campaigns, loadAllCosts, loadAllInvestments]);
 
@@ -445,6 +448,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentCampaignId,
         montes,
         montesLoading,
+        costsLoading,
         addMonte,
         updateMonte,
         deleteMonte: deleteMonteContext,

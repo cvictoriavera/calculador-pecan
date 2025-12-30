@@ -47,7 +47,7 @@ const categoriaColors: Record<string, string> = {
 };
 
 const Costos = () => {
-  const { currentProjectId, campaigns, currentCampaign } = useApp();
+  const { currentProjectId, campaigns, currentCampaign, costsLoading } = useApp();
   const { costs, addCost, updateCost, deleteCost } = useDataStore();
   const { getCostByCategory, getTotalCostsByCampaign } = useCalculationsStore();
 
@@ -226,6 +226,15 @@ const Costos = () => {
     if (campaigns.length === 0) return [];
     return campaigns.map(c => Number(c.year)).sort((a, b) => a - b);
   }, [campaigns]);
+
+  if (costsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <span className="ml-2 text-muted-foreground">Cargando costos...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
