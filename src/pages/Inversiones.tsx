@@ -33,11 +33,11 @@ const categoriaLabels: Record<string, string> = {
 };
 
 const categoriaColors: Record<string, string> = {
-  tierra: "#22c55e", // green-500
-  mejoras: "#3b82f6", // blue-500
-  implantacion: "#a855f7", // purple-500
-  riego: "#06b6d4", // cyan-500
-  maquinaria: "#f97316", // orange-500
+  tierra: "#60225f", 
+  mejoras: "#d3203e", 
+  implantacion: "#16af92", 
+  riego: "#70cddc", 
+  maquinaria: "#193f70", 
 };
 
 const Inversiones = () => {
