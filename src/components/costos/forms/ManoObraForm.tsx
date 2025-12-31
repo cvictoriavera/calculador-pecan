@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -39,6 +40,21 @@ const availableRoles = [
 ];
 
 export default function ManoObraForm({ onSave, onCancel, initialData }: ManoObraFormProps) {
+  const [isQuickMode, setIsQuickMode] = useState<boolean>(() => {
+    // For new loads, start with quick mode (true)
+    // For editing, use the mode from initialData (true if quick, false if detailed)
+    if (initialData) {
+      return initialData.quickMode || false;
+    }
+    return true;
+  });
+  const [quickTotal, setQuickTotal] = useState<number>(() => {
+    // Initialize with initialData total if available
+    if (initialData?.total) {
+      return initialData.total;
+    }
+    return 0;
+  });
   const [staffList, setStaffList] = useState<StaffMember[]>(() => {
     // Initialize with initialData if available
     if (initialData?.data?.staff_list && Array.isArray(initialData.data.staff_list)) {
@@ -146,6 +162,27 @@ export default function ManoObraForm({ onSave, onCancel, initialData }: ManoObra
     return availableRoles.filter(role => !selectedRoles.includes(role));
   };
 
+  // Handle save for quick mode
+  const handleQuickSave = () => {
+    // Validate at least total > 0
+    if (quickTotal <= 0) {
+      alert('Por favor ingresa un total mayor a 0.');
+      return;
+    }
+
+    const costData = {
+      category: "mano-obra",
+      details: {
+        quickMode: true,
+        total: quickTotal,
+      },
+      total_amount: quickTotal,
+      existingId: initialData?.existingId,
+    };
+
+    onSave(costData);
+  };
+
   const handleSave = () => {
     if (staffList.length === 0) return;
 
@@ -192,8 +229,88 @@ export default function ManoObraForm({ onSave, onCancel, initialData }: ManoObra
 
   const totals = calculateTotalLaborCost();
 
+  if (isQuickMode) {
+    return (
+      <div className="space-y-6">
+        {/* Mode switch - only show for new entries */}
+        {!initialData && (
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+            <div>
+              <Label className="text-sm font-medium">Modo de Carga</Label>
+              <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+            </div>
+            <Switch
+              checked={isQuickMode}
+              onCheckedChange={setIsQuickMode}
+            />
+          </div>
+        )}
+
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Carga Rápida de Mano de Obra</h3>
+          <p className="text-sm text-muted-foreground">
+            Ingresa el total de costos de mano de obra en el año
+          </p>
+        </div>
+
+        {/* Quick form */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Total Anual de Mano de Obra</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Total costo de mano de obra</Label>
+                <CurrencyInput
+                  value={quickTotal || ""}
+                  onChange={setQuickTotal}
+                  placeholder="0"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Total */}
+        <div className="p-4 bg-primary/10 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Total Mano de Obra:</span>
+            <span className="text-xl font-bold text-primary">
+              {formatCurrency(quickTotal, true)}
+            </span>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+            Cancelar
+          </Button>
+          <Button onClick={() => handleQuickSave()} className="flex-1" disabled={quickTotal === 0}>
+            Guardar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Mode switch - only show for new entries */}
+      {!initialData && (
+        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+          <div>
+            <Label className="text-sm font-medium">Modo de Carga</Label>
+            <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+          </div>
+          <Switch
+            checked={isQuickMode}
+            onCheckedChange={setIsQuickMode}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
