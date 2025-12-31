@@ -40,6 +40,30 @@ const categoriaColors: Record<string, string> = {
   maquinaria: "#193f70", 
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const filteredPayload = payload.filter((item: any) => item.value > 0);
+    if (filteredPayload.length === 0) return null;
+
+    return (
+      <div style={{
+        backgroundColor: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))",
+        borderRadius: "8px",
+        padding: "10px"
+      }}>
+        <p style={{ margin: 0, fontWeight: 'bold' }}>{`Año: ${label}`}</p>
+        {filteredPayload.map((item: any, index: number) => (
+          <p key={index} style={{ color: item.color, margin: '5px 0' }}>
+            {`${item.name}: $${item.value.toLocaleString()}`}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 const Inversiones = () => {
   const { currentProjectId, campaigns, currentCampaign, currentCampaignId } = useApp();
   const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
@@ -253,17 +277,7 @@ const Inversiones = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" />
                 <YAxis />
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    `$${value.toLocaleString()}`,
-                    categoriaLabels[name] || name
-                  ]}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
+                <Tooltip content={CustomTooltip} />
                 <Legend />
                 {Object.keys(categoriaLabels).map((category) => (
                   <Bar

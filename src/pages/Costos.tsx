@@ -46,6 +46,30 @@ const categoriaColors: Record<string, string> = {
   "costos-oportunidad": "#bc5930",
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const filteredPayload = payload.filter((item: any) => item.value > 0);
+    if (filteredPayload.length === 0) return null;
+
+    return (
+      <div style={{
+        backgroundColor: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))",
+        borderRadius: "8px",
+        padding: "10px"
+      }}>
+        <p style={{ margin: 0, fontWeight: 'bold' }}>{`Año: ${label}`}</p>
+        {filteredPayload.map((item: any, index: number) => (
+          <p key={index} style={{ color: item.color, margin: '5px 0' }}>
+            {`${item.name}: $${item.value.toLocaleString()}`}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 const Costos = () => {
   const { currentProjectId, campaigns, currentCampaign, costsLoading } = useApp();
   const { costs, addCost, updateCost, deleteCost } = useDataStore();
@@ -282,17 +306,7 @@ const Costos = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" />
                 <YAxis />
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    `$${value.toLocaleString()}`,
-                    categoriaLabels[name] || name
-                  ]}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
+                <Tooltip content={CustomTooltip} />
                 <Legend />
                 {Object.keys(categoriaLabels).map((category) => (
                   <Bar
