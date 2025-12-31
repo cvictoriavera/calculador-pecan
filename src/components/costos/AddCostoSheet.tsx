@@ -140,6 +140,27 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
     return undefined;
   };
 
+  // Determinar qué categorías deben estar deshabilitadas
+  const getDisabledCategories = () => {
+    const disabledCategories = new Set<string>();
+
+    existingCosts.forEach(cost => {
+      const category = cost.category;
+
+      // Para categorías con subtipos, solo deshabilitar si hay un modo rápido
+      if (hasSubtypes(category)) {
+        if (cost.details?.quickMode) {
+          disabledCategories.add(category);
+        }
+      } else {
+        // Para categorías sin subtipos, deshabilitar si existe cualquier entrada
+        disabledCategories.add(category);
+      }
+    });
+
+    return disabledCategories;
+  };
+
   const renderForm = () => {
     const initialData = getInitialData();
 
@@ -196,32 +217,37 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
               <p className="text-sm text-muted-foreground mb-4">
                 Selecciona la categoría de costo que deseas registrar:
               </p>
-              {categorias.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => !cat.disabled && handleCategorySelect(cat.id)}
-                  disabled={cat.disabled}
-                  className={`w-full flex items-center gap-4 p-4 rounded-lg border transition-colors text-left ${
-                    cat.disabled
-                      ? "border-border/50 bg-secondary/20 text-muted-foreground cursor-not-allowed opacity-60"
-                      : "border-border hover:bg-secondary/50 text-foreground"
-                  }`}
-                >
-                  <div className={`p-3 rounded-lg ${cat.disabled ? "bg-muted" : cat.color}`}>
-                    <cat.icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <span className={`font-medium ${cat.disabled ? "text-muted-foreground" : "text-foreground"}`}>
-                      {cat.label}
-                    </span>
-                    {cat.disabled && (
-                      <span className="block text-xs text-muted-foreground mt-1">
-                        En reparación de errores
+              {categorias.map((cat) => {
+                const disabledCategories = getDisabledCategories();
+                const isDisabled = disabledCategories.has(cat.id);
+
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => !isDisabled && handleCategorySelect(cat.id)}
+                    disabled={isDisabled}
+                    className={`w-full flex items-center gap-4 p-4 rounded-lg border transition-colors text-left ${
+                      isDisabled
+                        ? "border-border/50 bg-secondary/20 text-muted-foreground cursor-not-allowed opacity-60"
+                        : "border-border hover:bg-secondary/50 text-foreground"
+                    }`}
+                  >
+                    <div className={`p-3 rounded-lg ${isDisabled ? "bg-muted" : cat.color}`}>
+                      <cat.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <span className={`font-medium ${isDisabled ? "text-muted-foreground" : "text-foreground"}`}>
+                        {cat.label}
                       </span>
-                    )}
-                  </div>
-                </button>
-              ))}
+                      {isDisabled && (
+                        <span className="block text-xs text-muted-foreground mt-1">
+                          Ya existe un registro para esta categoría
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <div className="py-4">{renderForm()}</div>
