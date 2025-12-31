@@ -36,14 +36,14 @@ const categoriaLabels: Record<string, string> = {
 };
 
 const categoriaColors: Record<string, string> = {
-  insumos: "#CF7E3C",
-  combustible: "#5C4844",
-  "mano-obra": "#846761",
-  energia: "#F9A300",
-  cosecha: "#CF7E3C",
-  "gastos-admin": "#2F2928",
-  mantenimientos: "#5C4844",
-  "costos-oportunidad": "#846761",
+  insumos: "#16af92",
+  combustible: "#22469c",
+  "mano-obra": "#ba995c",
+  energia: "#f2c02b",
+  cosecha: "#f2794a",
+  "gastos-admin": "#762c4d",
+  mantenimientos: "#cb2030",
+  "costos-oportunidad": "#bc5930",
 };
 
 const Costos = () => {
