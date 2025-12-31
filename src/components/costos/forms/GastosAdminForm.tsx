@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, ArrowLeft, FileText, Users } from "lucide-react";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
@@ -79,13 +80,28 @@ interface GastosAdminFormProps {
 }
 
 export default function GastosAdminForm({ onSave, onCancel, initialData, existingCosts }: GastosAdminFormProps) {
+  const [isQuickMode, setIsQuickMode] = useState<boolean>(() => {
+    // For new loads, start with quick mode (true)
+    // For editing, use the mode from initialData (true if quick, false if detailed)
+    if (initialData) {
+      return initialData.quickMode || false;
+    }
+    return true;
+  });
+  const [quickTotal, setQuickTotal] = useState<number>(() => {
+    // Initialize with initialData total if available
+    if (initialData?.total) {
+      return initialData.total;
+    }
+    return 0;
+  });
   const [currentStep, setCurrentStep] = useState<'selection' | 'form'>(() => {
-    // If we have initialData, start directly in form mode
-    return initialData ? 'form' : 'selection';
+    // If we have initialData and not quick mode, start directly in form mode
+    return (initialData && !initialData.quickMode) ? 'form' : 'selection';
   });
   const [selectedType, setSelectedType] = useState<typeof tiposGastosAdmin[0] | null>(() => {
-    // If we have initialData, find the matching type
-    if (initialData?.type) {
+    // If we have initialData and not quick mode, find the matching type
+    if (initialData?.type && !initialData.quickMode) {
       return tiposGastosAdmin.find(t => t.label === initialData.type) || null;
     }
     return null;
@@ -264,6 +280,27 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
     return gastosGeneralesOptions.filter(option => !selectedTypes.includes(option.key));
   };
 
+  // Handle save for quick mode
+  const handleQuickSave = () => {
+    // Validate at least total > 0
+    if (quickTotal <= 0) {
+      alert('Por favor ingresa un total mayor a 0.');
+      return;
+    }
+
+    const costData = {
+      category: "gastos-admin",
+      details: {
+        quickMode: true,
+        total: quickTotal,
+      },
+      total_amount: quickTotal,
+      existingId: initialData?.existingId,
+    };
+
+    onSave(costData);
+  };
+
   const handleSave = () => {
     if (!selectedType) return;
 
@@ -346,9 +383,82 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
     }
   };
 
+  if (isQuickMode) {
+    return (
+      <div className="space-y-6">
+        {/* Mode switch - only show for new entries */}
+        {!initialData && (
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+            <div>
+              <Label className="text-sm font-medium">Modo de Carga</Label>
+              <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+            </div>
+            <Switch
+              checked={isQuickMode}
+              onCheckedChange={setIsQuickMode}
+            />
+          </div>
+        )}
+
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Carga Rápida de Gastos Administrativos</h3>
+          <p className="text-sm text-muted-foreground">
+            Ingresa el total de costos administrativos en el año
+          </p>
+        </div>
+
+        {/* Quick form */}
+        <div className="space-y-4">
+          <div>
+            <Label>Total costo de gastos administrativos</Label>
+            <CurrencyInput
+              value={quickTotal || ""}
+              onChange={setQuickTotal}
+              placeholder="0"
+            />
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="p-4 bg-primary/10 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Total Gastos Administrativos:</span>
+            <span className="text-xl font-bold text-primary">
+              {formatCurrency(quickTotal, true)}
+            </span>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+            Cancelar
+          </Button>
+          <Button onClick={() => handleQuickSave()} className="flex-1" disabled={quickTotal === 0}>
+            Guardar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (currentStep === 'selection') {
     return (
       <div className="space-y-6">
+        {/* Mode switch - only show for new entries */}
+        {!initialData && (
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+            <div>
+              <Label className="text-sm font-medium">Modo de Carga</Label>
+              <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+            </div>
+            <Switch
+              checked={isQuickMode}
+              onCheckedChange={setIsQuickMode}
+            />
+          </div>
+        )}
+
         <div className="text-center">
           <h3 className="text-lg font-semibold mb-2">Seleccionar Tipo de Gasto Administrativo</h3>
           <p className="text-sm text-muted-foreground">
@@ -392,6 +502,20 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
 
   return (
     <div className="space-y-6">
+      {/* Mode switch - only show for new entries */}
+      {!initialData && (
+        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
+          <div>
+            <Label className="text-sm font-medium">Modo de Carga</Label>
+            <p className="text-xs text-muted-foreground">Activa para carga rápida</p>
+          </div>
+          <Switch
+            checked={isQuickMode}
+            onCheckedChange={setIsQuickMode}
+          />
+        </div>
+      )}
+
       {/* Header with back button */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={handleBack}>
