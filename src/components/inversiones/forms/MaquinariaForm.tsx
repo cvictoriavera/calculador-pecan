@@ -22,6 +22,7 @@ const tiposMaquinaria = [
   "Barra de herbicida",
   "Podadora mecánica",
   "Herramienta de poda",
+  "Otros"
 ];
 
 interface MaquinariaFormProps {
