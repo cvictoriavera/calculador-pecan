@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.4.3';
+    private static $db_version = '1.5.0';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -47,6 +47,7 @@ class CCP_Database_Manager {
             $wpdb->prefix . 'pecan_investments',
             $wpdb->prefix . 'pecan_annual_records',
             $wpdb->prefix . 'pecan_montes',
+            $wpdb->prefix . 'pecan_productions',
             $wpdb->prefix . 'pecan_campaigns',
             $wpdb->prefix . 'pecan_projects',
             $wpdb->prefix . 'pecan_yield_models'
@@ -72,6 +73,7 @@ class CCP_Database_Manager {
             $wpdb->prefix . 'pecan_projects' => 'Proyectos',
             $wpdb->prefix . 'pecan_campaigns' => 'Campañas',
             $wpdb->prefix . 'pecan_montes' => 'Montes',
+            $wpdb->prefix . 'pecan_productions' => 'Producciones',
             $wpdb->prefix . 'pecan_annual_records' => 'Registros Anuales',
             $wpdb->prefix . 'pecan_investments' => 'Inversiones',
             $wpdb->prefix . 'pecan_costs' => 'Costos',
@@ -106,6 +108,7 @@ class CCP_Database_Manager {
             $wpdb->prefix . 'pecan_projects',
             $wpdb->prefix . 'pecan_campaigns',
             $wpdb->prefix . 'pecan_montes',
+            $wpdb->prefix . 'pecan_productions',
             $wpdb->prefix . 'pecan_annual_records',
             $wpdb->prefix . 'pecan_investments',
             $wpdb->prefix . 'pecan_costs',
@@ -128,11 +131,15 @@ class CCP_Database_Manager {
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             $charset_collate = $wpdb->get_charset_collate();
 
+            // Definir nombres de tablas para referencias de foreign keys
+            $table_name_projects = $wpdb->prefix . 'pecan_projects';
+            $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
+            $table_name_montes = $wpdb->prefix . 'pecan_montes';
+
             // Crear tablas faltantes individualmente
             $tables_created = [];
 
             // Tabla de Proyectos - solo si no existe
-            $table_name_projects = $wpdb->prefix . 'pecan_projects';
             if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_projects))) {
                 $sql_projects = "CREATE TABLE $table_name_projects (
                     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -152,7 +159,6 @@ class CCP_Database_Manager {
             }
 
             // Tabla de Campañas - solo si no existe
-            $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
             if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_campaigns))) {
                 $sql_campaigns = "CREATE TABLE $table_name_campaigns (
                     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -179,7 +185,6 @@ class CCP_Database_Manager {
             }
 
             // Tabla de Montes - solo si no existe
-            $table_name_montes = $wpdb->prefix . 'pecan_montes';
             if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_montes))) {
                 $sql_montes = "CREATE TABLE $table_name_montes (
                     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -204,6 +209,38 @@ class CCP_Database_Manager {
                 ) $charset_collate;";
                 dbDelta($sql_montes);
                 $tables_created[] = 'montes';
+            }
+
+            $table_name_productions = $wpdb->prefix . 'pecan_productions';
+
+            if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_productions))) {
+                $sql_productions = "CREATE TABLE $table_name_productions (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    project_id BIGINT UNSIGNED NOT NULL,
+                    campaign_id BIGINT UNSIGNED NOT NULL, 
+                    monte_id BIGINT UNSIGNED NOT NULL, 
+                    
+                    entry_group_id CHAR(36) NOT NULL, 
+                    
+                    input_type ENUM('total', 'detail') DEFAULT 'total',
+
+                    quantity_kg DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    
+                    is_estimated TINYINT(1) DEFAULT 0, 
+
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+                    INDEX idx_entry_group (entry_group_id),
+                    INDEX idx_project_campaign (project_id, campaign_id),
+                    
+                    FOREIGN KEY (project_id) REFERENCES $table_name_projects(id) ON DELETE CASCADE,
+                    FOREIGN KEY (campaign_id) REFERENCES $table_name_campaigns(id) ON DELETE CASCADE,
+                    
+                    FOREIGN KEY (monte_id) REFERENCES $table_name_montes(id) ON DELETE CASCADE
+                ) $charset_collate;";
+                
+                dbDelta($sql_productions);
             }
 
             // Tabla de Registros Anuales - solo si no existe

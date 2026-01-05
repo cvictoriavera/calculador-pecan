@@ -22,6 +22,7 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-proyectos-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-montes-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-campaigns-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-productions-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-annual-records-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-investments-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-costs-db.php';
@@ -31,6 +32,7 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-projects-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-montes-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-campaigns-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-productions-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-annual-records-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-investments-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-costs-controller.php';
@@ -47,6 +49,9 @@ class CCP_API_Manager {
 
 		$campaigns_controller = new CCP_Campaigns_Controller();
 		$campaigns_controller->register_routes();
+
+		$productions_controller = new CCP_Productions_Controller();
+		$productions_controller->register_routes();
 
 		$annual_records_controller = new CCP_Annual_Records_Controller();
 		$annual_records_controller->register_routes();
