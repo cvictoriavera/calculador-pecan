@@ -59,7 +59,7 @@ const Produccion = () => {
         await createProductionsByCampaign(currentCampaignId, {
           project_id: currentProjectId,
           productions: productionsData,
-          input_type: data.metodo, // 'detallado' or 'total'
+          input_type: data.metodo === 'detallado' ? 'detail' : 'total', // Map to API expected values
         });
 
         // Update campaign with summary data (only price and total production)
