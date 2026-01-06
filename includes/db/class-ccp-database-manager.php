@@ -398,9 +398,12 @@ class CCP_Database_Manager {
             }
 
             // 4. Preparar datos
+            // Determinar input_type basado en el método
+            $input_type = (isset($data['metodo']) && $data['metodo'] === 'detallado') ? 'detail' : 'total';
+
             // Si el método era 'total', marcamos is_estimated = 1
             $is_estimated = (isset($data['metodo']) && $data['metodo'] === 'total') ? 1 : 0;
-            
+
             // Fecha de registro (usamos fin de campaña o inicio como fallback)
             $date = !empty($campaign->end_date) ? $campaign->end_date : $campaign->start_date;
 
@@ -416,11 +419,12 @@ class CCP_Database_Manager {
                                 'campaign_id'    => $campaign->id,
                                 'monte_id'       => intval($monte_id),
                                 'entry_group_id' => $entry_group_id,
+                                'input_type'     => $input_type,
                                 'quantity_kg'    => floatval($quantity),
                                 'is_estimated'   => $is_estimated,
                                 'created_at'     => current_time('mysql')
                             ],
-                            ['%d', '%d', '%d', '%s', '%f', '%d', '%s']
+                            ['%d', '%d', '%d', '%s', '%s', '%f', '%d', '%s']
                         );
                     }
                 }
