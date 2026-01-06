@@ -30,6 +30,12 @@ class CCP_Database_Controller {
             'callback' => [$this, 'get_database_status'],
             'permission_callback' => [$this, 'check_admin_permissions'],
         ]);
+
+        register_rest_route('ccp/v1', '/database/migrate-production', [
+            'methods' => 'POST',
+            'callback' => [$this, 'migrate_production_data'],
+            'permission_callback' => [$this, 'check_admin_permissions'],
+        ]);
     }
 
     /**
@@ -62,6 +68,30 @@ class CCP_Database_Controller {
             'version' => $status['version'],
             'tables' => $status['tables'],
         ], 200);
+    }
+
+    /**
+     * Migrate production data from campaigns JSON to productions table.
+     *
+     * @return WP_REST_Response
+     */
+    public function migrate_production_data() {
+        require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-database-manager.php';
+
+        $result = CCP_Database_Manager::migrate_production_json_to_table();
+
+        if ($result['status'] === 'success') {
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => $result['message'],
+                'errors' => $result['errors']
+            ], 200);
+        } else {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $result['message']
+            ], 400);
+        }
     }
 
     /**

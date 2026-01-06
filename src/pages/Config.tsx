@@ -3,11 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, Save } from "lucide-react";
+import { Settings, Save, Database } from "lucide-react";
 import { getCurrentUser } from "@/services/userService";
+import { apiRequest } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 const Config = () => {
   const [producerName, setProducerName] = useState("");
+  const [isMigrating, setIsMigrating] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -21,6 +25,41 @@ const Config = () => {
     };
     fetchUser();
   }, []);
+
+  const handleMigrateProduction = async () => {
+    if (!confirm("¿Estás seguro de que quieres migrar los datos de producción? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    setIsMigrating(true);
+    try {
+      const result = await apiRequest('ccp/v1/database/migrate-production', {
+        method: 'POST',
+      });
+
+      if (result.success) {
+        toast({
+          title: "Migración exitosa",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Error en la migración",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error migrating production data:", error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al ejecutar la migración.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsMigrating(false);
+    }
+  };
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
@@ -58,7 +97,29 @@ const Config = () => {
         </CardContent>
       </Card>
 
-     
+      <Card className="border-border/50 shadow-md">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-accent" />
+            <CardTitle className="text-foreground">Operaciones de Base de Datos</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Migra los datos de producción almacenados en JSON en la tabla campaigns a la nueva tabla productions.
+            </p>
+            <Button
+              onClick={handleMigrateProduction}
+              disabled={isMigrating}
+              variant="outline"
+              className="gap-2"
+            >
+              {isMigrating ? "Migrando..." : "Migrar Datos de Producción"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
     </div>
   );

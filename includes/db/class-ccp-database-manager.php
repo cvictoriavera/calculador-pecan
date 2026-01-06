@@ -126,8 +126,7 @@ class CCP_Database_Manager {
 
         // Crear tablas faltantes individualmente o si la versión ha cambiado
         if (!$all_tables_exist || $installed_version != self::$db_version) {
-            // Ejecutar migraciones específicas de versión
-            self::run_migrations($installed_version);
+           
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             $charset_collate = $wpdb->get_charset_collate();
 
@@ -337,11 +336,6 @@ class CCP_Database_Manager {
                 $tables_created[] = 'yield_models';
             }
 
-            // Migrar datos existentes si se crearon nuevas tablas
-            if (!empty($tables_created)) {
-                self::migrate_existing_data();
-            }
-
             // Actualizar la versión de la BD si se crearon tablas o cambió la versión
             if (!empty($tables_created) || $installed_version != self::$db_version) {
                 update_option(self::$db_version_key, self::$db_version);
@@ -355,147 +349,95 @@ class CCP_Database_Manager {
         // error_log('CCP DB: create_tables completed'); // Commented out to prevent activation output
     }
 
-    /**
-     * Ejecutar migraciones específicas de versión.
-     * Se ejecuta cuando se actualiza la versión de la BD.
-     *
-     * @param string $from_version Versión anterior de la BD.
-     */
-    private static function run_migrations($from_version) {
+
+    public static function migrate_production_json_to_table() {
         global $wpdb;
 
-        // error_log('CCP DB: Running migrations from version ' . $from_version . ' to ' . self::$db_version); // Commented out to prevent activation output
+        $table_campaigns = $wpdb->prefix . 'pecan_campaigns';
+        $table_production = $wpdb->prefix . 'pecan_productions'; // Asegúrate que coincida con tu create_tables
 
-        // Migración v1.1 -> v1.2: Agregar columnas de producción a campaigns
-        if (version_compare($from_version, '1.2', '<')) {
-            $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
+        // 1. Buscar campañas que tengan datos JSON
+        $campaigns = $wpdb->get_results("
+            SELECT id, project_id, montes_production, start_date, end_date 
+            FROM $table_campaigns 
+            WHERE montes_production IS NOT NULL 
+            AND montes_production != '' 
+            AND montes_production != '{}'
+        ");
 
-            // Verificar si la tabla existe
-            $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_campaigns));
+        if (empty($campaigns)) {
+            return ['status' => 'error', 'message' => 'No se encontraron campañas con datos JSON para migrar.'];
+        }
 
-            if ($table_exists) {
-                // error_log('CCP DB: Adding production columns to campaigns table'); // Commented out to prevent activation output
+        $count_success = 0;
+        $count_skipped = 0;
+        $errors = [];
 
-                // Agregar columna average_price si no existe
-                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name_campaigns LIKE 'average_price'");
-                if (empty($column_exists)) {
-                    $wpdb->query("ALTER TABLE $table_name_campaigns ADD COLUMN average_price DECIMAL(10,2) DEFAULT 0.00 AFTER notes");
-                    // error_log('CCP DB: Added average_price column'); // Commented out to prevent activation output
+        foreach ($campaigns as $campaign) {
+            // ID Único Determinista: PROD-P{proyecto}-C{campaña}
+            $entry_group_id = sprintf('PROD-P%d-C%d', $campaign->project_id, $campaign->id);
+
+            // 2. Verificar si ya existe para evitar duplicados
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $table_production WHERE entry_group_id = %s", 
+                $entry_group_id
+            ));
+
+            if ($exists > 0) {
+                $count_skipped++;
+                continue; // Ya migrada, pasamos a la siguiente
+            }
+
+            // 3. Decodificar JSON
+            // Estructura esperada: { "metodo": "total/detallado", "distribucion": { "id_monte": cantidad } }
+            $data = json_decode($campaign->montes_production, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE || empty($data['distribucion'])) {
+                $errors[] = "JSON corrupto en campaña ID {$campaign->id}";
+                continue;
+            }
+
+            // 4. Preparar datos
+            // Si el método era 'total', marcamos is_estimated = 1
+            $is_estimated = (isset($data['metodo']) && $data['metodo'] === 'total') ? 1 : 0;
+            
+            // Fecha de registro (usamos fin de campaña o inicio como fallback)
+            $date = !empty($campaign->end_date) ? $campaign->end_date : $campaign->start_date;
+
+            // 5. Insertar filas
+            $wpdb->query('START TRANSACTION');
+            try {
+                foreach ($data['distribucion'] as $monte_id => $quantity) {
+                    if ($quantity > 0) {
+                        $wpdb->insert(
+                            $table_production,
+                            [
+                                'project_id'     => $campaign->project_id,
+                                'campaign_id'    => $campaign->id,
+                                'monte_id'       => intval($monte_id),
+                                'entry_group_id' => $entry_group_id,
+                                'quantity_kg'    => floatval($quantity),
+                                'is_estimated'   => $is_estimated,
+                                'created_at'     => current_time('mysql')
+                            ],
+                            ['%d', '%d', '%d', '%s', '%f', '%d', '%s']
+                        );
+                    }
                 }
+                $wpdb->query('COMMIT');
+                $count_success++;
 
-                // Agregar columna total_production si no existe
-                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name_campaigns LIKE 'total_production'");
-                if (empty($column_exists)) {
-                    $wpdb->query("ALTER TABLE $table_name_campaigns ADD COLUMN total_production DECIMAL(15,2) DEFAULT 0.00 AFTER average_price");
-                    // error_log('CCP DB: Added total_production column'); // Commented out to prevent activation output
-                }
-
-                // error_log('CCP DB: Production columns migration completed'); // Commented out to prevent activation output
+            } catch (Exception $e) {
+                $wpdb->query('ROLLBACK');
+                $errors[] = "Error SQL en campaña {$campaign->id}: " . $e->getMessage();
             }
         }
 
-        // Migración v1.2 -> v1.3: Agregar columnas de montes a campaigns
-        if (version_compare($from_version, '1.3', '<')) {
-            $table_name_campaigns = $wpdb->prefix . 'pecan_campaigns';
-
-            // Verificar si la tabla existe
-            $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name_campaigns));
-
-            if ($table_exists) {
-                // error_log('CCP DB: Adding montes columns to campaigns table'); // Commented out to prevent activation output
-
-                // Agregar columna montes_contribuyentes si no existe
-                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name_campaigns LIKE 'montes_contribuyentes'");
-                if (empty($column_exists)) {
-                    $wpdb->query("ALTER TABLE $table_name_campaigns ADD COLUMN montes_contribuyentes LONGTEXT AFTER total_production");
-                    // error_log('CCP DB: Added montes_contribuyentes column'); // Commented out to prevent activation output
-                }
-
-                // Agregar columna montes_production si no existe
-                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name_campaigns LIKE 'montes_production'");
-                if (empty($column_exists)) {
-                    $wpdb->query("ALTER TABLE $table_name_campaigns ADD COLUMN montes_production LONGTEXT AFTER montes_contribuyentes");
-                    // error_log('CCP DB: Added montes_production column'); // Commented out to prevent activation output
-                }
-
-                // error_log('CCP DB: Montes columns migration completed'); // Commented out to prevent activation output
-            }
-        }
-
-        // error_log('CCP DB: Migrations completed'); // Commented out to prevent activation output
+        return [
+            'status'  => 'success',
+            'message' => "Migración finalizada. Migrados: $count_success. Omitidos (ya existían): $count_skipped.",
+            'errors'  => $errors
+        ];
     }
 
-    /**
-     * Migrar datos existentes de la estructura antigua a la nueva.
-     * Se ejecuta solo cuando se actualiza la versión de la BD.
-     */
-    private static function migrate_existing_data() {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'pecan_project_data';
-
-        // Verificar si hay datos en la estructura antigua
-        $existing_data = $wpdb->get_results("SELECT * FROM $table_name WHERE data_type IN ('productividad', 'inversiones', 'costos')");
-
-        if (empty($existing_data)) {
-            return; // No hay datos para migrar
-        }
-
-        $migration_log = [];
-
-        foreach ($existing_data as $row) {
-            $type_map = [
-                'productividad' => 'production',
-                'inversiones' => 'investment',
-                'costos' => 'cost'
-            ];
-
-            $new_type = $type_map[$row->data_type] ?? 'global_config';
-            $category = $row->data_key;
-            $details = $row->data_value;
-
-            // Intentar calcular total_value desde el JSON
-            $total_value = 0.00;
-            $data_obj = json_decode($row->data_value, true);
-            if (is_array($data_obj)) {
-                // Para costos, sumar valores
-                if ($new_type === 'cost' && isset($data_obj['total'])) {
-                    $total_value = floatval($data_obj['total']);
-                } elseif ($new_type === 'production' && isset($data_obj['total_produccion'])) {
-                    $total_value = floatval($data_obj['total_produccion']);
-                } elseif ($new_type === 'investment' && isset($data_obj['total_inversion'])) {
-                    $total_value = floatval($data_obj['total_inversion']);
-                }
-            }
-
-            // Insertar en la nueva estructura
-            $result = $wpdb->insert(
-                $table_name_annual_records,
-                [
-                    'project_id' => $row->project_id,
-                    'campaign_id' => $row->campaign_id ?? 1, // Default campaign if null
-                    'type' => $new_type,
-                    'category' => $category,
-                    'total_value' => $total_value,
-                    'details' => $details,
-                    'updated_at' => $row->updated_at
-                ],
-                ['%d', '%d', '%s', '%s', '%f', '%s', '%s']
-            );
-
-            if ($result) {
-                $migration_log[] = "Migrated: {$row->data_type} -> {$new_type}, category: {$category}";
-            } else {
-                $migration_log[] = "Failed to migrate: {$row->data_type}, category: {$category}";
-            }
-        }
-
-        // Log de migración (comentado para evitar salida durante activación)
-        // error_log('CCP Database Migration Log:');
-        // foreach ($migration_log as $log) {
-        //     error_log($log);
-        // }
-
-        // Opcional: Marcar que la migración se completó
-        update_option('ccp_migration_completed', '4.0');
-    }
 }
