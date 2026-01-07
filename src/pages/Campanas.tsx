@@ -15,6 +15,7 @@ import { useDataStore } from "@/stores/dataStore";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
 import { createInvestment, updateInvestment as updateInvestmentApi } from "@/services/investmentService";
+import { createProductionsByCampaign, getProductionsByCampaign } from "@/services/productionService";
 
 const categoriaLabels: Record<string, string> = {
   tierra: "Tierra",
@@ -50,11 +51,7 @@ const Campanas = () => {
 
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign, getTotalProductionByCampaign } = useCalculationsStore();
   const loadAllProductions = useDataStore((state) => state.loadAllProductions);
-
   
-  const productionCampaigns = useDataStore((state) => state.productionCampaigns);
-  const addProductionCampaign = useDataStore((state) => state.addProductionCampaign);
-  const updateProductionCampaign = useDataStore((state) => state.updateProductionCampaign);
   const costs = useDataStore((state) => state.costs);
   const addCost = useDataStore((state) => state.addCost);
   const updateCost = useDataStore((state) => state.updateCost);
@@ -161,68 +158,111 @@ const Campanas = () => {
   const campaignYears = generateCampaignYears();
 
   const handleSaveProduccion = async (data: any) => {
+    if (!currentProjectId) return;
+
+    // Usamos el ID de la campaña que se está editando (guardado en el estado o hook)
+    // OJO: En tu código actual usas 'currentCampaign' (año) o 'currentCampaignId'.
+    // Asegúrate de tener el ID correcto. Si el wizard setea el año en 'currentCampaign',
+    // buscamos el ID así:
+    const targetCampaign = campaigns.find(c => Number(c.year) === currentCampaign);
+    if (!targetCampaign) return;
+    const campaignId = targetCampaign.id;
+
     try {
-      // Calculate total production
-      const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
+      // 1. Calcular totales para actualizar la cabecera de la campaña
+      const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + (p.kgRecolectados || 0), 0);
 
-      const montesContribuyentes = (data as any).produccionPorMonte
+      // 2. Preparar el array para la API (Mapeo exacto de nombres)
+      const productionsData = data.produccionPorMonte
         .filter((p: any) => p.kgRecolectados > 0)
-        .map((p: any) => p.monteId);
-      
-      // 1. CREAMOS EL DICCIONARIO DE PRODUCCIÓN (ID: Kilos)
-      const produccionDiccionario = (data as any).produccionPorMonte.reduce((acc: any, p: any) => {
-        if (p.kgRecolectados > 0) acc[p.monteId] = p.kgRecolectados;
-        return acc;
-      }, {});
+        .map((p: any) => ({
+          monte_id: parseInt(p.monteId), // Asegurar número
+          quantity_kg: p.kgRecolectados,
+          is_estimated: data.metodo === 'total' ? 1 : 0,
+        }));
 
-      // 2. CREAMOS EL OBJETO ESTRUCTURADO CON METADATOS
-      // Aquí guardamos el método ("total" o "detallado") para respetarlo al editar
-      const montesProductionJSON = {
-        metodo: data.metodo,
-        distribucion: produccionDiccionario
-      };
+      // 3. ENVIAR A LA BASE DE DATOS (Nueva Tabla)
+      await createProductionsByCampaign(campaignId, {
+        project_id: currentProjectId,
+        productions: productionsData,
+        input_type: data.metodo === 'detallado' ? 'detail' : 'total',
+      });
 
-      // Update campaign in database
-      if (currentCampaignId) {
-        await updateCampaign(currentCampaignId, {
-          average_price: data.precioPromedio,
-          total_production: totalKg,
-          montes_contribuyentes: JSON.stringify(montesContribuyentes),
-          // Guardamos la nueva estructura JSON
-          montes_production: JSON.stringify(montesProductionJSON),
-        });
-        console.log('Campaign updated with method:', data.metodo);
-        // Reload campaigns to reflect changes
-        await loadCampaigns();
-      } else {
-         console.log('No currentCampaignId, skipping DB update');
-      }
+      // 4. ACTUALIZAR LA CAMPAÑA (Solo precio y totales, limpiamos los JSON viejos)
+      await updateCampaign(campaignId, {
+        average_price: data.precioPromedio,
+        total_production: totalKg, // Esto actualiza la tarjeta visualmente rápido
+        montes_contribuyentes: null, // Limpieza
+        montes_production: null,     // Limpieza
+      });
 
-      // Update local productionCampaigns
-      const existingCampaign = productionCampaigns.find(pc => pc.year === currentCampaign);
-      if (existingCampaign) {
-        updateProductionCampaign(existingCampaign.id, {
-          averagePrice: data.precioPromedio,
-          totalProduction: totalKg,
-          date: new Date(),
-        });
-      } else {
-        addProductionCampaign({
-          id: `campaign-${currentCampaign}`,
-          year: currentCampaign,
-          averagePrice: data.precioPromedio,
-          totalProduction: totalKg,
-          date: new Date(),
-        });
-      }
+      // 5. RECARGAR EL STORE (Crucial para que las gráficas y tablas se actualicen)
+      const { loadAllProductions } = useDataStore.getState();
+      await loadAllProductions(campaigns);
 
+      toast({
+        title: "Éxito",
+        description: "Datos de producción guardados correctamente.",
+      });
+
+      // Cerrar modales
       setEditingData(null);
       setWizardOpen(false);
       setEditData(null);
       setEditOpen(false);
+
     } catch (error) {
       console.error('Error saving production:', error);
-      // TODO: Show error message to user
+      toast({
+        title: "Error",
+        description: "No se pudieron guardar los datos.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Función auxiliar para cargar datos antes de editar
+  const handleOpenEdit = async (campaign: Campaign) => {
+    setCurrentCampaign(campaign.year); // Sincronizamos el año seleccionado
+    
+    try {
+        // 1. Pedir datos a la API
+        const productionsData: any[] = await getProductionsByCampaign(campaign.id) as any[];
+        
+        // 2. Determinar método (mirando el primer registro)
+        const firstRecord = productionsData[0];
+        const metodo = firstRecord?.input_type === 'detail' ? 'detallado' : 'total';
+        const precioPromedio = Number(campaign.average_price || 0);
+
+        const produccionPorMonte = montes
+            .filter(m => m.añoPlantacion <= campaign.year)
+            .map(monte => {
+                // CORRECCIÓN AQUÍ: Usar 'monte' en lugar de 'm'
+                const edad = campaign.year - monte.añoPlantacion; 
+                
+                // Búsqueda segura de IDs (String vs Number)
+                const record = productionsData.find(p => String(p.monte_id) === String(monte.id));
+                
+                return {
+                    monteId: monte.id, 
+                    nombre: monte.nombre,
+                    hectareas: monte.hectareas,
+                    edad: edad,
+                    kgRecolectados: record ? Number(record.quantity_kg) : 0
+                };
+            });
+
+        // 4. Abrir el modal con los datos listos
+        setEditData({
+            precioPromedio,
+            metodo,
+            produccionPorMonte
+        });
+        setEditOpen(true);
+
+    } catch (error) {
+        console.error("Error cargando datos para edición:", error);
+        toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
     }
   };
 
@@ -576,74 +616,20 @@ const Campanas = () => {
                       variant="outline"
                       className="flex-1"
                       onClick={() => {
-                        const hasProduction = campaign && parseFloat(campaign.total_production || '0') > 0;
-                        setCurrentCampaign(year);
-                        if (hasProduction) {
-                          // Prepare editing data
-                          const campana = campaign;
-                          const totalProduccionRegistrada = campana?.total_production ? Number(campana.total_production) : 0;
-                          let prodByMonte: Record<string, number> = {};
-                          let metodoDetectado: "detallado" | "total" = "detallado";
+                        const hayDatos = campaign ? getTotalProductionByCampaign(campaign.id) > 0 : false;
 
-                          if (campana && (campana as any).montes_production) {
-                            try {
-                              const rawData = (campana as any).montes_production;
-                              let parsedData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                              if (parsedData && typeof parsedData === 'object' && parsedData.metodo) {
-                                metodoDetectado = parsedData.metodo;
-                                prodByMonte = parsedData.distribucion || {};
-                              } else {
-                                metodoDetectado = "detallado";
-                                prodByMonte = parsedData;
-                              }
-                            } catch (e) {
-                              console.error("Error parseando JSON de producción:", e);
-                            }
-                          } else if (campana && (campana as any).montes_contribuyentes && totalProduccionRegistrada > 0) {
-                            metodoDetectado = "total";
-                            try {
-                              const rawContrib = (campana as any).montes_contribuyentes;
-                              const idsContribuyentes: string[] = (typeof rawContrib === 'string' ? JSON.parse(rawContrib) : rawContrib).map(String);
-                              const montesQueAportaron = montes.filter(m => idsContribuyentes.includes(String(m.id)));
-                              const totalHectareas = montesQueAportaron.reduce((sum, m) => sum + m.hectareas, 0);
-                              if (totalHectareas > 0) {
-                                const rendimientoPromedio = totalProduccionRegistrada / totalHectareas;
-                                montesQueAportaron.forEach(m => {
-                                  prodByMonte[String(m.id)] = Math.round(m.hectareas * rendimientoPromedio);
-                                });
-                              }
-                            } catch (e) {
-                              console.error("Error recalculando distribución proporcional:", e);
-                            }
-                          }
-
-                          const montesDisponibles = montes
-                            .filter((m) => m.añoPlantacion <= year)
-                            .map((m) => ({
-                              ...m,
-                              edad: Number(year) - Number(m.añoPlantacion),
-                            }));
-
-                          const produccionPorMonte = montesDisponibles.map(monte => ({
-                            monteId: monte.id,
-                            nombre: monte.nombre,
-                            hectareas: monte.hectareas,
-                            edad: monte.edad,
-                            kgRecolectados: prodByMonte[String(monte.id)] || 0,
-                          }));
-
-                          setEditData({
-                            precioPromedio: campana?.average_price ? Number(campana.average_price) : 0,
-                            metodo: metodoDetectado,
-                            produccionPorMonte,
-                          });
-                          setEditOpen(true);
+                        if (hayDatos) {
+                          // SI HAY DATOS: Abrimos el formulario de edición
+                          handleOpenEdit(campaign!);
                         } else {
+                          // SI NO HAY DATOS: Abrimos el formulario de registro
+                          setCurrentCampaign(year);
+                          setEditingData(null);
                           setWizardOpen(true);
                         }
                       }}
                     >
-                      {campaign && parseFloat(campaign.total_production || '0') > 0 ? 'Editar Producción' : 'Cargar Producción'}
+                      {campaign && getTotalProductionByCampaign(campaign.id) > 0 ? 'Editar Producción' : 'Cargar Producción'}
                     </Button>
                     <Button
                       variant="outline"

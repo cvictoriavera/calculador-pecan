@@ -175,8 +175,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Update current campaign ID when currentCampaign changes
   const updateCurrentCampaignId = (campaignsData: Campaign[]) => {
-   
-    const currentCamp = campaignsData.find(c => Number(c.year) === currentCampaign);
+
+    const currentCamp = campaignsData.find(c => c.year == currentCampaign);
    
     if (currentCamp) {
       setCurrentCampaignId(currentCamp.id);
