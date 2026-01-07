@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -49,11 +49,25 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }
   const { currentCampaign, montes } = useApp();
   const [showJovenes, setShowJovenes] = useState(false);
 
+  // Filter montes that exist in current campaign
+  const montesDisponibles = useMemo(() => {
+    return montes
+      .filter((m) => m.añoPlantacion <= currentCampaign)
+      .map((m) => ({
+        ...m,
+        edad: currentCampaign - m.añoPlantacion,
+      }));
+  }, [montes, currentCampaign]);
+
+  const montesProductivos = montesDisponibles.filter((m) => m.edad >= 7);
+  const montesJovenes = montesDisponibles.filter((m) => m.edad < 7);
+
   const {
     control,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors }
   } = useForm<RegistrarProduccionFormData>({
     resolver: zodResolver(registrarProduccionFormSchema),
@@ -66,25 +80,49 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }
     },
   });
 
-
   useEffect(() => {
-    if (editingData) {
-      setValue("precioPromedio", editingData.precioPromedio);
-      setValue("metodo", editingData.metodo);
+    
+    if (editingData && montesDisponibles.length > 0) {
+  
+      const produccionPorMonte = montesDisponibles.map(monte => {
+        
+        const existingData = editingData.produccionPorMonte.find(
+          (p: MonteProduccion) => String(p.monteId) === String(monte.id)
+        );
+
+        return {
+          monteId: monte.id, 
+          nombre: monte.nombre,
+          hectareas: monte.hectareas,
+          edad: monte.edad,
+          kgRecolectados: existingData ? Number(existingData.kgRecolectados) : 0, 
+        };
+      });
+      
+
+      // Prepare form data
+      const formData: RegistrarProduccionFormData = {
+        precioPromedio: editingData.precioPromedio,
+        metodo: editingData.metodo,
+        produccionPorMonte,
+        pesoTotal: 0,
+        montesSeleccionados: [],
+      };
+
+      // Handle total method specific fields
       if (editingData.metodo === "total") {
-        const totalKg = editingData.produccionPorMonte.reduce((acc: number, p: any) => acc + (p.kgRecolectados || 0), 0);
-        const montesSeleccionados = editingData.produccionPorMonte
-          .filter((p: any) => p.kgRecolectados > 0)
-          .map((p: any) => p.monteId);
-        setValue("pesoTotal", totalKg);
-        setValue("montesSeleccionados", montesSeleccionados);
-      } else {
-        setValue("pesoTotal", 0);
-        setValue("montesSeleccionados", []);
+        const totalKg = produccionPorMonte.reduce((acc: number, p) => acc + (p.kgRecolectados || 0), 0);
+        const montesSeleccionados = produccionPorMonte
+          .filter((p) => p.kgRecolectados > 0)
+          .map((p) => p.monteId);
+        formData.pesoTotal = totalKg;
+        formData.montesSeleccionados = montesSeleccionados;
       }
-      setValue("produccionPorMonte", editingData.produccionPorMonte);
+
+      // Reset the entire form with new data
+      reset(formData);
     }
-  }, [editingData, setValue]);
+  }, [editingData, montesDisponibles, reset]);
 
   if (!editingData) return null;
 
@@ -93,17 +131,6 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }
   const watchedPesoTotal = watch("pesoTotal") || 0;
   const watchedMontesSeleccionados = watch("montesSeleccionados") || [];
   const watchedProduccionPorMonte = watch("produccionPorMonte") || [];
-
-  // Filter montes that exist in current campaign
-  const montesDisponibles = montes
-    .filter((m) => m.añoPlantacion <= currentCampaign)
-    .map((m) => ({
-      ...m,
-      edad: currentCampaign - m.añoPlantacion,
-    }));
-
-  const montesProductivos = montesDisponibles.filter((m) => m.edad >= 7);
-  const montesJovenes = montesDisponibles.filter((m) => m.edad < 7);
 
   // Los cálculos siguen igual, basados en el watch original
   const totalKg = watchedProduccionPorMonte.reduce((acc, p) => acc + (p?.kgRecolectados || 0), 0);

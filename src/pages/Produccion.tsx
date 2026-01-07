@@ -10,6 +10,17 @@ import { EvolucionProductiva } from "@/components/produccion/EvolucionProductiva
 import { formatCurrency } from "@/lib/calculations";
 import { useDataStore } from "@/stores/dataStore";
 import { createProductionsByCampaign, getProductionsByCampaign, deleteProductionsByCampaign } from "@/services/productionService";
+import { useToast } from "@/hooks/use-toast";
+
+interface ProductionRecord {
+  monte_id: number;
+  quantity_kg: number;
+  input_type: string;
+  is_estimated: number;
+  entry_group_id: string;
+  monte_name?: string;
+  area_hectareas?: number;
+}
 import {
   ComposedChart,
   Bar,
@@ -24,24 +35,25 @@ import {
 
 const Produccion = () => {
   const { currentCampaign, campaigns, currentCampaignId, currentProjectId, updateCampaign, montes } = useApp();
+  const { toast } = useToast();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
 
   // Get data from stores
-  const productions = useDataStore((state) => state.productions);
   const productionCampaigns = useDataStore((state) => state.productionCampaigns);
 
   // Store actions
-  const addProduction = useDataStore((state) => state.addProduction);
   const addProductionCampaign = useDataStore((state) => state.addProductionCampaign);
   const updateProductionCampaign = useDataStore((state) => state.updateProductionCampaign);
-  const deleteProduction = useDataStore((state) => state.deleteProduction);
   const deleteProductionCampaign = useDataStore((state) => state.deleteProductionCampaign);
 
   const handleSaveProduccion = async (data: any) => {
     try {
+      // Determine if this is an edit operation (has existing data)
+      const isEdit = editingData !== null || editData !== null;
+
       // Calculate total production
       const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
 
@@ -71,51 +83,29 @@ const Produccion = () => {
           montes_production: null,
         });
 
-        console.log('Productions saved with method:', data.metodo);
-      } else {
-        console.log('Missing campaign or project ID, skipping DB update');
       }
-
-      // Update local Zustand stores
-      // Remove existing records for current campaign
-      productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
-
-      // Add new production records
-      data.produccionPorMonte.forEach((p: any) => {
-        addProduction({
-          id: `${currentCampaign}-${p.monteId}`,
-          year: currentCampaign,
-          monteId: p.monteId,
-          kgHarvested: p.kgRecolectados,
-          date: new Date(),
-        });
-      });
-
-      // Update local productionCampaigns
-      const existingCampaign = productionCampaigns.find(pc => pc.year === currentCampaign);
-      if (existingCampaign) {
-        updateProductionCampaign(existingCampaign.id, {
-          averagePrice: data.precioPromedio,
-          totalProduction: totalKg,
-          date: new Date(),
-        });
-      } else {
-        addProductionCampaign({
-          id: `campaign-${currentCampaign}`,
-          year: currentCampaign,
-          averagePrice: data.precioPromedio,
-          totalProduction: totalKg,
-          date: new Date(),
-        });
+      // Reload production data from database to update local stores
+      if (currentCampaignId) {
+        const { loadProductions } = useDataStore.getState();
+        await loadProductions(currentCampaignId);
       }
 
       setEditingData(null);
       setWizardOpen(false);
       setEditData(null);
       setEditOpen(false);
+
+      toast({
+        title: "Datos Guardados ...",
+        description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
+      });
     } catch (error) {
       console.error('Error saving production:', error);
-      // TODO: Show error message to user
+      toast({
+        title: "Error",
+        description: "No se pudieron guardar los cambios",
+        variant: "destructive",
+      });
     }
   };
 
@@ -188,18 +178,18 @@ const Produccion = () => {
             <Button
               onClick={async () => {
                 try {
-                  // Load production data from the new productions API
+                  
                   if (currentCampaignId) {
-                    const productionsData = await getProductionsByCampaign(currentCampaignId);
+                    const productionsData = await getProductionsByCampaign(currentCampaignId) as ProductionRecord[];
 
                     // Get campaign data for price
                     const campana = campaigns.find(c => Number(c.year) === currentCampaign);
                     const precioPromedio = campana?.average_price ? Number(campana.average_price) : 0;
 
                     // Determine input method from the productions data
-                    // If all records have is_estimated = 0, it's detailed; if any have is_estimated = 1, it's total
-                    const hasEstimated = productionsData.some((p: any) => p.is_estimated === 1);
-                    const metodo = hasEstimated ? 'total' : 'detallado';
+                    // Check the input_type of the first record (all records should have the same input_type)
+                    const firstRecord = productionsData[0] as ProductionRecord;
+                    const metodo = firstRecord?.input_type === 'detail' ? 'detallado' : 'total';
 
                     // Prepare montes data
                     const montesDisponibles = montes
@@ -211,22 +201,24 @@ const Produccion = () => {
 
                     // Create production per monte from API data
                     const produccionPorMonte = montesDisponibles.map(monte => {
-                      const productionRecord = productionsData.find((p: any) => p.monte_id === parseInt(monte.id));
+                      
+                      const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === String(monte.id));
+
                       return {
-                        monteId: monte.id,
-                        nombre: monte.nombre,
-                        hectareas: monte.hectareas,
-                        edad: monte.edad,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        kgRecolectados: productionRecord ? (productionRecord as any).quantity_kg : 0,
+                          monteId: monte.id,
+                          nombre: monte.nombre,
+                          hectareas: monte.hectareas,
+                          edad: monte.edad,
+                          kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0, 
                       };
                     });
 
-                    setEditData({
+                    const editDataToSet = {
                       precioPromedio,
                       metodo,
                       produccionPorMonte,
-                    });
+                    };
+                    setEditData(editDataToSet);
 
                     setEditOpen(true);
                   }
@@ -240,7 +232,7 @@ const Produccion = () => {
                       edad: Number(currentCampaign) - Number(m.añoPlantacion),
                     }));
 
-                  setEditData({
+                  const fallbackData = {
                     precioPromedio: 0,
                     metodo: 'detallado',
                     produccionPorMonte: montesDisponibles.map(monte => ({
@@ -250,7 +242,8 @@ const Produccion = () => {
                       edad: monte.edad,
                       kgRecolectados: 0,
                     })),
-                  });
+                  };
+                  setEditData(fallbackData);
                   setEditOpen(true);
                 }
               }}
@@ -280,11 +273,9 @@ const Produccion = () => {
                   <AlertDialogAction
                     onClick={async () => {
                       try {
-                        console.log('Starting production deletion for campaign:', currentCampaignId);
                         // Delete productions from database using new API
                         if (currentCampaignId) {
                           await deleteProductionsByCampaign(currentCampaignId);
-                          console.log('Productions deleted from database');
                         }
 
                         // Update campaign to remove summary data
@@ -299,9 +290,7 @@ const Produccion = () => {
                         }
 
                         // Delete from local Zustand stores
-                        productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
                         productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
-                        console.log('Production deletion completed successfully');
                       } catch (error) {
                         console.error('Error deleting production:', error);
                         // TODO: Show error message to user

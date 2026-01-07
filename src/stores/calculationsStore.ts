@@ -1,4 +1,3 @@
-// Calculations Store - Selectores y cálculos memoizados
 import { create } from 'zustand';
 import { useDataStore } from './dataStore';
 
@@ -25,7 +24,6 @@ interface CalculationsState {
 }
 
 export const useCalculationsStore = create<CalculationsState>((_, get) => ({
-  // Selectores por año
   getTotalCosts: (year: number): number => {
     const { costs, campaigns } = useDataStore.getState();
     const campaign = campaigns.find(c => c.year === year);
@@ -46,7 +44,6 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
       .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
   },
 
-  // ELIMINAR memoize()
   getCostByCategory: (campaignId: number | string): Record<string, number> => {
     const { costs } = useDataStore.getState();
     const targetId = Number(campaignId);
@@ -73,7 +70,6 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
       }, {} as Record<string, number>);
   },
 
-  // 1. Costos Totales por CAMPAÑA (ID)
   getTotalCostsByCampaign: (campaignId: number | string): number => {
     const { costs } = useDataStore.getState();
     const targetId = Number(campaignId);
@@ -85,7 +81,6 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
       .reduce((sum, cost) => sum + (Number(cost.total_amount) || 0), 0);
   },
 
-  // 2. Inversiones Totales por CAMPAÑA (ID)
   getTotalInvestmentsByCampaign:(campaignId: number | string): number => {
     const { investments } = useDataStore.getState();
     const targetId = Number(campaignId);
@@ -99,7 +94,6 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
     return total;
   },
 
-  // Ratio de Rentabilidad (Por ID)
   getProfitabilityRatio: (campaignId: number | string): number => {
     const totalCosts = get().getTotalCostsByCampaign(campaignId);
     const totalInvestments = get().getTotalInvestmentsByCampaign(campaignId);
@@ -107,19 +101,23 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
     if (totalInvestments === 0) return 0;
     return (totalCosts - totalInvestments) / totalInvestments;
   },
+
+
+
+
   // Production selectors
   getTotalProduction: (year: number): number => {
     const productions = useDataStore.getState().productions
-      .filter(p => p.year === year);
-    return productions.reduce((sum, p) => sum + p.kgHarvested, 0);
+      .filter(p => p.campaign_id === year);
+    return productions.reduce((sum, p) => sum + p.quantity_kg, 0);
   },
 
   getProductionByMonte: (year: number): Record<string, number> => {
     const productions = useDataStore.getState().productions
-      .filter(p => p.year === year);
+      .filter(p => p.campaign_id === year); // campaign_id is actually the year in this context
 
     return productions.reduce((acc, p) => {
-      acc[p.monteId] = (acc[p.monteId] || 0) + p.kgHarvested;
+      acc[p.monte_id] = (acc[p.monte_id] || 0) + p.quantity_kg;
       return acc;
     }, {} as Record<string, number>);
   },
@@ -135,7 +133,7 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
 
   hasProductionForYear: (year: number): boolean => {
     const productions = useDataStore.getState().productions
-      .filter(p => p.year === year);
+      .filter(p => p.campaign_id === year);
     return productions.length > 0;
   },
 }));

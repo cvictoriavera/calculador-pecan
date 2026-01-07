@@ -3,9 +3,14 @@
  */
 
 interface ProductionRecord {
-  monte_id: number;
+  id: number; 
+  project_id: number;
+  campaign_id: number; 
+  monte_id: number;    
+  entry_group_id: string; 
   quantity_kg: number;
-  is_estimated?: number;
+  is_estimated: boolean; 
+  date: string; 
 }
 
 interface ProductionData {

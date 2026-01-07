@@ -48,12 +48,9 @@ const Campanas = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
-  const productions = useDataStore((state) => state.productions);
   const productionCampaigns = useDataStore((state) => state.productionCampaigns);
-  const addProduction = useDataStore((state) => state.addProduction);
   const addProductionCampaign = useDataStore((state) => state.addProductionCampaign);
   const updateProductionCampaign = useDataStore((state) => state.updateProductionCampaign);
-  const deleteProduction = useDataStore((state) => state.deleteProduction);
   const costs = useDataStore((state) => state.costs);
   const addCost = useDataStore((state) => state.addCost);
   const updateCost = useDataStore((state) => state.updateCost);
@@ -160,20 +157,8 @@ const Campanas = () => {
       // Calculate total production
       const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
 
-      // Update local Zustand stores
-      // Remove existing records for current campaign
-      productions.filter((p) => p.year === currentCampaign).forEach((p) => deleteProduction(p.id));
-
-      // Add new production records
-      data.produccionPorMonte.forEach((p: any) => {
-        addProduction({
-          id: `${currentCampaign}-${p.monteId}`,
-          year: currentCampaign,
-          monteId: p.monteId,
-          kgHarvested: p.kgRecolectados,
-          date: new Date(),
-        });
-      });
+      // Production data is now handled by the new API in Produccion.tsx
+      // This code is kept for compatibility but production records are managed elsewhere
 
       // Prepare montes data for DB (IDs de los que aportaron algo)
       const montesContribuyentes = (data as any).produccionPorMonte
