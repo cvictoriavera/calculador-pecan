@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.5.0';
+    private static $db_version = '1.5.1';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -336,6 +336,14 @@ class CCP_Database_Manager {
                 $tables_created[] = 'yield_models';
             }
 
+            // Ejecutar migraciones específicas de versión
+            if ($installed_version != self::$db_version) {
+                // Migración a 1.5.1: añadir columnas pais y region
+                if (version_compare($installed_version, '1.5.1', '<')) {
+                    self::migrate_to_1_5_1();
+                }
+            }
+
             // Actualizar la versión de la BD si se crearon tablas o cambió la versión
             if (!empty($tables_created) || $installed_version != self::$db_version) {
                 update_option(self::$db_version_key, self::$db_version);
@@ -442,6 +450,49 @@ class CCP_Database_Manager {
             'message' => "Migración finalizada. Migrados: $count_success. Omitidos (ya existían): $count_skipped.",
             'errors'  => $errors
         ];
+    }
+
+    /**
+     * Migra la base de datos a la versión 1.5.1
+     * Añade columnas pais y region a la tabla pecan_projects
+     */
+    public static function migrate_to_1_5_1() {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'pecan_projects';
+
+        // Verificar si la tabla existe
+        if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name))) {
+            return ['status' => 'error', 'message' => 'Tabla pecan_projects no existe.'];
+        }
+
+        $columns_added = [];
+
+        // Verificar y añadir columna 'pais'
+        $pais_exists = $wpdb->get_results("DESCRIBE $table_name pais");
+        if (empty($pais_exists)) {
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN pais VARCHAR(100) NULL AFTER description");
+            $columns_added[] = 'pais';
+        }
+
+        // Verificar y añadir columna 'region'
+        $region_exists = $wpdb->get_results("DESCRIBE $table_name region");
+        if (empty($region_exists)) {
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN region VARCHAR(255) NULL AFTER pais");
+            $columns_added[] = 'region';
+        }
+
+        if (!empty($columns_added)) {
+            return [
+                'status' => 'success',
+                'message' => 'Columnas añadidas: ' . implode(', ', $columns_added)
+            ];
+        } else {
+            return [
+                'status' => 'info',
+                'message' => 'Todas las columnas ya existen.'
+            ];
+        }
     }
 
 }

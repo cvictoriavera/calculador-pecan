@@ -104,6 +104,12 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 						),
 					),
 				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_item' ),
+					'permission_callback' => array( $this, 'update_item_permissions_check' ),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+				),
 			)
 		);
 	}
@@ -175,11 +181,71 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to create an item.
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool|WP_Error True if the request has access to create items, WP_Error object otherwise.
-	 */
+		* Check if a given request has access to update an item.
+		*
+		* @param WP_REST_Request $request Full data about the request.
+		* @return bool|WP_Error True if the request has access to update items, WP_Error object otherwise.
+		*/
+	public function update_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to update a project.', 'calculador-pecan' ), array( 'status' => 401 ) );
+		}
+		return true;
+	}
+
+	/**
+		* Update one item from the collection.
+		*
+		* @param WP_REST_Request $request Full data about the request.
+		* @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+		*/
+	public function update_item( $request ) {
+		$user_id = get_current_user_id();
+		$project_id = (int) $request->get_param( 'id' );
+		$params = $request->get_json_params();
+
+		// Verify ownership
+		$existing_project = $this->proyectos_db->get_by_id( $project_id, $user_id );
+		if ( is_null( $existing_project ) ) {
+			return new WP_Error( 'rest_project_invalid_id', __( 'Invalid project ID or access denied.', 'calculador-pecan' ), array( 'status' => 404 ) );
+		}
+
+		// Prepare update data
+		$update_data = array();
+		if ( isset( $params['pais'] ) ) {
+			$update_data['pais'] = sanitize_text_field( $params['pais'] );
+		}
+		if ( isset( $params['region'] ) ) {
+			$update_data['region'] = sanitize_text_field( $params['region'] );
+		}
+		if ( isset( $params['description'] ) ) {
+			$update_data['description'] = sanitize_textarea_field( $params['description'] );
+		}
+
+		if ( empty( $update_data ) ) {
+			return new WP_Error( 'rest_no_data', __( 'No valid data provided for update.', 'calculador-pecan' ), array( 'status' => 400 ) );
+		}
+
+		// Update the project
+		$result = $this->proyectos_db->update( $project_id, $update_data, $user_id );
+
+		if ( ! $result ) {
+			return new WP_Error( 'update_failed', __( 'Could not update project.', 'calculador-pecan' ), array( 'status' => 500 ) );
+		}
+
+		// Get updated project
+		$updated_project = $this->proyectos_db->get_by_id( $project_id, $user_id );
+
+		$response = rest_ensure_response( $updated_project );
+		return $response;
+	}
+
+	/**
+		* Check if a given request has access to create an item.
+		*
+		* @param WP_REST_Request $request Full data about the request.
+		* @return bool|WP_Error True if the request has access to create items, WP_Error object otherwise.
+		*/
 	public function create_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to create a project.', 'calculador-pecan' ), array( 'status' => 401 ) );
@@ -212,6 +278,8 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 				'user_id' => $user_id,
 				'project_name' => sanitize_text_field($params['project_name'] ?? 'Nuevo Proyecto'),
 				'description' => sanitize_textarea_field($params['description'] ?? ''),
+				'pais' => sanitize_text_field($params['pais'] ?? ''),
+				'region' => sanitize_text_field($params['region'] ?? ''),
 			);
 
 			error_log('CCP: Creating project with data: ' . print_r($project_data, true));

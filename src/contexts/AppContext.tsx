@@ -35,6 +35,8 @@ interface Project {
   user_id: number;
   project_name: string;
   description?: string;
+  pais?: string;
+  region?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -285,38 +287,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Create campaigns for each year from initial year to current year
     for (let y = year; y <= currentYear; y++) {
-      try {
-        const campaignData = {
-          project_id: projectId,
-          campaign_name: `Campaña ${y}`,
-          year: y,
-          start_date: `${y}-01-01`,
-          end_date: `${y}-12-31`,
-          status: y === currentYear ? 'open' : 'closed',
-          is_current: y === currentYear ? 1 : 0,
-        };
+      const campaignData = {
+        project_id: projectId,
+        campaign_name: `Campaña ${y}`,
+        year: y,
+        start_date: `${y}-01-01`,
+        end_date: `${y}-12-31`,
+        status: y === currentYear ? 'open' : 'closed',
+        is_current: y === currentYear ? 1 : 0,
+      };
 
+      try {
         console.log(`Creating campaign for year ${y}:`, campaignData);
         const createdCampaign = await createCampaign(campaignData);
         console.log(`Successfully created campaign for year ${y}:`, createdCampaign);
         createdCampaigns.push(createdCampaign);
       } catch (error) {
         console.error(`Error creating campaign for year ${y}:`, error);
-        // Check if it's a duplicate error - if so, try to get existing campaign
-        if (error instanceof Error && error.message && error.message.includes('already exists')) {
-          console.log(`Campaign for year ${y} already exists, fetching existing...`);
-          try {
-            const existingCampaigns = await getCampaignsByProject(projectId);
-            const existing = existingCampaigns.find(c => c.year === y);
-            if (existing) {
-              console.log(`Found existing campaign for year ${y}:`, existing);
-              createdCampaigns.push(existing);
-            }
-          } catch (fetchError) {
-            console.error(`Error fetching existing campaign for year ${y}:`, fetchError);
+        // Try to get existing campaign
+        try {
+          const existingCampaigns = await getCampaignsByProject(projectId);
+          const existing = existingCampaigns.find(c => c.year === y);
+          if (existing) {
+            console.log(`Found existing campaign for year ${y}:`, existing);
+            createdCampaigns.push(existing);
+          } else {
+            console.error(`No existing campaign found for year ${y}`);
           }
+        } catch (fetchError) {
+          console.error(`Error fetching existing campaign for year ${y}:`, fetchError);
         }
-        // Continue with other campaigns even if one fails
       }
     }
 

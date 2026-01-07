@@ -5,7 +5,8 @@ import { useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import { useUiStore } from "@/stores";
 
@@ -16,6 +17,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, changeProject, montes } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
+  const navigate = useNavigate();
 
   const totalArea = montes
     .filter(m => m.añoPlantacion <= currentCampaign)
@@ -105,6 +107,17 @@ export function Layout({ children }: LayoutProps) {
                 <p className="text-muted-foreground">Área Total Plantada</p>
                 <p className="font-semibold text-foreground">{totalArea.toFixed(1)} ha</p>
               </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => window.location.href = '/'}>Volver a Cappecan</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/config')}>Configuración</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
           <main className="flex-1 p-6 overflow-y-auto overflow-x-hidden">

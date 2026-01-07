@@ -91,6 +91,8 @@ class CCP_Proyectos_DB {
 
 		$project_name = isset( $data['project_name'] ) ? sanitize_text_field( $data['project_name'] ) : 'Nuevo Proyecto';
 		$description  = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
+		$pais         = isset( $data['pais'] ) ? sanitize_text_field( $data['pais'] ) : '';
+		$region       = isset( $data['region'] ) ? sanitize_text_field( $data['region'] ) : '';
 
 		$result = $this->wpdb->insert(
 			$this->table_name,
@@ -98,6 +100,8 @@ class CCP_Proyectos_DB {
 				'user_id'      => $user_id,
 				'project_name' => $project_name,
 				'description'  => $description,
+				'pais'         => $pais,
+				'region'       => $region,
 				'status'       => 'active',
 				'created_at'   => current_time( 'mysql', 1 ),
 				'updated_at'   => current_time( 'mysql', 1 ),
@@ -106,6 +110,8 @@ class CCP_Proyectos_DB {
 				'%d', // user_id
 				'%s', // project_name
 				'%s', // description
+				'%s', // pais
+				'%s', // region
 				'%s', // status
 				'%s', // created_at
 				'%s', // updated_at
@@ -128,8 +134,64 @@ class CCP_Proyectos_DB {
 	 * @return bool True on success, false on failure.
 	 */
 	public function update( $project_id, $data, $user_id ) {
-		// Stub: Implementation to be added later.
-		return false;
+		if ( ! is_numeric( $project_id ) || ! is_numeric( $user_id ) || empty( $data ) ) {
+			return false;
+		}
+
+		// Verify ownership
+		$existing = $this->get_by_id( $project_id, $user_id );
+		if ( null === $existing ) {
+			return false;
+		}
+
+		// Prepare update data
+		$update_data = array();
+		$format = array();
+
+		if ( isset( $data['project_name'] ) ) {
+			$update_data['project_name'] = sanitize_text_field( $data['project_name'] );
+			$format[] = '%s';
+		}
+		if ( isset( $data['description'] ) ) {
+			$update_data['description'] = sanitize_textarea_field( $data['description'] );
+			$format[] = '%s';
+		}
+		if ( isset( $data['pais'] ) ) {
+			$update_data['pais'] = sanitize_text_field( $data['pais'] );
+			$format[] = '%s';
+		}
+		if ( isset( $data['region'] ) ) {
+			$update_data['region'] = sanitize_text_field( $data['region'] );
+			$format[] = '%s';
+		}
+		if ( isset( $data['status'] ) ) {
+			$update_data['status'] = sanitize_text_field( $data['status'] );
+			$format[] = '%s';
+		}
+
+		if ( empty( $update_data ) ) {
+			return false;
+		}
+
+		// Add updated_at
+		$update_data['updated_at'] = current_time( 'mysql', 1 );
+		$format[] = '%s';
+
+		$where = array(
+			'id'      => absint( $project_id ),
+			'user_id' => absint( $user_id ),
+		);
+		$where_format = array( '%d', '%d' );
+
+		$result = $this->wpdb->update(
+			$this->table_name,
+			$update_data,
+			$where,
+			$format,
+			$where_format
+		);
+
+		return $result !== false;
 	}
 
 	/**
