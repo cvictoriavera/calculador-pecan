@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,11 @@ const Campanas = () => {
   const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign, currentCampaignId, montes } = useApp();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
+
+  const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign, getTotalProductionByCampaign } = useCalculationsStore();
+  const loadAllProductions = useDataStore((state) => state.loadAllProductions);
+
+  
   const productionCampaigns = useDataStore((state) => state.productionCampaigns);
   const addProductionCampaign = useDataStore((state) => state.addProductionCampaign);
   const updateProductionCampaign = useDataStore((state) => state.updateProductionCampaign);
@@ -68,6 +72,11 @@ const Campanas = () => {
   const [editingInversion, setEditingInversion] = useState<any>(null);
 
 
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      loadAllProductions(campaigns);
+    }
+  }, [campaigns, loadAllProductions]);
   
   const handleNuevaCampana = async () => {
     // Activamos el modo carga inmediatamente
@@ -139,7 +148,6 @@ const Campanas = () => {
     return safeCampaigns.find(campaign => String(campaign.year) === String(year)) || null;
   };
 
-  // Generate years from current year down to initial year
   const generateCampaignYears = () => {
     if (!initialYear) return [];
 
@@ -157,10 +165,6 @@ const Campanas = () => {
       // Calculate total production
       const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
 
-      // Production data is now handled by the new API in Produccion.tsx
-      // This code is kept for compatibility but production records are managed elsewhere
-
-      // Prepare montes data for DB (IDs de los que aportaron algo)
       const montesContribuyentes = (data as any).produccionPorMonte
         .filter((p: any) => p.kgRecolectados > 0)
         .map((p: any) => p.monteId);
@@ -463,8 +467,13 @@ const Campanas = () => {
         <div className="space-y-4">
           {campaignYears.map((year) => {
 
-             const campaign = getCampaignForYear(year);
-             const isCurrentYear = year === currentCampaign;
+            const campaign = getCampaignForYear(year);
+            const isCurrentYear = year === currentCampaign;
+
+            const totalProductionKg = campaign ? getTotalProductionByCampaign(campaign.id) : 0;  
+
+            const averagePrice = campaign ? Number(campaign.average_price || 0) : 0;
+            const totalRevenue = totalProductionKg * averagePrice;
 
 
             return (
@@ -518,7 +527,9 @@ const Campanas = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Producción</p>
-                        <p className="text-lg font-semibold text-foreground">{campaign ? (parseFloat(campaign.total_production || '0')).toLocaleString() + ' kg' : '0 kg'}</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {totalProductionKg.toLocaleString()} kg
+                        </p>
                       </div>
                     </div>
 
@@ -528,7 +539,9 @@ const Campanas = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Ingresos</p>
-                        <p className="text-lg font-semibold text-accent">{campaign ? formatCurrency((parseFloat(campaign.total_production || '0')) * (parseFloat(campaign.average_price || '0')), true) : '$0'}</p>
+                        <p className="text-lg font-semibold text-accent">
+                          {formatCurrency(totalRevenue, true)}
+                        </p>
                       </div>
                     </div>
 

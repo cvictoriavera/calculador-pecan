@@ -13,6 +13,7 @@ interface CalculationsState {
   getInvestmentByCategory: (campaignId: number | string) => Record<string, number>;
   getTotalCostsByCampaign: (campaignId: number | string) => number;
   getTotalInvestmentsByCampaign: (campaignId: number | string) => number;
+  getTotalProductionByCampaign: (campaignId: number | string) => number;
 
   getProfitabilityRatio: (campaignId: number | string) => number;
 
@@ -24,6 +25,19 @@ interface CalculationsState {
 }
 
 export const useCalculationsStore = create<CalculationsState>((_, get) => ({
+
+  getTotalProductionByCampaign: (campaignId: number | string): number => {
+    
+    const { productions } = useDataStore.getState();
+    const targetId = Number(campaignId);
+
+    if (!targetId) return 0;
+
+    return productions
+      .filter(p => Number(p.campaign_id) === targetId) // Ojo: usa el nombre real de tu propiedad en DB
+      .reduce((sum, p) => sum + (Number(p.quantity_kg) || 0), 0);
+  },
+
   getTotalCosts: (year: number): number => {
     const { costs, campaigns } = useDataStore.getState();
     const campaign = campaigns.find(c => c.year === year);

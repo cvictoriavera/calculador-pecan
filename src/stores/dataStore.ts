@@ -108,7 +108,8 @@ interface DataState {
 
   loadProductions: (campaignId: number) => Promise<void>;
   addProductionBatch: (data: any) => Promise<void>;
-  loadAllProductions: (campaigns: Campaign[]) => Promise<void>;
+  loadAllProductions: (campaigns: any[]) => Promise<void>;
+  getTotalProductionByCampaign: (campaignId: number | string) => number;
 
   addProduction: (production: ProductionRecord) => void;
   updateProduction: (id: number, updates: Partial<ProductionRecord>) => void;
@@ -596,36 +597,61 @@ export const useDataStore = create<DataState>()(
       throw error;
     }
   },
-  loadAllProductions: async (campaigns: Campaign[]) => {
+  loadAllProductions: async (campaigns: { id: number }[]) => {
     try {
       const allProductions: ProductionRecord[] = [];
-      
-      // Opción A: Si tu API soporta buscar por proyecto, úsalo (es más eficiente).
-      // Opción B (Estilo actual de tu app): Iterar por campañas
+      const updatedProductionCampaigns: ProductionCampaign[] = [];
+
       for (const campaign of campaigns) {
-        // Reutilizamos el servicio que ya tienes
         const records = await getProductionsByCampaign(campaign.id);
-        
-        // Aseguramos que sea un array antes de spreadear
+
         if (Array.isArray(records)) {
-            // Normalizamos tipos si hace falta
-            const cleanRecords = records.map((r: any) => ({
-                ...r,
-                // Asegurar IDs numéricos para consistencia
-                id: Number(r.id),
-                campaign_id: Number(campaign.id), 
-                monte_id: Number(r.monte_id),
-                quantity_kg: Number(r.quantity_kg)
-            }));
-            allProductions.push(...cleanRecords);
+          const cleanRecords = records.map((r: any) => ({
+            ...r,
+            id: Number(r.id),
+            campaign_id: Number(campaign.id),
+            monte_id: Number(r.monte_id),
+            quantity_kg: Number(r.quantity_kg)
+          }));
+          allProductions.push(...cleanRecords);
+        }
+
+        // Poblar productionCampaigns desde campaigns (igual que en Produccion.tsx)
+        const campaignData = campaigns.find(c => c.id === campaign.id);
+        if (campaignData && (campaignData as any).average_price !== undefined && (campaignData as any).total_production !== undefined) {
+          const averagePrice = parseFloat((campaignData as any).average_price);
+          const totalProduction = parseFloat((campaignData as any).total_production);
+          const date = new Date((campaignData as any).updated_at || (campaignData as any).created_at);
+
+          updatedProductionCampaigns.push({
+            id: `campaign-${(campaignData as any).year}`,
+            year: (campaignData as any).year,
+            averagePrice,
+            totalProduction,
+            date,
+          });
         }
       }
 
-      set({ productions: allProductions });
-      
+      set({
+        productions: allProductions,
+        productionCampaigns: updatedProductionCampaigns
+      });
+
     } catch (error) {
       console.error('Error loading all productions:', error);
     }
+  },
+
+  getTotalProductionByCampaign: (campaignId: number | string): number => {
+    const { productions } = useDataStore.getState();
+    const targetId = Number(campaignId);
+
+    if (!targetId) return 0;
+
+    return productions
+      .filter(p => Number(p.campaign_id) === targetId)
+      .reduce((sum, p) => sum + (Number(p.quantity_kg) || 0), 0);
   },
 
   // Backup/Restore functionality
