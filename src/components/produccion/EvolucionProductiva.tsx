@@ -11,6 +11,7 @@ import { createYieldModel, updateYieldModel, getYieldModelsByProject } from "@/s
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { useDataStore } from "@/stores/dataStore";
 
 interface ProduccionRecord {
   campanaYear: number;
@@ -24,36 +25,25 @@ interface EvolucionProductivaProps {
 }
 
 export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaProps) {
-  console.log('=== EvolucionProductiva Debug ===');
-  console.log('Campaigns received:', campaigns);
-  console.log('Campaigns length:', campaigns?.length || 0);
-  console.log('Campaigns is array:', Array.isArray(campaigns));
-  console.log('Campaigns type:', typeof campaigns);
-  if (campaigns && Array.isArray(campaigns) && campaigns.length > 0) {
-    console.log('Sample campaign:', campaigns[0]);
-    console.log('Sample campaign average_price:', campaigns[0]?.average_price, 'type:', typeof campaigns[0]?.average_price);
-  } else {
-    console.log('No campaigns available or not an array');
-  }
-  console.log('================================');
-
+  
+  
   const { currentProjectId } = useApp();
+
+  const productions = useDataStore((state) => state.productions);
+  const loadAllProductions = useDataStore((state) => state.loadAllProductions);
+
   const [expandedMontes, setExpandedMontes] = useState<string[]>([]);
   const [yieldCurveOpen, setYieldCurveOpen] = useState(false);
 
-  // Keep montes collapsed by default for better initial load performance
-  // Users can expand individual montes as needed
   const [yieldData, setYieldData] = useState<Array<{year: number, kg: number}>>([]);
   const [editingYieldData, setEditingYieldData] = useState<YieldCurveFormData | undefined>(undefined);
   const [projectedPrice, setProjectedPrice] = useState(3.50);
 
-  // Year range state - initialized with calculated default range
   const [yearRange, setYearRange] = useState<[number, number]>(() => {
     const currentYear = new Date().getFullYear();
-    return [Math.max(2015, currentYear - 5), Math.min(2055, currentYear + 5)];
+    return [Math.max(2015, currentYear - 5), Math.min(2055, currentYear + 2)];
   });
 
-  // Fetch yield model on component mount and when project changes
   useEffect(() => {
     const fetchYieldModel = async () => {
       if (!currentProjectId) return;
@@ -88,6 +78,13 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
     fetchYieldModel();
   }, [currentProjectId]);
 
+  useEffect(() => {
+    if (currentProjectId && campaigns.length > 0) {
+        // Carga inicial de todos los datos históricos
+        loadAllProductions(campaigns);
+    }
+  }, [currentProjectId, campaigns, loadAllProductions]);
+
   // Calculate dynamic year range based on montes
   const yearRangeLimits = useMemo(() => {
     if (montes.length === 0) return { min: 2020, max: 2030 };
@@ -114,7 +111,6 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
     for (let year = yearRange[0]; year <= yearRange[1]; year++) {
       years.push(year);
     }
-    console.log('displayedYears:', years);
     return years;
   }, [yearRange]);
 
@@ -128,43 +124,36 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
 
   // Compute produccionData from campaigns
   const produccionData = useMemo(() => {
-    console.log('Computing produccionData from campaigns:', campaigns.length, 'campaigns');
+    
     const data: ProduccionRecord[] = [];
-    campaigns.forEach(camp => {
-      if (camp.montes_production) {
-        let prodData = JSON.parse(camp.montes_production);
-        if (prodData && typeof prodData === 'object' && prodData.distribucion) {
-          prodData = prodData.distribucion;
-        }
-        Object.entries(prodData).forEach(([monteId, kg]) => {
-          data.push({
-            campanaYear: Number(camp.year),
-            monteId,
-            kgRecolectados: kg as number,
-          });
-        });
-      } else if (camp.montes_contribuyentes) {
-        const contrib = JSON.parse(camp.montes_contribuyentes);
-        const totalProd = camp.total_production;
-        const totalArea = contrib.reduce((sum: number, id: string) => {
-          const monte = montes.find(m => m.id == id);
-          return sum + (monte ? monte.hectareas : 0);
-        }, 0);
-        contrib.forEach((id: string) => {
-          const monte = montes.find(m => m.id == id);
-          if (monte && totalArea > 0) {
-            const kg = totalProd * (monte.hectareas / totalArea);
-            data.push({
-              campanaYear: Number(camp.year),
-              monteId: id,
-              kgRecolectados: kg,
-            });
-          }
+    
+    productions.forEach(prod => {
+      
+      const campaign = campaigns.find(c => String(c.id) === String(prod.campaign_id));      
+      
+      if (!campaign) return; 
+
+      const monteIdStr = String(prod.monte_id);
+      const yearNum = Number(campaign.year);
+      const quantity = Number(prod.quantity_kg);
+
+      const existingEntry = data.find(
+        d => d.monteId === monteIdStr && d.campanaYear === yearNum
+      );
+
+      if (existingEntry) {
+        existingEntry.kgRecolectados += quantity;
+      } else {
+        data.push({
+          campanaYear: yearNum,
+          monteId: monteIdStr,
+          kgRecolectados: quantity,
         });
       }
     });
+
     return data;
-  }, [campaigns, montes]);
+  }, [productions, campaigns]);
 
   // Campaigns are used for getting production data and pricing
 
@@ -271,7 +260,6 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
         await updateYieldModel(generalModel.id, {
           yield_data: JSON.stringify(yieldData)
         });
-        console.log('Updated existing yield model');
       } else {
         // Create new model
         await createYieldModel({
@@ -281,7 +269,6 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
           yield_data: JSON.stringify(yieldData),
           is_active: 1
         });
-        console.log('Created new yield model');
       }
 
       // Refresh yield model data
@@ -354,7 +341,6 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
             <Slider
               value={yearRange}
               onValueChange={(value) => {
-                console.log('onValueChange called with:', value);
                 setYearRange(value as [number, number]);
               }}
               min={yearRangeLimits.min}
@@ -570,10 +556,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                         {/* Financial Row (Optional) */}
                         {(() => {
                           // Check if we have pricing data for any campaign
-                          console.log('Checking pricing for campaigns:', campaigns.map(c => ({ year: c.year, average_price: c.average_price, type: typeof c.average_price })));
                           const hasPricing = campaigns.some(c => c.average_price && parseFloat(c.average_price) > 0);
-                          console.log('Has pricing data:', hasPricing, 'Campaigns with prices:', campaigns.filter(c => c.average_price && parseFloat(c.average_price) > 0));
-                          console.log('Rendering billing row for monte:', monte.id, 'hasPricing:', hasPricing);
                           return hasPricing ? (
                             <tr className="bg-secondary/20 border-b border-border/50">
                               <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-3 text-sm text-muted-foreground border-r border-border">
@@ -587,7 +570,6 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
                                 const campaign = campaigns.find(c => Number(c.year) === year);
                                 const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : (isFuture ? projectedPrice : 0);
 
-                                console.log(`Billing cell for monte ${monte.id}, year ${year}: existed=${existed}, produccion=${produccion}, campaign.average_price=${campaign?.average_price}, precioPromedio=${precioPromedio}`);
 
                                 const realFacturacion = produccion !== null && precioPromedio > 0
                                   ? produccion * precioPromedio
@@ -703,9 +685,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
               {/* Row 2: Economic Impact ($) */}
               {(() => {
                 // Check if we have pricing data for any campaign
-                console.log('Footer - Checking pricing for campaigns:', campaigns.map(c => ({ year: c.year, average_price: c.average_price, type: typeof c.average_price })));
                 const hasPricing = campaigns.some(c => c.average_price && parseFloat(c.average_price) > 0);
-                console.log('Footer - Has pricing data:', hasPricing);
                 return hasPricing ? (
                   <tr className="border-t border-border bg-primary/3">
                     <td className="sticky left-0 z-20 bg-primary/3 p-3 border-r border-border">

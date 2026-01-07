@@ -1,31 +1,17 @@
 /**
- * @file Type definitions for production service functions.
+ * Type declarations for productionService.js
  */
 
-interface ProductionRecord {
-  id: number; 
-  project_id: number;
-  campaign_id: number; 
-  monte_id: number;    
-  entry_group_id: string; 
-  quantity_kg: number;
-  is_estimated: boolean; 
-  date: string; 
-}
+export declare function getProductionsByCampaign(campaignId: number): Promise<any[]>;
 
-interface ProductionData {
+export declare function createProductionsByCampaign(campaignId: number, productionData: {
   project_id: number;
-  productions: ProductionRecord[];
+  productions: Array<{
+    monte_id: number;
+    quantity_kg: number;
+    is_estimated?: number;
+  }>;
   input_type: 'total' | 'detail';
-}
+}): Promise<any>;
 
-interface ProductionResponse {
-  success: boolean;
-  productions?: unknown[];
-}
-
-declare module '@/services/productionService' {
-  export function getProductionsByCampaign(campaignId: number): Promise<unknown[]>;
-  export function createProductionsByCampaign(campaignId: number, productionData: ProductionData): Promise<ProductionResponse>;
-  export function deleteProductionsByCampaign(campaignId: number): Promise<ProductionResponse>;
-}
+export declare function deleteProductionsByCampaign(campaignId: number): Promise<any>;

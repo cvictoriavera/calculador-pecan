@@ -3,10 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getCostsByCampaign, createCost, createCostBatch, updateCost as updateCostApi, deleteCost as deleteCostApi } from '../services/costService';
 import { getInvestmentsByCampaign } from '../services/investmentService';
-
-// Declare production service functions
-declare function getProductionsByCampaign(campaignId: number): Promise<any[]>;
-declare function createProductionsByCampaign(campaignId: number, data: any): Promise<any>;
+import { getProductionsByCampaign, createProductionsByCampaign } from '../services/productionService';
 
 // Interfaces base
 export interface Project {
@@ -111,6 +108,7 @@ interface DataState {
 
   loadProductions: (campaignId: number) => Promise<void>;
   addProductionBatch: (data: any) => Promise<void>;
+  loadAllProductions: (campaigns: Campaign[]) => Promise<void>;
 
   addProduction: (production: ProductionRecord) => void;
   updateProduction: (id: number, updates: Partial<ProductionRecord>) => void;
@@ -383,19 +381,7 @@ export const useDataStore = create<DataState>()(
       throw new Error('Investment category is required');
     }
 
-    // For now, still add to local state for compatibility
-    // TODO: Remove local state when fully migrated to API
     set((state) => ({ investments: [...state.investments, investment] }));
-
-    // TODO: Call API to save to database
-    // const result = await createInvestment({
-    //   project_id: currentProjectId,
-    //   campaign_id: investment.campaign_id,
-    //   category: investment.category,
-    //   description: investment.description,
-    //   total_value: investment.amount,
-    //   details: investment.data,
-    // });
   },
 
   updateInvestment: async (id, updates) => {
@@ -452,7 +438,6 @@ export const useDataStore = create<DataState>()(
 
     set((state) => ({ productions: [...state.productions, production] }));
   },
-
   updateProduction: (id: number, updates: Partial<ProductionRecord>) => {
     const currentProduction = get().productions.find((p: ProductionRecord) => p.id === id);
     if (!currentProduction) {
@@ -470,7 +455,6 @@ export const useDataStore = create<DataState>()(
       ),
     }));
   },
-
   deleteProduction: (id: number) => {
     const production = get().productions.find((p: ProductionRecord) => p.id === id);
     if (!production) {
@@ -591,7 +575,6 @@ export const useDataStore = create<DataState>()(
       console.error('Error loading productions:', error);
     }
   },
-
   addProductionBatch: async (dataPayload: any) => {
     try {
       // dataPayload debería tener: { project_id, input_type, productions: [...] }
@@ -611,6 +594,37 @@ export const useDataStore = create<DataState>()(
     } catch (error) {
       console.error('Error saving productions:', error);
       throw error;
+    }
+  },
+  loadAllProductions: async (campaigns: Campaign[]) => {
+    try {
+      const allProductions: ProductionRecord[] = [];
+      
+      // Opción A: Si tu API soporta buscar por proyecto, úsalo (es más eficiente).
+      // Opción B (Estilo actual de tu app): Iterar por campañas
+      for (const campaign of campaigns) {
+        // Reutilizamos el servicio que ya tienes
+        const records = await getProductionsByCampaign(campaign.id);
+        
+        // Aseguramos que sea un array antes de spreadear
+        if (Array.isArray(records)) {
+            // Normalizamos tipos si hace falta
+            const cleanRecords = records.map((r: any) => ({
+                ...r,
+                // Asegurar IDs numéricos para consistencia
+                id: Number(r.id),
+                campaign_id: Number(campaign.id), 
+                monte_id: Number(r.monte_id),
+                quantity_kg: Number(r.quantity_kg)
+            }));
+            allProductions.push(...cleanRecords);
+        }
+      }
+
+      set({ productions: allProductions });
+      
+    } catch (error) {
+      console.error('Error loading all productions:', error);
     }
   },
 
