@@ -282,6 +282,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentProjectId(projectId);
     setInitialYear(year);
 
+    // Refetch projects to ensure the new project is in the list
+    try {
+      const updatedProjects = await getProjects();
+      setProjects(updatedProjects);
+    } catch (error) {
+      console.error('Error refetching projects:', error);
+    }
+
     const currentYear = new Date().getFullYear();
     const createdCampaigns: Campaign[] = [];
 

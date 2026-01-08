@@ -527,7 +527,7 @@ const Campanas = () => {
                       <CardTitle className="text-2xl text-foreground">
                         Campaña {year}
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="hidden text-sm text-muted-foreground mt-1">
                         {campaign
                           ? `${new Date(campaign.start_date).toLocaleDateString("es-AR")} - ${campaign.end_date ? new Date(campaign.end_date).toLocaleDateString("es-AR") : "En curso"}`
                           : `${year}-01-01 - ${year}-12-31`
