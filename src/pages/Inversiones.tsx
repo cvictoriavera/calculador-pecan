@@ -238,7 +238,7 @@ const Inversiones = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Inversiones</h1>
+          <h1 className="text-3xl mb-2">Inversiones</h1>
           <p className="text-muted-foreground">Registro de inversiones de capital - Campaña {currentCampaign}</p>
         </div>
         <Button onClick={handleOpenSheet} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">

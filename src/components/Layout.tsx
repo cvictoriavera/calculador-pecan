@@ -57,7 +57,7 @@ export function Layout({ children }: LayoutProps) {
                 <span className="text-sm font-medium text-muted-foreground">Proyecto:</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-[200px] justify-between bg-secondary">
+                    <Button variant="outline" className="w-[200px] justify-between bg-cream">
                       {projects.find(p => p.id === currentProjectId)?.project_name || "Seleccionar Proyecto"}
                       <ChevronDown className="h-4 w-4" />
                     </Button>
@@ -89,7 +89,7 @@ export function Layout({ children }: LayoutProps) {
                   value={currentCampaign.toString()}
                   onValueChange={(value) => handleCampaignChange(parseInt(value))}
                 >
-                  <SelectTrigger className="w-[180px] bg-secondary">
+                  <SelectTrigger className="w-[180px] bg-cream">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -104,12 +104,12 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <div className="flex items-center gap-4 text-sm">
               <div className="text-right">
-                <p className="text-muted-foreground">Área Total Plantada</p>
-                <p className="font-semibold text-foreground">{totalArea.toFixed(1)} ha</p>
+                <p className="text-muted-foreground m-0">Área Total Plantada</p>
+                <p className="font-semibold text-foreground m-0">{totalArea.toFixed(1)} ha</p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
+                  <Button variant="ghost" size="icon" className="rounded-full bg-cream">
                     <User className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

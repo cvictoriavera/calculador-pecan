@@ -445,14 +445,14 @@ const Campanas = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Campañas</h1>
+            <h1 className="text-3xl text-foreground mb-2">Campañas</h1>
             <p className="text-muted-foreground">Gestión de ciclos anuales de Producción</p>
           </div>
         </div>
         <Card className="border-border/50 shadow-md">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Configuración incompleta</h3>
+            <h3 className="text-xl text-foreground mb-2">Configuración incompleta</h3>
             <p className="text-muted-foreground mb-6 text-center max-w-md">
               Debes completar la configuración inicial para ver las campañas
             </p>
@@ -466,7 +466,7 @@ const Campanas = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Campañas</h1>
+          <h1 className="text-3xl mb-2">Campañas</h1>
           <p className="text-muted-foreground">Gestión de ciclos anuales de producción</p>
         </div>
         <Button 
@@ -492,7 +492,7 @@ const Campanas = () => {
         <Card className="border-border/50 shadow-md">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Proyecto no configurado</h3>
+            <h3 className="text-xl text-foreground mb-2">Proyecto no configurado</h3>
             <p className="text-muted-foreground mb-6 text-center max-w-md">
               Debes completar la configuración inicial del proyecto para ver las campañas
             </p>
@@ -524,7 +524,7 @@ const Campanas = () => {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-2xl font-bold text-foreground">
+                      <CardTitle className="text-2xl text-foreground">
                         Campaña {year}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -536,7 +536,7 @@ const Campanas = () => {
                     </div>
                     {campaign ? (
                       campaign.status === 'open' ? (
-                        <Badge className="bg-accent text-accent-foreground">
+                        <Badge className="bg-pecan text-accent-foreground b">
                           {isCurrentYear ? 'Activa' : 'Abierta'}
                         </Badge>
                       ) : campaign.status === 'closed' ? (
@@ -552,7 +552,7 @@ const Campanas = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-lg bg-secondary">
+                      <div className="p-3 rounded-lg bg-cream">
                         <Calendar className="h-6 w-6 text-accent" />
                       </div>
                       <div>
@@ -562,7 +562,7 @@ const Campanas = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-lg bg-secondary">
+                      <div className="p-3 rounded-lg bg-cream">
                         <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>
@@ -574,7 +574,7 @@ const Campanas = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-lg bg-secondary">
+                      <div className="p-3 rounded-lg bg-cream">
                         <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>
@@ -586,7 +586,7 @@ const Campanas = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-lg bg-secondary">
+                      <div className="p-3 rounded-lg bg-cream">
                         <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>
@@ -596,7 +596,7 @@ const Campanas = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-lg bg-secondary">
+                      <div className="p-3 rounded-lg bg-cream">
                         <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>

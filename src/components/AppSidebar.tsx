@@ -28,13 +28,13 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="bg-sidebar">
-        <div className="p-4 border-b border-sidebar-border">
+        <div className="p-3 border-b border-sidebar-border">
           {open && (
             <div className="flex items-center gap-2">
               <Sprout className="h-8 w-8 text-sidebar-primary" />
               <div>
-                <h1 className="text-lg font-bold text-sidebar-foreground">PecanManager</h1>
-                <p className="text-xs text-sidebar-foreground/70">Gestión Cultivo de Pecán</p>
+                <h1 className="text-lg m-0 text-sidebar-foreground">PecanManager</h1>
+                <p className="text-xs m-0 text-sidebar-foreground/70">Gestión Cultivo de Pecán</p>
               </div>
             </div>
           )}

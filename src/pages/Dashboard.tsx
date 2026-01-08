@@ -92,7 +92,7 @@ const Dashboard = () => {
   if (dashboardData.length === 0) {
      return (
         <div className="text-center py-10">
-           <h2 className="text-xl font-semibold">No hay datos registrados</h2>
+           <h2 className="text-xl ">No hay datos registrados</h2>
            <p className="text-muted-foreground">Comienza creando una campaña y registrando movimientos.</p>
         </div>
      )
@@ -101,7 +101,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Inicio</h1>
+        <h1 className="text-3xl text-foreground mb-2">Inicio</h1>
         <p className="text-muted-foreground">Visión general de tu operación pecanera</p>
       </div>
 
