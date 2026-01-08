@@ -76,6 +76,7 @@ class CCP_Users_Controller extends WP_REST_Controller {
 			'name'     => $current_user->display_name,
 			'email'    => $current_user->user_email,
 			'username' => $current_user->user_login,
+			'roles'    => $current_user->roles,
 		);
 
 		$response = rest_ensure_response( $user_data );

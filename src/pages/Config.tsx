@@ -14,6 +14,7 @@ import { updateProject } from "@/services/projectService";
 
 const Config = () => {
   const [producerName, setProducerName] = useState("");
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isMigrating, setIsMigrating] = useState(false);
   const { toast } = useToast();
   const { initialYear, currentProjectId, projects } = useApp();
@@ -35,6 +36,7 @@ const Config = () => {
       try {
         const user = await getCurrentUser();
         setProducerName(user.name || "");
+        setUserRoles(user.roles || []);
       } catch (error) {
         console.error("Error fetching user:", error);
         // Fallback to empty or default
@@ -227,29 +229,31 @@ const Config = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 shadow-md">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-accent" />
-            <CardTitle className="text-foreground">Operaciones de Base de Datos</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Migra los datos de producción almacenados en JSON en la tabla campaigns a la nueva tabla productions.
-            </p>
-            <Button
-              onClick={handleMigrateProduction}
-              disabled={isMigrating}
-              variant="outline"
-              className="gap-2"
-            >
-              {isMigrating ? "Migrando..." : "Migrar Datos de Producción"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {userRoles.includes('administrator') && (
+        <Card className="border-border/50 shadow-md">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-accent" />
+              <CardTitle className="text-foreground">Operaciones de Base de Datos</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Migra los datos de producción almacenados en JSON en la tabla campaigns a la nueva tabla productions.
+              </p>
+              <Button
+                onClick={handleMigrateProduction}
+                disabled={isMigrating}
+                variant="outline"
+                className="gap-2"
+              >
+                {isMigrating ? "Migrando..." : "Migrar Datos de Producción"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
     </div>
   );
