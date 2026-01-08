@@ -85,6 +85,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
     }
   }, [currentProjectId, campaigns, loadAllProductions]);
 
+
   // Calculate dynamic year range based on montes
   const yearRangeLimits = useMemo(() => {
     if (montes.length === 0) return { min: 2020, max: 2030 };
@@ -271,15 +272,12 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
         });
       }
 
-      // Refresh yield model data
-      if (currentProjectId) {
-        const models = await getYieldModelsByProject(currentProjectId);
-        const generalModel = models.find((model: any) => model.variety === 'general' && model.is_active === 1);
-        if (generalModel) {
-          const parsedData = JSON.parse(generalModel.yield_data);
-          setYieldData(parsedData);
-        }
-      }
+      // Update yieldData immediately from form data
+      const updatedYieldData = data.rows.map(row => ({
+        year: row.age,
+        kg: row.yield_kg
+      }));
+      setYieldData(updatedYieldData);
 
       setYieldCurveOpen(false);
     } catch (error) {
