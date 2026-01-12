@@ -181,23 +181,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateCurrentCampaignId = (campaignsData: Campaign[]) => {
 
     const currentCamp = campaignsData.find(c => c.year == currentCampaign);
-   
+
     if (currentCamp) {
       setCurrentCampaignId(currentCamp.id);
-      
+
     } else {
-     
-      // Create the missing campaign
+
+      // Create the missing campaign using the same format as onboarding
       createCampaign({
         project_id: currentProjectId!,
         campaign_name: `Campaña ${currentCampaign}`,
         year: currentCampaign,
-        start_date: `${currentCampaign}-01-01`,
-        end_date: `${currentCampaign}-12-31`,
+        start_date: `Julio ${currentCampaign}`,
+        end_date: `Junio ${currentCampaign + 1}`,
         status: 'open',
         is_current: 1,
       }).then(newCampaign => {
-       
+
         const updatedCampaigns = [...campaignsData, newCampaign];
         setCampaigns(updatedCampaigns);
         setCurrentCampaignId(newCampaign.id);
