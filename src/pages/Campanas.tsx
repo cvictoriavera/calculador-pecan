@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, TrendingUp, Loader2 } from "lucide-react";
+import { Plus, Calendar, TrendingUp, Loader2, Pencil, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useApp } from "@/contexts/AppContext";
 import { formatCurrency } from "@/lib/calculations";
 import { useCalculationsStore } from "@/stores/calculationsStore";
@@ -24,6 +25,8 @@ const categoriaLabels: Record<string, string> = {
   riego: "Riego",
   maquinaria: "Maquinaria",
 };
+
+const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 interface Campaign {
   id: number;
@@ -67,6 +70,8 @@ const Campanas = () => {
   const [editingCosto, setEditingCosto] = useState<any>(null);
   const [inversionSheetOpen, setInversionSheetOpen] = useState(false);
   const [editingInversion, setEditingInversion] = useState<any>(null);
+  const [editingMonth, setEditingMonth] = useState<{ [year: number]: boolean }>({});
+  const [updatingMonth, setUpdatingMonth] = useState<{ [year: number]: boolean }>({});
 
 
   useEffect(() => {
@@ -106,7 +111,7 @@ const Campanas = () => {
         project_id: currentProjectId!,
         campaign_name: `Campaña ${nextYear}`,
         year: nextYear,
-        start_date: `${nextYear}-01-01`,
+        start_date: `Enero ${nextYear}`,
         end_date: undefined,
         status: 'open',
         is_current: 1,
@@ -156,6 +161,66 @@ const Campanas = () => {
   };
 
   const campaignYears = generateCampaignYears();
+
+  const formatCampaignDates = (campaign: Campaign | null, year: number) => {
+    if (!campaign) {
+        return `Enero ${year} - Enero ${year + 1}`;
+    }
+
+    // Caso A: Ya tenemos el formato nuevo guardado (Strings)
+    // Ejemplo: start_date="Junio 2026", end_date="Junio 2027"
+    if (campaign.start_date && !campaign.start_date.includes('-')) {
+        // Si existe end_date lo usamos, si no, lo "inventamos" visualmente
+        const endText = campaign.end_date || `${campaign.start_date.split(' ')[0]} ${year + 1}`;
+        return `${campaign.start_date} - ${endText}`;
+    }
+
+    // Caso B: Formato antiguo (YYYY-MM-DD) o fallback
+    // Esto es solo por si tienes datos viejos sin migrar
+    const start = new Date(campaign.start_date);
+    const end = new Date(start);
+    end.setFullYear(end.getFullYear() + 1);
+    // Nota: aquí podrías tener el problema de zona horaria si son datos viejos, 
+    // pero los datos nuevos entrarán en el Case A.
+    return `${months[start.getUTCMonth()]} ${start.getFullYear()} - ${months[end.getUTCMonth()]} ${end.getFullYear()}`;
+};
+
+  const handleMonthChange = async (year: number, monthIndex: number) => {
+    const campaign = getCampaignForYear(year);
+    if (!campaign) return;
+    
+    setUpdatingMonth(prev => ({ ...prev, [year]: true }));
+    
+    try {
+      const startMonthName = months[monthIndex];
+      
+      // CALCULO DEL MES DE FIN (El mes anterior al de inicio)
+      // Si el inicio es Enero (0), el fin es Diciembre (11).
+      // Si el inicio es Julio (6), el fin es Junio (5).
+      const endMonthIndex = (monthIndex - 1 + 12) % 12; 
+      const endMonthName = months[endMonthIndex];
+
+      const newStartDate = `${startMonthName} ${year}`;
+      const newEndDate = `${endMonthName} ${year + 1}`;
+      
+      await updateCampaign(campaign.id, {
+        start_date: newStartDate,
+        end_date: newEndDate,
+      });
+      
+      await loadCampaigns();
+      setEditingMonth(prev => ({ ...prev, [year]: false }));
+    } catch (error) {
+      console.error('Error updating campaign month:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el mes de la campaña",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingMonth(prev => ({ ...prev, [year]: false }));
+    }
+  };
 
   const handleSaveProduccion = async (data: any) => {
     if (!currentProjectId) return;
@@ -527,12 +592,52 @@ const Campanas = () => {
                       <CardTitle className="text-2xl text-foreground">
                         Campaña {year}
                       </CardTitle>
-                      <p className="hidden text-sm text-muted-foreground mt-1">
-                        {campaign
-                          ? `${new Date(campaign.start_date).toLocaleDateString("es-AR")} - ${campaign.end_date ? new Date(campaign.end_date).toLocaleDateString("es-AR") : "En curso"}`
-                          : `${year}-01-01 - ${year}-12-31`
-                        }
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {editingMonth[year] ? (
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={campaign?.start_date ? campaign.start_date.split(' ')[0] : months[0]}
+                              onValueChange={(value: string) => {
+                                const monthIndex = months.indexOf(value);
+                                handleMonthChange(year, monthIndex);
+                              }}
+                              disabled={updatingMonth[year]}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {months.map((month, index) => (
+                                  <SelectItem key={index} value={month}>{month}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingMonth(prev => ({ ...prev, [year]: false }))}
+                              className="p-1 h-6 w-6"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <p className="text-sm text-muted-foreground mb-0">Define el mes de inicio de la campaña</p>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground mb-0">
+                            {formatCampaignDates(campaign, year)}
+                          </p>
+                        )}
+                        {!editingMonth[year] && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingMonth(prev => ({ ...prev, [year]: !prev[year] }))}
+                            className="p-1 h-6 w-6"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     {campaign ? (
                       campaign.status === 'open' ? (
@@ -556,8 +661,8 @@ const Campanas = () => {
                         <Calendar className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Duración</p>
-                        <p className="text-lg font-semibold text-foreground">12 meses</p>
+                        <p className="text-sm text-muted-foreground mb-0">Duración</p>
+                        <p className="text-lg font-semibold text-foreground mb-0">12 meses</p>
                       </div>
                     </div>
 
@@ -566,8 +671,8 @@ const Campanas = () => {
                         <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Producción</p>
-                        <p className="text-lg font-semibold text-foreground">
+                        <p className="text-sm text-muted-foreground mb-0">Producción</p>
+                        <p className="text-lg font-semibold text-foreground mb-0">
                           {totalProductionKg.toLocaleString()} kg
                         </p>
                       </div>
@@ -575,11 +680,11 @@ const Campanas = () => {
 
                     <div className="flex items-center gap-3">
                       <div className="p-3 rounded-lg bg-cream">
-                        <TrendingUp className="h-6 w-6 text-accent" />
+                        <TrendingUp className="h-6 w-6 text-accent mb-0" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Ingresos</p>
-                        <p className="text-lg font-semibold text-accent">
+                        <p className="text-sm text-muted-foreground mb-0">Ingresos</p>
+                        <p className="text-lg font-semibold text-accent mb-0">
                           {formatCurrency(totalRevenue, true)}
                         </p>
                       </div>
@@ -590,8 +695,8 @@ const Campanas = () => {
                         <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Costos</p>
-                        <p className="text-lg font-semibold text-accent"> {campaign ? formatCurrency(getTotalCostsByCampaign(campaign.id), true) : '$0'}</p>
+                        <p className="text-sm text-muted-foreground mb-0">Costos</p>
+                        <p className="text-lg font-semibold text-accent mb-0"> {campaign ? formatCurrency(getTotalCostsByCampaign(campaign.id), true) : '$0'}</p>
                       </div>
                     </div>
 
@@ -600,8 +705,8 @@ const Campanas = () => {
                         <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Invertido</p>
-                        <p className="text-lg font-semibold text-accent">
+                        <p className="text-sm text-muted-foreground mb-0">Invertido</p>
+                        <p className="text-lg font-semibold text-accent mb-0">
                           {(() => {
                             const total = campaign ? getTotalInvestmentsByCampaign(campaign.id) : 0;
                             return formatCurrency(total, true);

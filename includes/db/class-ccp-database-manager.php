@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.5.2';
+    private static $db_version = '1.5.3';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -164,8 +164,8 @@ class CCP_Database_Manager {
                     project_id BIGINT UNSIGNED NOT NULL,
                     campaign_name VARCHAR(100) NOT NULL,
                     year INT NOT NULL,
-                    start_date DATE NOT NULL,
-                    end_date DATE NULL,
+                    start_date VARCHAR(50) NOT NULL,
+                    end_date VARCHAR(50) NULL,
                     status ENUM('open', 'closed', 'archived') DEFAULT 'open',
                     is_current TINYINT(1) DEFAULT 0,
                     notes TEXT NULL,
@@ -345,6 +345,10 @@ class CCP_Database_Manager {
                  // Migración a 1.5.2: añadir provincia, departamento, municipio y zona
                  if (version_compare($installed_version, '1.5.2', '<')) {
                      self::migrate_to_1_5_2();
+                 }
+                 // Migración a 1.5.3: cambiar start_date y end_date a VARCHAR en pecan_campaigns
+                 if (version_compare($installed_version, '1.5.3', '<')) {
+                     self::migrate_to_1_5_3();
                  }
              }
 
@@ -559,6 +563,49 @@ class CCP_Database_Manager {
              return [
                  'status' => 'info',
                  'message' => 'Todas las columnas ya existen.'
+             ];
+         }
+     }
+
+     /**
+      * Migra la base de datos a la versión 1.5.3
+      * Cambia start_date y end_date de DATE a VARCHAR(50) en pecan_campaigns
+      */
+     public static function migrate_to_1_5_3() {
+         global $wpdb;
+
+         $table_name = $wpdb->prefix . 'pecan_campaigns';
+
+         // Verificar si la tabla existe
+         if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name))) {
+             return ['status' => 'error', 'message' => 'Tabla pecan_campaigns no existe.'];
+         }
+
+         $columns_changed = [];
+
+         // Verificar y cambiar columna 'start_date' a VARCHAR(50)
+         $start_date_desc = $wpdb->get_results("DESCRIBE $table_name start_date");
+         if (!empty($start_date_desc) && strpos($start_date_desc[0]->Type, 'date') !== false) {
+             $wpdb->query("ALTER TABLE $table_name MODIFY COLUMN start_date VARCHAR(50) NOT NULL");
+             $columns_changed[] = 'start_date cambiado a VARCHAR(50)';
+         }
+
+         // Verificar y cambiar columna 'end_date' a VARCHAR(50)
+         $end_date_desc = $wpdb->get_results("DESCRIBE $table_name end_date");
+         if (!empty($end_date_desc) && strpos($end_date_desc[0]->Type, 'date') !== false) {
+             $wpdb->query("ALTER TABLE $table_name MODIFY COLUMN end_date VARCHAR(50) NULL");
+             $columns_changed[] = 'end_date cambiado a VARCHAR(50)';
+         }
+
+         if (!empty($columns_changed)) {
+             return [
+                 'status' => 'success',
+                 'message' => 'Cambios realizados: ' . implode(', ', $columns_changed)
+             ];
+         } else {
+             return [
+                 'status' => 'info',
+                 'message' => 'Las columnas ya están en VARCHAR.'
              ];
          }
      }
