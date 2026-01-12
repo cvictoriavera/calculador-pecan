@@ -36,7 +36,9 @@ interface Project {
   project_name: string;
   description?: string;
   pais?: string;
-  region?: string;
+  provincia?: string;
+  departamento?: string;
+  municipio?: string;
   status: string;
   created_at: string;
   updated_at: string;

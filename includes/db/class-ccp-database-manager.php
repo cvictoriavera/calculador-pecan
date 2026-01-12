@@ -17,7 +17,7 @@ class CCP_Database_Manager {
      *
      * @var string
      */
-    private static $db_version = '1.5.1';
+    private static $db_version = '1.5.2';
 
     /**
      * Clave para guardar la versión de la BD en la tabla de opciones.
@@ -337,12 +337,16 @@ class CCP_Database_Manager {
             }
 
             // Ejecutar migraciones específicas de versión
-            if ($installed_version != self::$db_version) {
-                // Migración a 1.5.1: añadir columnas pais y region
-                if (version_compare($installed_version, '1.5.1', '<')) {
-                    self::migrate_to_1_5_1();
-                }
-            }
+             if ($installed_version != self::$db_version) {
+                 // Migración a 1.5.1: añadir columna pais
+                 if (version_compare($installed_version, '1.5.1', '<')) {
+                     self::migrate_to_1_5_1();
+                 }
+                 // Migración a 1.5.2: añadir provincia, departamento, municipio y zona
+                 if (version_compare($installed_version, '1.5.2', '<')) {
+                     self::migrate_to_1_5_2();
+                 }
+             }
 
             // Actualizar la versión de la BD si se crearon tablas o cambió la versión
             if (!empty($tables_created) || $installed_version != self::$db_version) {
@@ -454,7 +458,7 @@ class CCP_Database_Manager {
 
     /**
      * Migra la base de datos a la versión 1.5.1
-     * Añade columnas pais y region a la tabla pecan_projects
+     * Añade columna pais a la tabla pecan_projects
      */
     public static function migrate_to_1_5_1() {
         global $wpdb;
@@ -475,13 +479,6 @@ class CCP_Database_Manager {
             $columns_added[] = 'pais';
         }
 
-        // Verificar y añadir columna 'region'
-        $region_exists = $wpdb->get_results("DESCRIBE $table_name region");
-        if (empty($region_exists)) {
-            $wpdb->query("ALTER TABLE $table_name ADD COLUMN region VARCHAR(255) NULL AFTER pais");
-            $columns_added[] = 'region';
-        }
-
         if (!empty($columns_added)) {
             return [
                 'status' => 'success',
@@ -493,6 +490,70 @@ class CCP_Database_Manager {
                 'message' => 'Todas las columnas ya existen.'
             ];
         }
-    }
+     }
 
-}
+     /**
+      * Migra la base de datos a la versión 1.5.2
+      * Añade 'provincia', 'departamento', 'municipio' y 'zona' en la tabla pecan_projects
+      */
+     public static function migrate_to_1_5_2() {
+         global $wpdb;
+
+         $table_name = $wpdb->prefix . 'pecan_projects';
+
+         // Verificar si la tabla existe
+         if (!$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name))) {
+             return ['status' => 'error', 'message' => 'Tabla pecan_projects no existe.'];
+         }
+
+         $columns_added = [];
+
+         // Verificar y gestionar columna 'provincia'
+         $region_exists = $wpdb->get_results("DESCRIBE $table_name region");
+         $provincia_exists = $wpdb->get_results("DESCRIBE $table_name provincia");
+
+         if (!empty($region_exists) && empty($provincia_exists)) {
+             // Renombrar columna 'region' a 'provincia'
+             $wpdb->query("ALTER TABLE $table_name CHANGE region provincia VARCHAR(255) NULL");
+             $columns_added[] = 'region -> provincia';
+         } elseif (empty($region_exists) && empty($provincia_exists)) {
+             // Si no existe ninguna, añadir 'provincia'
+             $wpdb->query("ALTER TABLE $table_name ADD COLUMN provincia VARCHAR(255) NULL AFTER pais");
+             $columns_added[] = 'provincia añadida';
+         }
+
+         // Verificar y añadir columna 'departamento'
+         $departamento_exists = $wpdb->get_results("DESCRIBE $table_name departamento");
+         if (empty($departamento_exists)) {
+             $wpdb->query("ALTER TABLE $table_name ADD COLUMN departamento VARCHAR(255) NULL AFTER provincia");
+             $columns_added[] = 'departamento añadido';
+         }
+
+         // Verificar y añadir columna 'municipio'
+         $municipio_exists = $wpdb->get_results("DESCRIBE $table_name municipio");
+         if (empty($municipio_exists)) {
+             $wpdb->query("ALTER TABLE $table_name ADD COLUMN municipio VARCHAR(255) NULL AFTER departamento");
+             $columns_added[] = 'municipio añadido';
+         }
+
+         // Verificar y añadir columna 'zona'
+         $zona_exists = $wpdb->get_results("DESCRIBE $table_name zona");
+         if (empty($zona_exists)) {
+             $wpdb->query("ALTER TABLE $table_name ADD COLUMN zona VARCHAR(255) NULL AFTER municipio");
+             $columns_added[] = 'zona añadido';
+         }
+
+         if (!empty($columns_added)) {
+             return [
+                 'status' => 'success',
+                 'message' => 'Cambios realizados: ' . implode(', ', $columns_added)
+             ];
+         } else {
+             return [
+                 'status' => 'info',
+                 'message' => 'Todas las columnas ya existen.'
+             ];
+         }
+     }
+
+ }

@@ -20,16 +20,22 @@ const Config = () => {
   const { initialYear, currentProjectId, projects } = useApp();
 
   const [pais, setPais] = useState("Argentina");
-  const [region, setRegion] = useState("");
+  const [provincia, setProvincia] = useState("");
+  const [departamento, setDepartamento] = useState("");
+  const [municipio, setMunicipio] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [añoInicio, setAñoInicio] = useState(initialYear || 2020);
 
-  const provinciasArgentina = [
-    "Buenos Aires", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes",
-    "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza",
-    "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis",
-    "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán"
-  ];
+  const [geoData, setGeoData] = useState<{
+    provinces: string[];
+    departments: { [province: string]: string[] };
+    municipalities: { [key: string]: string[] };
+  }>({
+    provinces: [],
+    departments: {},
+    municipalities: {},
+  });
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -46,11 +52,76 @@ const Config = () => {
   }, []);
 
   useEffect(() => {
+    const loadGeoData = async () => {
+      try {
+        // Dynamic import to load only when needed
+        const data = await import('../../public/geo-argentina.json');
+
+        const provincesSet = new Set<string>();
+        const departmentsMap: { [province: string]: Set<string> } = {};
+        const municipalitiesMap: { [key: string]: Set<string> } = {};
+
+        data.default.localidades_censales.forEach((loc: any) => {
+          const province = loc.provincia.nombre;
+          const department = loc.departamento.nombre;
+          const municipality = loc.nombre;
+
+          provincesSet.add(province);
+
+          if (!departmentsMap[province]) {
+            departmentsMap[province] = new Set();
+          }
+          departmentsMap[province].add(department);
+
+          const key = `${province}-${department}`;
+          if (!municipalitiesMap[key]) {
+            municipalitiesMap[key] = new Set();
+          }
+          municipalitiesMap[key].add(municipality);
+        });
+
+        const provinces = Array.from(provincesSet).sort();
+        const departments: { [province: string]: string[] } = {};
+        const municipalities: { [key: string]: string[] } = {};
+
+        Object.keys(departmentsMap).forEach(prov => {
+          departments[prov] = Array.from(departmentsMap[prov]).sort();
+        });
+
+        Object.keys(municipalitiesMap).forEach(key => {
+          municipalities[key] = Array.from(municipalitiesMap[key]).sort();
+        });
+
+        setGeoData({
+          provinces,
+          departments,
+          municipalities,
+        });
+      } catch (error) {
+        console.error("Error loading geo data:", error);
+      }
+    };
+
+    if (pais === "Argentina") {
+      loadGeoData();
+    } else {
+      // Clear geo data if not Argentina
+      setGeoData({
+        provinces: [],
+        departments: {},
+        municipalities: {},
+      });
+    }
+  }, [pais]);
+
+  useEffect(() => {
     if (currentProjectId && projects.length > 0) {
       const currentProject = projects.find(p => p.id === currentProjectId);
       if (currentProject) {
         setPais(currentProject.pais || "Argentina");
-        setRegion(currentProject.region || "");
+        setProvincia(currentProject.provincia || "");
+        setDepartamento(currentProject.departamento || "");
+        setMunicipio(currentProject.municipio || "");
         setDescripcion(currentProject.description || "");
       }
     }
@@ -69,7 +140,9 @@ const Config = () => {
     try {
       await updateProject(currentProjectId, {
         pais,
-        region,
+        provincia,
+        departamento,
+        municipio,
         description: descripcion,
       });
       toast({
@@ -159,28 +232,78 @@ const Config = () => {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="provincia">Provincia / Región</Label>
-            {pais === "Argentina" ? (
-              <Select value={region} onValueChange={setRegion}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una provincia" />
-                </SelectTrigger>
-                <SelectContent>
-                  {provinciasArgentina.map((prov) => (
-                    <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
+          {pais === "Argentina" ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="provincia">Provincia</Label>
+                <Select
+                  value={provincia}
+                  onValueChange={(value) => {
+                    setProvincia(value);
+                    setDepartamento("");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una provincia" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {geoData.provinces.map((prov) => (
+                      <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="departamento">Departamento</Label>
+                <Select
+                  value={departamento}
+                  onValueChange={(value) => {
+                    setDepartamento(value);
+                    setMunicipio("");
+                  }}
+                  disabled={!provincia}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un departamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {provincia && geoData.departments[provincia]?.map((dept) => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="municipio">Municipio</Label>
+                <Select
+                  value={municipio}
+                  onValueChange={setMunicipio}
+                  disabled={!departamento}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un municipio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departamento && provincia && geoData.municipalities[`${provincia}-${departamento}`]?.map((mun) => (
+                      <SelectItem key={mun} value={mun}>{mun}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="provincia">Provincia / Región</Label>
               <Input
-                id="region"
+                id="provincia"
                 placeholder="Ej: São Paulo"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
+                value={provincia}
+                onChange={(e) => setProvincia(e.target.value)}
               />
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="descripcion">Descripción del Proyecto</Label>

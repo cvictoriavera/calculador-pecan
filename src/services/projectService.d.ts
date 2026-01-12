@@ -1,19 +1,25 @@
-interface ProjectData {
+export interface ProjectData {
   project_name: string;
   description?: string;
 }
 
-interface UpdateProjectData {
+export interface UpdateProjectData {
   pais?: string;
-  region?: string;
+  provincia?: string;
+  departamento?: string;
+  municipio?: string;
   description?: string;
 }
 
-interface Project {
+export interface Project {
   id: number;
   user_id: number;
   project_name: string;
   description: string;
+  pais?: string;
+  provincia?: string;
+  departamento?: string;
+  municipio?: string;
   status: string;
   created_at: string;
   updated_at: string;

@@ -215,8 +215,14 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		if ( isset( $params['pais'] ) ) {
 			$update_data['pais'] = sanitize_text_field( $params['pais'] );
 		}
-		if ( isset( $params['region'] ) ) {
-			$update_data['region'] = sanitize_text_field( $params['region'] );
+		if ( isset( $params['provincia'] ) ) {
+			$update_data['provincia'] = sanitize_text_field( $params['provincia'] );
+		}
+		if ( isset( $params['departamento'] ) ) {
+			$update_data['departamento'] = sanitize_text_field( $params['departamento'] );
+		}
+		if ( isset( $params['municipio'] ) ) {
+			$update_data['municipio'] = sanitize_text_field( $params['municipio'] );
 		}
 		if ( isset( $params['description'] ) ) {
 			$update_data['description'] = sanitize_textarea_field( $params['description'] );
@@ -279,7 +285,10 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 				'project_name' => sanitize_text_field($params['project_name'] ?? 'Nuevo Proyecto'),
 				'description' => sanitize_textarea_field($params['description'] ?? ''),
 				'pais' => sanitize_text_field($params['pais'] ?? ''),
-				'region' => sanitize_text_field($params['region'] ?? ''),
+				'provincia' => sanitize_text_field($params['provincia'] ?? ''),
+				'departamento' => sanitize_text_field($params['departamento'] ?? ''),
+				'municipio' => sanitize_text_field($params['municipio'] ?? ''),
+				'zona' => sanitize_text_field($params['zona'] ?? ''),
 			);
 
 			error_log('CCP: Creating project with data: ' . print_r($project_data, true));

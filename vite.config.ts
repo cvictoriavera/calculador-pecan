@@ -25,9 +25,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     manifest: true,
-    // Opcional: Aumentamos el límite de advertencia a 1MB para que no salten alertas falsas
-    // si el vendor es grande pero necesario.
-    chunkSizeWarningLimit: 1000, 
+    // Aumentamos el límite de advertencia a 1500KB para incluir el chunk de datos geográficos
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
@@ -39,6 +38,10 @@ export default defineConfig({
             // Si el código proviene de node_modules, mételo en un chunk llamado "vendor"
             if (id.includes('node_modules')) {
                 return 'vendor';
+            }
+            // Separa el archivo de datos geográficos en su propio chunk
+            if (id.includes('geo-argentina.json')) {
+                return 'geo-argentina';
             }
         }
         // --------------------------

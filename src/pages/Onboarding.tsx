@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,30 +17,98 @@ const Onboarding = () => {
   const [projectName, setProjectName] = useState("");
   const [initialYear, setInitialYear] = useState("");
   const [pais, setPais] = useState("Argentina");
-  const [region, setRegion] = useState("");
+  const [provincia, setProvincia] = useState("");
+  const [departamento, setDepartamento] = useState("");
+  const [municipio, setMunicipio] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const provinciasArgentina = [
-    "Buenos Aires", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes",
-    "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza",
-    "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis",
-    "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán"
-  ];
+  const [geoData, setGeoData] = useState<{
+    provinces: string[];
+    departments: { [province: string]: string[] };
+    municipalities: { [key: string]: string[] };
+  }>({
+    provinces: [],
+    departments: {},
+    municipalities: {},
+  });
+
+  useEffect(() => {
+    const loadGeoData = async () => {
+      try {
+        // Dynamic import to load only when needed
+        const data = await import('../../public/geo-argentina.json');
+
+        const provincesSet = new Set<string>();
+        const departmentsMap: { [province: string]: Set<string> } = {};
+        const municipalitiesMap: { [key: string]: Set<string> } = {};
+
+        data.default.localidades_censales.forEach((loc: any) => {
+          const province = loc.provincia.nombre;
+          const department = loc.departamento.nombre;
+          const municipality = loc.nombre;
+
+          provincesSet.add(province);
+
+          if (!departmentsMap[province]) {
+            departmentsMap[province] = new Set();
+          }
+          departmentsMap[province].add(department);
+
+          const key = `${province}-${department}`;
+          if (!municipalitiesMap[key]) {
+            municipalitiesMap[key] = new Set();
+          }
+          municipalitiesMap[key].add(municipality);
+        });
+
+        const provinces = Array.from(provincesSet).sort();
+        const departments: { [province: string]: string[] } = {};
+        const municipalities: { [key: string]: string[] } = {};
+
+        Object.keys(departmentsMap).forEach(prov => {
+          departments[prov] = Array.from(departmentsMap[prov]).sort();
+        });
+
+        Object.keys(municipalitiesMap).forEach(key => {
+          municipalities[key] = Array.from(municipalitiesMap[key]).sort();
+        });
+
+        setGeoData({
+          provinces,
+          departments,
+          municipalities,
+        });
+      } catch (error) {
+        console.error("Error loading geo data:", error);
+      }
+    };
+
+    if (pais === "Argentina") {
+      loadGeoData();
+    } else {
+      // Clear geo data if not Argentina
+      setGeoData({
+        provinces: [],
+        departments: {},
+        municipalities: {},
+      });
+    }
+  }, [pais]);
 
   const handleStart = () => {
     setStep(1);
   };
 
   const handleNext = () => {
-    if (projectName && initialYear && pais && region) {
+    if (projectName && initialYear && pais && provincia && (pais !== "Argentina" || (departamento && municipio))) {
       setStep(2);
     }
   };
 
   const handleFinish = async () => {
-    if (!initialYear || !pais || !region) return;
+    if (!initialYear || !pais || !provincia || (pais === "Argentina" && (!departamento || !municipio))) return;
 
     setIsCreating(true);
     setError(null);
@@ -53,7 +121,9 @@ const Onboarding = () => {
         project_name: finalProjectName,
         description: descripcion,
         pais,
-        region,
+        provincia,
+        departamento,
+        municipio,
       };
 
       const createdProject = await createProject(projectData);
@@ -149,31 +219,87 @@ const Onboarding = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="region" className="text-base font-medium">
-                Provincia / Región
-              </Label>
-              {pais === "Argentina" ? (
-                <Select value={region} onValueChange={setRegion}>
-                  <SelectTrigger className="text-lg py-6">
-                    <SelectValue placeholder="Selecciona una provincia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {provinciasArgentina.map((prov) => (
-                      <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
+            {pais === "Argentina" ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="provincia" className="text-base font-medium">
+                    Provincia
+                  </Label>
+                  <Select
+                    value={provincia}
+                    onValueChange={(value) => {
+                      setProvincia(value);
+                      setDepartamento("");
+                    }}
+                  >
+                    <SelectTrigger className="text-lg py-6">
+                      <SelectValue placeholder="Selecciona una provincia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {geoData.provinces.map((prov) => (
+                        <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="departamento" className="text-base font-medium">
+                    Departamento
+                  </Label>
+                  <Select
+                    value={departamento}
+                    onValueChange={(value) => {
+                      setDepartamento(value);
+                      setMunicipio("");
+                    }}
+                    disabled={!provincia}
+                  >
+                    <SelectTrigger className="text-lg py-6">
+                      <SelectValue placeholder="Selecciona un departamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {provincia && geoData.departments[provincia]?.map((dept) => (
+                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="municipio" className="text-base font-medium">
+                    Municipio
+                  </Label>
+                  <Select
+                    value={municipio}
+                    onValueChange={setMunicipio}
+                    disabled={!departamento}
+                  >
+                    <SelectTrigger className="text-lg py-6">
+                      <SelectValue placeholder="Selecciona un municipio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departamento && provincia && geoData.municipalities[`${provincia}-${departamento}`]?.map((mun) => (
+                        <SelectItem key={mun} value={mun}>{mun}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="provincia" className="text-base font-medium">
+                  Provincia / Región
+                </Label>
                 <Input
-                  id="region"
+                  id="provincia"
                   placeholder="Ej: São Paulo"
-                  value={region}
-                  onChange={(e) => setRegion(e.target.value)}
+                  value={provincia}
+                  onChange={(e) => setProvincia(e.target.value)}
                   className="text-lg py-6"
                 />
-              )}
-            </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="descripcion" className="text-base font-medium">
                 Descripción del Proyecto
@@ -189,7 +315,7 @@ const Onboarding = () => {
             <div className="flex justify-end pt-4">
               <Button
                 onClick={handleNext}
-                disabled={!projectName || !initialYear || !pais || !region}
+                disabled={!projectName || !initialYear || !pais || !provincia || (pais === "Argentina" && (!departamento || !municipio))}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
               >
                 Siguiente
@@ -225,9 +351,21 @@ const Onboarding = () => {
               <p className="text-xl font-semibold text-foreground">{pais}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Provincia / Región:</p>
-              <p className="text-xl font-semibold text-foreground">{region}</p>
+              <p className="text-sm text-muted-foreground">Provincia:</p>
+              <p className="text-xl font-semibold text-foreground">{provincia}</p>
             </div>
+            {pais === "Argentina" && (
+              <>
+                <div>
+                  <p className="text-sm text-muted-foreground">Departamento:</p>
+                  <p className="text-xl font-semibold text-foreground">{departamento}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Municipio:</p>
+                  <p className="text-xl font-semibold text-foreground">{municipio}</p>
+                </div>
+              </>
+            )}
             <div>
               <p className="text-sm text-muted-foreground">Descripción:</p>
               <p className="text-lg text-foreground">{descripcion}</p>

@@ -92,7 +92,10 @@ class CCP_Proyectos_DB {
 		$project_name = isset( $data['project_name'] ) ? sanitize_text_field( $data['project_name'] ) : 'Nuevo Proyecto';
 		$description  = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
 		$pais         = isset( $data['pais'] ) ? sanitize_text_field( $data['pais'] ) : '';
-		$region       = isset( $data['region'] ) ? sanitize_text_field( $data['region'] ) : '';
+		$provincia    = isset( $data['provincia'] ) ? sanitize_text_field( $data['provincia'] ) : '';
+		$departamento = isset( $data['departamento'] ) ? sanitize_text_field( $data['departamento'] ) : '';
+		$municipio    = isset( $data['municipio'] ) ? sanitize_text_field( $data['municipio'] ) : '';
+		$zona         = isset( $data['zona'] ) ? sanitize_text_field( $data['zona'] ) : '';
 
 		$result = $this->wpdb->insert(
 			$this->table_name,
@@ -101,7 +104,10 @@ class CCP_Proyectos_DB {
 				'project_name' => $project_name,
 				'description'  => $description,
 				'pais'         => $pais,
-				'region'       => $region,
+				'provincia'    => $provincia,
+				'departamento' => $departamento,
+				'municipio'    => $municipio,
+				'zona'         => $zona,
 				'status'       => 'active',
 				'created_at'   => current_time( 'mysql', 1 ),
 				'updated_at'   => current_time( 'mysql', 1 ),
@@ -111,7 +117,10 @@ class CCP_Proyectos_DB {
 				'%s', // project_name
 				'%s', // description
 				'%s', // pais
-				'%s', // region
+				'%s', // provincia
+				'%s', // departamento
+				'%s', // municipio
+				'%s', // zona
 				'%s', // status
 				'%s', // created_at
 				'%s', // updated_at
@@ -160,8 +169,20 @@ class CCP_Proyectos_DB {
 			$update_data['pais'] = sanitize_text_field( $data['pais'] );
 			$format[] = '%s';
 		}
-		if ( isset( $data['region'] ) ) {
-			$update_data['region'] = sanitize_text_field( $data['region'] );
+		if ( isset( $data['provincia'] ) ) {
+			$update_data['provincia'] = sanitize_text_field( $data['provincia'] );
+			$format[] = '%s';
+		}
+		if ( isset( $data['departamento'] ) ) {
+			$update_data['departamento'] = sanitize_text_field( $data['departamento'] );
+			$format[] = '%s';
+		}
+		if ( isset( $data['municipio'] ) ) {
+			$update_data['municipio'] = sanitize_text_field( $data['municipio'] );
+			$format[] = '%s';
+		}
+		if ( isset( $data['zona'] ) ) {
+			$update_data['zona'] = sanitize_text_field( $data['zona'] );
 			$format[] = '%s';
 		}
 		if ( isset( $data['status'] ) ) {

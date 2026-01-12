@@ -49,7 +49,7 @@ export const createProject = (projectData) => {
  * @param {number} projectId - The ID of the project to update.
  * @param {object} projectData - The data to update.
  * @param {string} [projectData.pais] - The country.
- * @param {string} [projectData.region] - The region.
+ * @param {string} [projectData.provincia] - The province.
  * @param {string} [projectData.descripcion] - The description.
  * @returns {Promise<object>} A promise that resolves to the updated project object.
  */
