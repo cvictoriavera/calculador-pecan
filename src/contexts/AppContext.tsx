@@ -301,8 +301,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         project_id: projectId,
         campaign_name: `Campaña ${y}`,
         year: y,
-        start_date: `${y}-01-01`,
-        end_date: `${y}-12-31`,
+        start_date: `Julio ${y}`,
+        end_date: `Junio ${y+1}`,
         status: y === currentYear ? 'open' : 'closed',
         is_current: y === currentYear ? 1 : 0,
       };

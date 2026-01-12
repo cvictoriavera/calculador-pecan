@@ -111,8 +111,8 @@ const Campanas = () => {
         project_id: currentProjectId!,
         campaign_name: `Campaña ${nextYear}`,
         year: nextYear,
-        start_date: `Enero ${nextYear}`,
-        end_date: undefined,
+        start_date: `Julio ${nextYear}`,
+        end_date: `Junio ${nextYear + 1}`,
         status: 'open',
         is_current: 1,
       });
