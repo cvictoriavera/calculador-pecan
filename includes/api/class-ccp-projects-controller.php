@@ -224,6 +224,9 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		if ( isset( $params['municipio'] ) ) {
 			$update_data['municipio'] = sanitize_text_field( $params['municipio'] );
 		}
+		if ( isset( $params['allow_benchmarking'] ) ) {
+			$update_data['allow_benchmarking'] = intval( $params['allow_benchmarking'] );
+		}
 		if ( isset( $params['description'] ) ) {
 			$update_data['description'] = sanitize_textarea_field( $params['description'] );
 		}
@@ -289,6 +292,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 				'departamento' => sanitize_text_field($params['departamento'] ?? ''),
 				'municipio' => sanitize_text_field($params['municipio'] ?? ''),
 				'zona' => sanitize_text_field($params['zona'] ?? ''),
+				'allow_benchmarking' => intval($params['allow_benchmarking'] ?? 0),
 			);
 
 			error_log('CCP: Creating project with data: ' . print_r($project_data, true));

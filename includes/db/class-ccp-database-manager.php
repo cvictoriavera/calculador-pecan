@@ -543,6 +543,13 @@ class CCP_Database_Manager {
              $columns_added[] = 'zona añadido';
          }
 
+         // Verificar y añadir columna 'allow_benchmarking'
+         $allow_benchmarking_exists = $wpdb->get_results("DESCRIBE $table_name allow_benchmarking");
+         if (empty($allow_benchmarking_exists)) {
+             $wpdb->query("ALTER TABLE $table_name ADD COLUMN allow_benchmarking TINYINT(1) NOT NULL DEFAULT 0 AFTER zona");
+             $columns_added[] = 'allow_benchmarking añadido';
+         }
+
          if (!empty($columns_added)) {
              return [
                  'status' => 'success',

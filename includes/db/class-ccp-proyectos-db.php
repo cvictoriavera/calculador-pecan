@@ -84,6 +84,7 @@ class CCP_Proyectos_DB {
 	 * @return int|false The ID of the newly created project or false on failure.
 	 */
 	public function create( $data ) {
+		error_log('CCP DB: Create project called with data: ' . print_r($data, true));
 		$user_id = isset( $data['user_id'] ) ? absint( $data['user_id'] ) : get_current_user_id();
 		if ( ! $user_id ) {
 			return false;
@@ -96,22 +97,28 @@ class CCP_Proyectos_DB {
 		$departamento = isset( $data['departamento'] ) ? sanitize_text_field( $data['departamento'] ) : '';
 		$municipio    = isset( $data['municipio'] ) ? sanitize_text_field( $data['municipio'] ) : '';
 		$zona         = isset( $data['zona'] ) ? sanitize_text_field( $data['zona'] ) : '';
+		$allow_benchmarking = isset( $data['allow_benchmarking'] ) ? intval( $data['allow_benchmarking'] ) : 0;
+		error_log('CCP DB: allow_benchmarking value: ' . $allow_benchmarking);
+
+		$insert_data = array(
+			'user_id'      => $user_id,
+			'project_name' => $project_name,
+			'description'  => $description,
+			'pais'         => $pais,
+			'provincia'    => $provincia,
+			'departamento' => $departamento,
+			'municipio'    => $municipio,
+			'zona'         => $zona,
+			'allow_benchmarking' => $allow_benchmarking,
+			'status'       => 'active',
+			'created_at'   => current_time( 'mysql', 1 ),
+			'updated_at'   => current_time( 'mysql', 1 ),
+		);
+		error_log('CCP DB: Inserting data: ' . print_r($insert_data, true));
 
 		$result = $this->wpdb->insert(
 			$this->table_name,
-			array(
-				'user_id'      => $user_id,
-				'project_name' => $project_name,
-				'description'  => $description,
-				'pais'         => $pais,
-				'provincia'    => $provincia,
-				'departamento' => $departamento,
-				'municipio'    => $municipio,
-				'zona'         => $zona,
-				'status'       => 'active',
-				'created_at'   => current_time( 'mysql', 1 ),
-				'updated_at'   => current_time( 'mysql', 1 ),
-			),
+			$insert_data,
 			array(
 				'%d', // user_id
 				'%s', // project_name
@@ -121,11 +128,14 @@ class CCP_Proyectos_DB {
 				'%s', // departamento
 				'%s', // municipio
 				'%s', // zona
+				'%d', // allow_benchmarking
 				'%s', // status
 				'%s', // created_at
 				'%s', // updated_at
 			)
 		);
+
+		error_log('CCP DB: Insert result: ' . ($result === false ? 'FAILED' : 'SUCCESS, ID: ' . $this->wpdb->insert_id));
 
 		if ( false === $result ) {
 			return false;

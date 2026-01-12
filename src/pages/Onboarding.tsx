@@ -21,6 +21,7 @@ const Onboarding = () => {
   const [departamento, setDepartamento] = useState("");
   const [municipio, setMunicipio] = useState("");
   const [descripcion, setDescripcion] = useState("");
+  const [allowBenchmarking, setAllowBenchmarking] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,13 +103,17 @@ const Onboarding = () => {
   };
 
   const handleNext = () => {
-    if (projectName && initialYear && pais && provincia && (pais !== "Argentina" || (departamento && municipio))) {
+    if (step === 1 && projectName && initialYear) {
       setStep(2);
+    } else if (step === 2 && pais && provincia && (pais !== "Argentina" || (departamento && municipio))) {
+      setStep(3);
+    } else if (step === 3) {
+      setStep(4);
     }
   };
 
   const handleFinish = async () => {
-    if (!initialYear || !pais || !provincia || (pais === "Argentina" && (!departamento || !municipio))) return;
+    if (!initialYear || !pais || !provincia || (pais === "Argentina" && (!departamento || !municipio)) || !allowBenchmarking) return;
 
     setIsCreating(true);
     setError(null);
@@ -124,6 +129,7 @@ const Onboarding = () => {
         provincia,
         departamento,
         municipio,
+        allow_benchmarking: allowBenchmarking ? 1 : 0,
       };
 
       const createdProject = await createProject(projectData);
@@ -204,6 +210,40 @@ const Onboarding = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex justify-between pt-4">
+              <Button
+                onClick={() => setStep(0)}
+                variant="outline"
+                className="gap-2 px-6 py-6"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Volver
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={!projectName || !initialYear}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
+              >
+                Siguiente
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-2xl w-full border-border/50 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-foreground">
+              Paso 2: Ubicación
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="pais" className="text-base font-medium">
                 País
@@ -300,22 +340,18 @@ const Onboarding = () => {
                 />
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="descripcion" className="text-base font-medium">
-                Descripción del Proyecto
-              </Label>
-              <Textarea
-                id="descripcion"
-                placeholder="Breve descripción del proyecto"
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                className="text-lg min-h-[100px]"
-              />
-            </div>
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-between pt-4">
+              <Button
+                onClick={() => setStep(1)}
+                variant="outline"
+                className="gap-2 px-6 py-6"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Volver
+              </Button>
               <Button
                 onClick={handleNext}
-                disabled={!projectName || !initialYear || !pais || !provincia || (pais === "Argentina" && (!departamento || !municipio))}
+                disabled={!pais || !provincia || (pais === "Argentina" && (!departamento || !municipio))}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
               >
                 Siguiente
@@ -328,87 +364,151 @@ const Onboarding = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="max-w-2xl w-full border-border/50 shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold text-foreground">
-            Paso 2: Revisión
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="bg-secondary/20 rounded-lg p-6 space-y-3">
-            <div>
-              <p className="text-sm text-muted-foreground">Proyecto:</p>
-              <p className="text-xl font-semibold text-foreground">{projectName}</p>
+  if (step === 3) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-2xl w-full border-border/50 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-foreground">
+              Paso 3: Descripción
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="descripcion" className="text-base font-medium">
+                Descripción del Proyecto
+              </Label>
+              <Textarea
+                id="descripcion"
+                placeholder="Breve descripción del proyecto"
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                className="text-lg min-h-[100px]"
+              />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Año/Campaña inicial:</p>
-              <p className="text-xl font-semibold text-foreground">{initialYear}</p>
+            <div className="flex justify-between pt-4">
+              <Button
+                onClick={() => setStep(2)}
+                variant="outline"
+                className="gap-2 px-6 py-6"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Volver
+              </Button>
+              <Button
+                onClick={handleNext}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
+              >
+                Siguiente
+                <ChevronRight className="h-5 w-5" />
+              </Button>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">País:</p>
-              <p className="text-xl font-semibold text-foreground">{pais}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Provincia:</p>
-              <p className="text-xl font-semibold text-foreground">{provincia}</p>
-            </div>
-            {pais === "Argentina" && (
-              <>
-                <div>
-                  <p className="text-sm text-muted-foreground">Departamento:</p>
-                  <p className="text-xl font-semibold text-foreground">{departamento}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Municipio:</p>
-                  <p className="text-xl font-semibold text-foreground">{municipio}</p>
-                </div>
-              </>
-            )}
-            <div>
-              <p className="text-sm text-muted-foreground">Descripción:</p>
-              <p className="text-lg text-foreground">{descripcion}</p>
-            </div>
-          </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-          {error && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-              <p className="text-destructive text-sm">{error}</p>
-            </div>
-          )}
-
-          <div className="flex justify-between pt-4">
-            <Button
-              onClick={() => setStep(1)}
-              variant="outline"
-              className="gap-2 px-6 py-6"
-            >
-              <ChevronLeft className="h-5 w-5" />
-              Volver
-            </Button>
-            <Button
-              onClick={handleFinish}
-              disabled={isCreating}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
-            >
-              {isCreating ? (
+  if (step === 4) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-2xl w-full border-border/50 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-foreground">
+              Paso 4: Revisión
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="bg-secondary/20 rounded-lg p-6 space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Proyecto:</p>
+                <p className="text-xl font-semibold text-foreground">{projectName}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Año/Campaña inicial:</p>
+                <p className="text-xl font-semibold text-foreground">{initialYear}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">País:</p>
+                <p className="text-xl font-semibold text-foreground">{pais}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Provincia:</p>
+                <p className="text-xl font-semibold text-foreground">{provincia}</p>
+              </div>
+              {pais === "Argentina" && (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Creando proyecto...
-                </>
-              ) : (
-                <>
-                  <Check className="h-5 w-5" />
-                  Crear proyecto
+                  <div>
+                    <p className="text-sm text-muted-foreground">Departamento:</p>
+                    <p className="text-xl font-semibold text-foreground">{departamento}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Municipio:</p>
+                    <p className="text-xl font-semibold text-foreground">{municipio}</p>
+                  </div>
                 </>
               )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+              <div>
+                <p className="text-sm text-muted-foreground">Descripción:</p>
+                <p className="text-lg text-foreground">{descripcion}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="allowBenchmarking"
+                  checked={allowBenchmarking}
+                  onChange={(e) => setAllowBenchmarking(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <Label htmlFor="allowBenchmarking" className="text-sm font-medium">
+                  He leído y acepto las políticas de privacidad
+                </Label>
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <p className="text-destructive text-sm">{error}</p>
+              </div>
+            )}
+
+            <div className="flex justify-between pt-4">
+              <Button
+                onClick={() => setStep(3)}
+                variant="outline"
+                className="gap-2 px-6 py-6"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Volver
+              </Button>
+              <Button
+                onClick={handleFinish}
+                disabled={isCreating || !allowBenchmarking}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Creando proyecto...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-5 w-5" />
+                    Crear proyecto
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return null;
 };
 
 export default Onboarding;
