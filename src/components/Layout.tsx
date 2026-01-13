@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { ChevronDown, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import { useUiStore } from "@/stores";
+// Importamos tus hooks personalizados
+import { useIsLargeScreen } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   children: ReactNode;
@@ -19,47 +21,69 @@ export function Layout({ children }: LayoutProps) {
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
 
+  // 1. Detectamos si es pantalla gigante (> 1400px)
+  const isLargeScreen = useIsLargeScreen();
+  console.log(`Layout: isLargeScreen=${isLargeScreen}`);
+
+  // 2. Estado controlado del sidebar
+  // Iniciamos el estado basado en si la pantalla es grande
+  const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
+  console.log(`Layout: sidebarOpen=${sidebarOpen}`);
+
+  // 3. Efecto reactivo:
+  // - Si la pantalla crece (>1400), se abre (true).
+  // - Si la pantalla se reduce (<1400), se cierra/contrae (false).
+  useEffect(() => {
+    console.log(`Layout useEffect: setting sidebarOpen to ${isLargeScreen}`);
+    setSidebarOpen(isLargeScreen);
+  }, [isLargeScreen]);
+
+  // Resto de lógica de campañas...
   const totalArea = montes
     .filter(m => m.añoPlantacion <= currentCampaign)
     .reduce((acc, m) => acc + m.hectareas, 0);
 
-  // Sincronizar activeCampaignId con currentCampaign
   useEffect(() => {
     if (campaigns.length > 0) {
       const campaign = campaigns.find(c => c.year === currentCampaign);
-      if (campaign) {
-        setActiveCampaign(campaign.id);
-      }
+      if (campaign) setActiveCampaign(campaign.id);
     }
   }, [campaigns, currentCampaign, setActiveCampaign]);
 
-  // Sincronizar currentCampaign con el store
   const handleCampaignChange = (year: number) => {
     setCurrentCampaign(year);
     setStoreCurrentCampaign(year);
-
-    // Encontrar la campaña correspondiente y actualizar activeCampaignId
     const campaign = campaigns.find(c => c.year === year);
-    if (campaign) {
-      setActiveCampaign(campaign.id);
-    }
+    if (campaign) setActiveCampaign(campaign.id);
   };
   
   return (
-    <SidebarProvider>
+    <SidebarProvider 
+      open={sidebarOpen} 
+      onOpenChange={setSidebarOpen}
+      // Opcional: Ajustar el ancho del sidebar si lo necesitas
+      style={{
+        "--sidebar-width": "16rem",
+        "--sidebar-width-mobile": "18rem",
+      } as React.CSSProperties}
+    >
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-16 flex items-center justify-between px-6 border-none border-border bg-card shadow-sm">
+        <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out">
+          <header className="h-16 flex items-center justify-between px-6 border-none border-border bg-card shadow-sm sticky top-0 z-10">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-foreground" />
+              
+              {/* Bloque de selectores... igual a tu código */}
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground">Proyecto:</span>
+                <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Proyecto:</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-[200px] justify-between bg-cream">
-                      {projects.find(p => p.id === currentProjectId)?.project_name || "Seleccionar Proyecto"}
-                      <ChevronDown className="h-4 w-4" />
+                    <Button variant="outline" className="w-[180px] sm:w-[200px] justify-between bg-cream truncate">
+                      <span className="truncate">
+                        {projects.find(p => p.id === currentProjectId)?.project_name || "Seleccionar"}
+                      </span>
+                      <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[200px]">
@@ -83,17 +107,18 @@ export function Layout({ children }: LayoutProps) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground">Campaña Actual:</span>
+                <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Campaña:</span>
                 <Select
                   value={currentCampaign.toString()}
                   onValueChange={(value) => handleCampaignChange(parseInt(value))}
                 >
-                  <SelectTrigger className="w-[180px] bg-cream">
+                  <SelectTrigger className="w-[140px] sm:w-[180px] bg-cream">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {campaigns.filter(campaign => campaign && campaign.year).map((campaign) => (
+                    {campaigns.filter(c => c && c.year).map((campaign) => (
                       <SelectItem key={campaign.id} value={campaign.year.toString()}>
                         Campaña {campaign.year}
                       </SelectItem>
@@ -102,9 +127,10 @@ export function Layout({ children }: LayoutProps) {
                 </Select>
               </div>
             </div>
+
             <div className="flex items-center gap-4 text-sm">
-              <div className="text-right">
-                <p className="text-muted-foreground m-0">Área Total Plantada</p>
+              <div className="text-right hidden sm:block">
+                <p className="text-muted-foreground m-0 text-xs">Área Total</p>
                 <p className="font-semibold text-foreground m-0">{totalArea.toFixed(1)} ha</p>
               </div>
               <DropdownMenu>
@@ -120,7 +146,8 @@ export function Layout({ children }: LayoutProps) {
               </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 p-6 overflow-y-auto overflow-x-hidden">
+          
+          <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden w-full max-w-[100vw]">
             {children}
           </main>
         </div>
