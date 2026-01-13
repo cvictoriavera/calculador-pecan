@@ -319,11 +319,10 @@ const Produccion = () => {
           <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-medium font-semibold text-amber-900">
-              Registrar una Cosecha
+              Registrar una Producción
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
-              La producción debe asignarse a un <strong>Monte específico</strong> para poder calcular el rendimiento por hectárea (Kg/Ha). 
-              Puedes cargar datos parciales a medida que avanza la cosecha o un total final. Recuerda indicar si el dato es una estimación o un pesaje real.
+              Al registrar tu <strong>cosecha anual</strong> puedes cargar los kilos por monte o los kilos totales.   
             </p>
           </div>
         </CardContent>

@@ -124,7 +124,7 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="text-xl font-bold text-foreground">
+          <SheetTitle className="text-xl">
             {editingData ? "Editar Producción" : "Cierre de Campaña"} {currentCampaign}
           </SheetTitle>
         </SheetHeader>
@@ -159,7 +159,7 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
         {step === 1 && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">
+              <h3 className="text-lg mb-4">
                 Configuración Global
               </h3>
 
@@ -196,14 +196,14 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
                       onClick={() => setValue("metodo", "detallado")}
                     >
                       <CardContent className="p-4 flex items-start gap-4">
-                        <div className="p-3 rounded-lg bg-secondary">
+                        <div className="p-3 rounded-lg bg-cream">
                           <ClipboardList className="h-6 w-6 text-accent" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-foreground">
+                          <p className="font-semibold text-foreground mb-0">
                             Detallado por Monte
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-0">
                             Tengo el peso de cada lote individual
                           </p>
                         </div>
@@ -222,14 +222,14 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
                       onClick={() => setValue("metodo", "total")}
                     >
                       <CardContent className="p-4 flex items-start gap-4">
-                        <div className="p-3 rounded-lg bg-secondary">
+                        <div className="p-3 rounded-lg bg-cream">
                           <Package className="h-6 w-6 text-accent" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-foreground">
+                          <p className="font-semibold text-foreground mb-0">
                             Total General / A Granel
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-0">
                             Tengo el ticket de balanza total
                           </p>
                         </div>
