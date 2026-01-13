@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2 } from "lucide-react";
+import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2, Info } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
 import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
@@ -314,6 +314,21 @@ const Produccion = () => {
         )}
       </div>
 
+      <Card className="bg-amber-50 border-amber-200 mb-6">
+        <CardContent className="flex items-start gap-4 p-4">
+          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <p className="font-medium font-semibold text-amber-900">
+              Registrar una Cosecha
+            </p>
+            <p className="text-sm text-amber-800/90 leading-relaxed">
+              La producción debe asignarse a un <strong>Monte específico</strong> para poder calcular el rendimiento por hectárea (Kg/Ha). 
+              Puedes cargar datos parciales a medida que avanza la cosecha o un total final. Recuerda indicar si el dato es una estimación o un pesaje real.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards - Only show when has production */}
       {hasProduction && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -368,7 +383,7 @@ const Produccion = () => {
         <Card className="border-border/50 shadow-md border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">
+            <h3 className="text-xl text-foreground mb-2">
               Sin registro de producción
             </h3>
             <p className="text-muted-foreground mb-6 text-center max-w-md">

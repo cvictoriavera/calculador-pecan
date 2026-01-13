@@ -63,13 +63,15 @@ const Montes = () => {
       </div>
 
       {/* Educational Card */}
-      <Card className="border-border/50 shadow-md bg-secondary/10">
-        <CardContent className="flex items-start gap-3 p-4">
-          <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-semibold text-foreground mb-1">¿Qué consideramos un "Monte"?</p>
-            <p className="text-sm text-muted-foreground">
-              Definimos como un Monte individual a un sector de tierra donde los árboles tienen el mismo año de plantación y una densidad similar.
+      <Card className="bg-amber-50 border-amber-200 mb-6">
+        <CardContent className="flex items-start gap-4 p-4">
+          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <p className="font-medium font-semibold text-amber-900">
+              ¿Qué consideramos un "Monte" o un "Lote"? 
+            </p>
+            <p className="text-sm text-amber-800/90 leading-relaxed">
+              Definimos como un <strong>Monte individual</strong> a un sector de tierra con una densidad especifica y donde los árboles tienen el mismo año de plantación.
             </p>
           </div>
         </CardContent>
