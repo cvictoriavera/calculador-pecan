@@ -5,6 +5,16 @@
 import { apiRequest } from './api';
 
 const BASE_ENDPOINT = 'ccp/v1/investments';
+const TRIAL_RECORDS_KEY = 'trialAnnualRecords';
+
+/**
+ * Checks if the user is in trial mode.
+ *
+ * @returns {boolean} True if in trial mode.
+ */
+const isTrialMode = () => {
+	return localStorage.getItem('isTrialMode') === 'true';
+};
 
 /**
  * Fetches all investments for a given project.
@@ -29,6 +39,11 @@ export const getInvestmentsByProject = (projectId) => {
 export const getInvestmentsByCampaign = (projectId, campaignId) => {
 	if (!projectId || !campaignId) {
 		return Promise.reject(new Error('Project ID and Campaign ID are required.'));
+	}
+	if (isTrialMode()) {
+		const records = JSON.parse(localStorage.getItem(TRIAL_RECORDS_KEY) || '[]');
+		const filtered = records.filter(r => r.project_id == projectId && r.campaign_id == campaignId && r.type === 'investment');
+		return Promise.resolve(filtered);
 	}
 	return apiRequest(`${BASE_ENDPOINT}/${projectId}/${campaignId}`);
 };

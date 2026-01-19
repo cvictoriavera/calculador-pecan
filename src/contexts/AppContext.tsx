@@ -363,9 +363,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const data = await getCampaignsByProject(projectId);
-    const sortedData = Array.isArray(data) ? data.sort((a, b) => a.year - b.year) : [];
-    setCampaigns(sortedData);
+    // Set campaigns directly from created ones to avoid timing issues
+    const sortedCampaigns = createdCampaigns.sort((a, b) => a.year - b.year);
+    setCampaigns(sortedCampaigns);
     setCurrentCampaign(currentYear);
   };
 
