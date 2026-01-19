@@ -75,6 +75,32 @@ export const updateYieldModel = (modelId, yieldModelData) => {
 	if (!modelId) {
 		return Promise.reject(new Error('Model ID is required.'));
 	}
+	if (isTrialMode()) {
+		// For trial mode, update in localStorage
+		// Find the project_id from all stored models
+		let projectId = null;
+		const keys = Object.keys(localStorage);
+		for (const key of keys) {
+			if (key.startsWith('yield_models_project_')) {
+				const stored = localStorage.getItem(key);
+				const models = stored ? JSON.parse(stored) : [];
+				const model = models.find(m => m.id == modelId);
+				if (model) {
+					projectId = model.project_id;
+					break;
+				}
+			}
+		}
+		if (!projectId) {
+			return Promise.reject(new Error('Yield model not found in localStorage.'));
+		}
+		const stored = localStorage.getItem(`yield_models_project_${projectId}`);
+		const models = stored ? JSON.parse(stored) : [];
+		const index = models.findIndex(m => m.id == modelId);
+		models[index] = { ...models[index], ...yieldModelData, updated_at: new Date().toISOString() };
+		localStorage.setItem(`yield_models_project_${projectId}`, JSON.stringify(models));
+		return Promise.resolve(models[index]);
+	}
 	return apiRequest(`${BASE_ENDPOINT}/${modelId}`, {
 		method: 'PUT',
 		body: JSON.stringify(yieldModelData),
@@ -90,6 +116,30 @@ export const updateYieldModel = (modelId, yieldModelData) => {
 export const deleteYieldModel = (modelId) => {
 	if (!modelId) {
 		return Promise.reject(new Error('Model ID is required.'));
+	}
+	if (isTrialMode()) {
+		// For trial mode, delete from localStorage
+		let projectId = null;
+		const keys = Object.keys(localStorage);
+		for (const key of keys) {
+			if (key.startsWith('yield_models_project_')) {
+				const stored = localStorage.getItem(key);
+				const models = stored ? JSON.parse(stored) : [];
+				const model = models.find(m => m.id == modelId);
+				if (model) {
+					projectId = model.project_id;
+					break;
+				}
+			}
+		}
+		if (!projectId) {
+			return Promise.reject(new Error('Yield model not found in localStorage.'));
+		}
+		const stored = localStorage.getItem(`yield_models_project_${projectId}`);
+		let models = stored ? JSON.parse(stored) : [];
+		models = models.filter(m => m.id != modelId);
+		localStorage.setItem(`yield_models_project_${projectId}`, JSON.stringify(models));
+		return Promise.resolve();
 	}
 	return apiRequest(`${BASE_ENDPOINT}/${modelId}`, {
 		method: 'DELETE',

@@ -1,0 +1,64 @@
+index-Dld_F5d3.js?ver=1.0.0:1  PUT https://cappecan.com/wp-json/ccp/v1/yield-models/1768858361747 500 (Internal Server Error)
+me @ index-Dld_F5d3.js?ver=1.0.0:1
+Zi @ index-Dld_F5d3.js?ver=1.0.0:1
+N @ index-Dld_F5d3.js?ver=1.0.0:1
+await in N
+j @ index-Dld_F5d3.js?ver=1.0.0:1
+(anonymous) @ vendor-C_XjUiP7.js:119
+await in (anonymous)
+Zn @ vendor-C_XjUiP7.js:5
+gB @ vendor-C_XjUiP7.js:5
+bB @ vendor-C_XjUiP7.js:5
+PO @ vendor-C_XjUiP7.js:5
+EO @ vendor-C_XjUiP7.js:5
+(anonymous) @ vendor-C_XjUiP7.js:5
+Vm @ vendor-C_XjUiP7.js:8
+Rr @ vendor-C_XjUiP7.js:5
+Vv @ vendor-C_XjUiP7.js:5
+Pv @ vendor-C_XjUiP7.js:5
+NB @ vendor-C_XjUiP7.js:5Understand this error
+index-Dld_F5d3.js?ver=1.0.0:1 ❌ API Error: {code: 'yield_model_update_failed', message: 'Failed to update yield model.', data: {…}}
+me @ index-Dld_F5d3.js?ver=1.0.0:1
+await in me
+Zi @ index-Dld_F5d3.js?ver=1.0.0:1
+N @ index-Dld_F5d3.js?ver=1.0.0:1
+await in N
+j @ index-Dld_F5d3.js?ver=1.0.0:1
+(anonymous) @ vendor-C_XjUiP7.js:119
+await in (anonymous)
+Zn @ vendor-C_XjUiP7.js:5
+gB @ vendor-C_XjUiP7.js:5
+bB @ vendor-C_XjUiP7.js:5
+PO @ vendor-C_XjUiP7.js:5
+EO @ vendor-C_XjUiP7.js:5
+(anonymous) @ vendor-C_XjUiP7.js:5
+Vm @ vendor-C_XjUiP7.js:8
+Rr @ vendor-C_XjUiP7.js:5
+Vv @ vendor-C_XjUiP7.js:5
+Pv @ vendor-C_XjUiP7.js:5
+NB @ vendor-C_XjUiP7.js:5Understand this error
+index-Dld_F5d3.js?ver=1.0.0:1 ☠️ Fetch Crash: Error: Failed to update yield model.
+    at me (index-Dld_F5d3.js?ver=1.0.0:1:7705)
+    at async N (index-Dld_F5d3.js?ver=1.0.0:1:206005)
+me @ index-Dld_F5d3.js?ver=1.0.0:1
+await in me
+Zi @ index-Dld_F5d3.js?ver=1.0.0:1
+N @ index-Dld_F5d3.js?ver=1.0.0:1
+await in N
+j @ index-Dld_F5d3.js?ver=1.0.0:1
+(anonymous) @ vendor-C_XjUiP7.js:119
+await in (anonymous)
+Zn @ vendor-C_XjUiP7.js:5
+gB @ vendor-C_XjUiP7.js:5
+bB @ vendor-C_XjUiP7.js:5
+PO @ vendor-C_XjUiP7.js:5
+EO @ vendor-C_XjUiP7.js:5
+(anonymous) @ vendor-C_XjUiP7.js:5
+Vm @ vendor-C_XjUiP7.js:8
+Rr @ vendor-C_XjUiP7.js:5
+Vv @ vendor-C_XjUiP7.js:5
+Pv @ vendor-C_XjUiP7.js:5
+NB @ vendor-C_XjUiP7.js:5Understand this error
+index-Dld_F5d3.js?ver=1.0.0:1 Error saving yield curve: Error: Failed to update yield model.
+    at me (index-Dld_F5d3.js?ver=1.0.0:1:7705)
+    at async N (index-Dld_F5d3.js?ver=1.0.0:1:206005)
