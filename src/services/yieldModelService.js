@@ -7,6 +7,15 @@ import { apiRequest } from './api';
 const BASE_ENDPOINT = 'ccp/v1/yield-models';
 
 /**
+ * Checks if the user is in trial mode.
+ *
+ * @returns {boolean} True if in trial mode.
+ */
+const isTrialMode = () => {
+	return localStorage.getItem('isTrialMode') === 'true';
+};
+
+/**
  * Fetches all yield models for a given project.
  *
  * @param {number} projectId - The ID of the project.
@@ -15,6 +24,13 @@ const BASE_ENDPOINT = 'ccp/v1/yield-models';
 export const getYieldModelsByProject = (projectId) => {
 	if (!projectId) {
 		return Promise.reject(new Error('Project ID is required.'));
+	}
+	console.log('DEBUG: getYieldModelsByProject called with projectId:', projectId, 'isTrialMode:', isTrialMode());
+	if (isTrialMode()) {
+		// For trial mode, load from localStorage
+		const stored = localStorage.getItem(`yield_models_project_${projectId}`);
+		console.log('DEBUG: Loading yield models from localStorage:', stored);
+		return Promise.resolve(stored ? JSON.parse(stored) : []);
 	}
 	return apiRequest(`${BASE_ENDPOINT}/by-project/${projectId}`);
 };
@@ -31,6 +47,16 @@ export const getYieldModelsByProject = (projectId) => {
  * @returns {Promise<object>} A promise that resolves to the created yield model object.
  */
 export const createYieldModel = (yieldModelData) => {
+	if (isTrialMode()) {
+		// For trial mode, save to localStorage
+		const projectId = yieldModelData.project_id;
+		const stored = localStorage.getItem(`yield_models_project_${projectId}`);
+		const models = stored ? JSON.parse(stored) : [];
+		const newModel = { ...yieldModelData, id: Date.now() }; // fake id
+		models.push(newModel);
+		localStorage.setItem(`yield_models_project_${projectId}`, JSON.stringify(models));
+		return Promise.resolve(newModel);
+	}
 	return apiRequest(BASE_ENDPOINT, {
 		method: 'POST',
 		body: JSON.stringify(yieldModelData),

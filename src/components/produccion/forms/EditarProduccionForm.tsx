@@ -81,7 +81,9 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }
   });
 
   useEffect(() => {
-    
+    console.log('DEBUG: editingData in EditarProduccionForm:', editingData);
+    console.log('DEBUG: montesDisponibles:', montesDisponibles);
+
     if (editingData && montesDisponibles.length > 0) {
   
       const produccionPorMonte = montesDisponibles.map(monte => {

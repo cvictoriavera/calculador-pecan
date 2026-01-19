@@ -1,6 +1,91 @@
-handleSaveProduccion called with data: {precioPromedio: 2.99, metodo: 'total', pesoTotal: 120500.5, montesSeleccionados: Array(2), produccionPorMonte: Array(2)}
-index-NfhBxR7u.js?ver=1.0.0:1 currentProjectId: 1
-index-NfhBxR7u.js?ver=1.0.0:1 currentCampaign: 2022
-index-NfhBxR7u.js?ver=1.0.0:1 currentCampaignId: 14
-index-NfhBxR7u.js?ver=1.0.0:1 campaigns: (18) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-index-NfhBxR7u.js?ver=1.0.0:1 targetCampaign: 
+
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238569.6863 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: null
+index-DKlqMrs9.js?ver=1.0.0:1 Layout: isLargeScreen=false
+index-DKlqMrs9.js?ver=1.0.0:1 Layout: sidebarOpen=false
+index-DKlqMrs9.js?ver=1.0.0:1 Slider received props: 
+{value: Array(2), min: 2016, max: 2056, step: 1, onValueChange: ƒ}
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238571.423 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: [{"monte_id":1768857248651,"quantity_kg":20000,"is_estimated":0,"input_type":"detail"}]
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238569.8223 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: null
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238570.6233 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: null
+index-DKlqMrs9.js?ver=1.0.0:1 Layout: isLargeScreen=false
+index-DKlqMrs9.js?ver=1.0.0:1 Layout: sidebarOpen=false
+index-DKlqMrs9.js?ver=1.0.0:1 Slider received props: 
+{value: Array(2), min: 2016, max: 2056, step: 1, onValueChange: ƒ}
+index-DKlqMrs9.js?ver=1.0.0:1 Layout: isLargeScreen=false
+index-DKlqMrs9.js?ver=1.0.0:1 Layout: sidebarOpen=false
+index-DKlqMrs9.js?ver=1.0.0:1 Slider received props: 
+{value: Array(2), min: 2016, max: 2056, step: 1, onValueChange: ƒ}
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238570.0598 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: null
+index-DKlqMrs9.js?ver=1.0.0:1 Slider received props: 
+{value: Array(2), min: 2016, max: 2056, step: 1, onValueChange: ƒ}
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238570.0354 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: null
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238571.0562 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: null
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238571.7874 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: null
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238571.423 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: [{"monte_id":1768857248651,"quantity_kg":20000,"is_estimated":0,"input_type":"detail"}]
+index-DKlqMrs9.js?ver=1.0.0:1 Layout: isLargeScreen=false
+index-DKlqMrs9.js?ver=1.0.0:1 Layout: sidebarOpen=false
+index-DKlqMrs9.js?ver=1.0.0:1 Slider received props: 
+{value: Array(2), min: 2016, max: 2056, step: 1, onValueChange: ƒ}
+index-DKlqMrs9.js?ver=1.0.0:1 Slider received props: 
+{value: Array(2), min: 2016, max: 2056, step: 1, onValueChange: ƒ}
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: getProductionsByCampaign called with campaignId: 1768857238571.423 isTrialMode: true
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: Loading productions from localStorage: [{"monte_id":1768857248651,"quantity_kg":20000,"is_estimated":0,"input_type":"detail"}]
+index-DKlqMrs9.js?ver=1.0.0:1 Slider received props: 
+{value: Array(2), min: 2016, max: 2056, step: 1, onValueChange: ƒ}
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: editingData in EditarProduccionForm: 
+{precioPromedio: 2, metodo: 'detallado', produccionPorMonte: Array(1)}
+metodo
+: 
+"detallado"
+precioPromedio
+: 
+2
+produccionPorMonte
+: 
+[{…}]
+[[Prototype]]
+: 
+Object
+index-DKlqMrs9.js?ver=1.0.0:1 DEBUG: montesDisponibles: 
+[{…}]
+0
+: 
+añoPlantacion
+: 
+2016
+densidad
+: 
+50
+edad
+: 
+10
+hectareas
+: 
+50
+id
+: 
+"1768857248651.8713"
+nombre
+: 
+"Monte A"
+variedad
+: 
+""
+[[Prototype]]
+: 
+Object
+length
+: 
+1
+[[Prototype]]
+: 
+Array(0)

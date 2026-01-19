@@ -25,6 +25,13 @@ export const getProductionsByCampaign = (campaignId) => {
   if (!campaignId) {
     return Promise.reject(new Error('Campaign ID is required.'));
   }
+  console.log('DEBUG: getProductionsByCampaign called with campaignId:', campaignId, 'isTrialMode:', isTrialMode());
+  if (isTrialMode()) {
+    // For trial mode, load from localStorage
+    const stored = localStorage.getItem(`productions_campaign_${campaignId}`);
+    console.log('DEBUG: Loading productions from localStorage:', stored);
+    return Promise.resolve(stored ? JSON.parse(stored) : []);
+  }
   return apiRequest(`${BASE_ENDPOINT}/by-campaign/${campaignId}`);
 };
 
@@ -43,11 +50,13 @@ export const createProductionsByCampaign = (campaignId, productionData) => {
     return Promise.reject(new Error('Campaign ID is required.'));
   }
   if (isTrialMode()) {
-    // For trial mode, return fake result without API call
+    // For trial mode, save to localStorage and return fake result
+    const productionsWithType = (productionData.productions || []).map(p => ({ ...p, input_type: productionData.input_type }));
+    localStorage.setItem(`productions_campaign_${campaignId}`, JSON.stringify(productionsWithType));
     return Promise.resolve({
       success: true,
       campaign_id: campaignId,
-      productions: productionData.productions || [],
+      productions: productionsWithType,
     });
   }
   return apiRequest(`${BASE_ENDPOINT}/by-campaign/${campaignId}`, {

@@ -201,15 +201,15 @@ const Produccion = () => {
 
                     // Create production per monte from API data
                     const produccionPorMonte = montesDisponibles.map(monte => {
-                      
-                      const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === String(monte.id));
+
+                      const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === monte.id.split('.')[0]);
 
                       return {
                           monteId: monte.id,
                           nombre: monte.nombre,
                           hectareas: monte.hectareas,
                           edad: monte.edad,
-                          kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0, 
+                          kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0,
                       };
                     });
 
