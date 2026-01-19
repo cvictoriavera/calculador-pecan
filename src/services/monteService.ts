@@ -5,6 +5,16 @@
 import { apiRequest } from './api';
 
 const BASE_ENDPOINT = 'ccp/v1/montes';
+const TRIAL_MONTES_KEY = 'trialMontes';
+
+/**
+ * Checks if the user is in trial mode.
+ *
+ * @returns True if in trial mode.
+ */
+const isTrialMode = (): boolean => {
+	return localStorage.getItem('isTrialMode') === 'true';
+};
 
 export interface MonteDB {
   id: number;
@@ -30,6 +40,11 @@ export const getMontesByProject = (projectId: number): Promise<MonteDB[]> => {
   if (!projectId) {
     return Promise.reject(new Error('Project ID is required.'));
   }
+  if (isTrialMode()) {
+    const montes = JSON.parse(localStorage.getItem(TRIAL_MONTES_KEY) || '[]');
+    const filtered = montes.filter((m: MonteDB) => m.project_id === projectId);
+    return Promise.resolve(filtered);
+  }
   return apiRequest(`${BASE_ENDPOINT}/by-project/${projectId}`);
 };
 
@@ -47,6 +62,25 @@ export const createMonte = (monteData: {
   fecha_plantacion?: string;
   variedad?: string;
 }): Promise<MonteDB> => {
+  if (isTrialMode()) {
+    const montes = JSON.parse(localStorage.getItem(TRIAL_MONTES_KEY) || '[]');
+    const newMonte: MonteDB = {
+      id: Date.now(),
+      project_id: monteData.project_id,
+      campaign_created_id: 0, // Dummy
+      monte_name: monteData.monte_name || 'Nuevo Monte',
+      area_hectareas: monteData.area_hectareas?.toString() || '0',
+      plantas_por_hectarea: monteData.plantas_por_hectarea || 0,
+      fecha_plantacion: monteData.fecha_plantacion || null,
+      variedad: monteData.variedad || '',
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    montes.push(newMonte);
+    localStorage.setItem(TRIAL_MONTES_KEY, JSON.stringify(montes));
+    return Promise.resolve(newMonte);
+  }
   return apiRequest(BASE_ENDPOINT, {
     method: 'POST',
     body: JSON.stringify(monteData),

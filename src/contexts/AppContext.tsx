@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { createCampaign, getCampaignsByProject, updateCampaign } from "@/services/campaignService";
 import { getProjects } from "@/services/projectService";
 import { getMontesByProject, createMonte, updateMonte as updateMonteAPI, deleteMonte } from "@/services/monteService";
-import { useDataStore } from "@/stores"; 
+import { getCurrentUser } from "@/services/userService";
+import { useDataStore } from "@/stores";
 
 export interface Monte {
   id: string;
@@ -30,6 +31,14 @@ interface Campaign {
   updated_at: string;
 }
 
+interface User {
+  id: number;
+  name: string;
+  email?: string;
+  username?: string;
+  roles?: string[];
+}
+
 interface Project {
   id: number;
   user_id: number;
@@ -45,6 +54,8 @@ interface Project {
 }
 
 interface AppContextType {
+  user: User | null;
+  isTrialMode: boolean;
   projectName: string;
   setProjectName: (name: string) => void;
   currentProjectId: number | null;
@@ -75,7 +86,10 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  
+
+  const [user, setUser] = useState<User | null>(null);
+  const [isTrialMode, setIsTrialMode] = useState(false);
+
   const [projectName, setProjectName] = useState(() =>
     localStorage.getItem("projectName") || ""
   );
@@ -102,6 +116,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const isOnboardingComplete = !!currentProjectId;
+
+  // Fetch user data and set trial mode
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+        const trial = userData.roles?.includes('subscriber') || false;
+        setIsTrialMode(trial);
+        localStorage.setItem('isTrialMode', trial.toString());
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        // If error, assume not trial
+        setIsTrialMode(false);
+        localStorage.setItem('isTrialMode', 'false');
+      }
+    };
+    fetchUser();
+  }, []);
 
   const { loadAllCosts, loadAllInvestments } = useDataStore();
 
@@ -443,6 +476,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider
       value={{
+        user,
+        isTrialMode,
         projectName,
         setProjectName,
         currentProjectId,

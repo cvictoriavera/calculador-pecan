@@ -17,7 +17,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, changeProject, montes } = useApp();
+  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, changeProject, montes, isTrialMode } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
 
@@ -147,6 +147,13 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </header>
           
+          {isTrialMode && (
+            <div className="bg-yellow-100 border-b border-yellow-200 px-6 py-2">
+              <p className="text-yellow-800 text-sm">
+                <strong>Modo Prueba:</strong> Los datos de tus proyectos no se guardan permanentemente. Actualiza tu suscripción para guardar tus datos.
+              </p>
+            </div>
+          )}
           <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden w-full max-w-[100vw]">
             {children}
           </main>

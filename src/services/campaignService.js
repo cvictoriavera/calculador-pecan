@@ -5,6 +5,16 @@
 import { apiRequest } from './api';
 
 const BASE_ENDPOINT = 'ccp/v1/campaigns';
+const TRIAL_CAMPAIGNS_KEY = 'trialCampaigns';
+
+/**
+ * Checks if the user is in trial mode.
+ *
+ * @returns {boolean} True if in trial mode.
+ */
+const isTrialMode = () => {
+	return localStorage.getItem('isTrialMode') === 'true';
+};
 
 /**
  * Fetches all campaigns for a given project.
@@ -15,6 +25,11 @@ const BASE_ENDPOINT = 'ccp/v1/campaigns';
 export const getCampaignsByProject = (projectId) => {
 	if (!projectId) {
 		return Promise.reject(new Error('Project ID is required.'));
+	}
+	if (isTrialMode()) {
+		const campaigns = JSON.parse(localStorage.getItem(TRIAL_CAMPAIGNS_KEY) || '[]');
+		const filtered = campaigns.filter(c => c.project_id == projectId);
+		return Promise.resolve(filtered);
 	}
 	return apiRequest(`${BASE_ENDPOINT}/by-project/${projectId}`);
 };
@@ -34,6 +49,18 @@ export const getCampaignsByProject = (projectId) => {
  * @returns {Promise<object>} A promise that resolves to the created campaign object.
  */
 export const createCampaign = (campaignData) => {
+	if (isTrialMode()) {
+		const campaigns = JSON.parse(localStorage.getItem(TRIAL_CAMPAIGNS_KEY) || '[]');
+		const newCampaign = {
+			...campaignData,
+			id: Date.now(), // Dummy ID
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		};
+		campaigns.push(newCampaign);
+		localStorage.setItem(TRIAL_CAMPAIGNS_KEY, JSON.stringify(campaigns));
+		return Promise.resolve(newCampaign);
+	}
 	return apiRequest(BASE_ENDPOINT, {
 		method: 'POST',
 		body: JSON.stringify(campaignData),
@@ -61,6 +88,16 @@ export const createCampaign = (campaignData) => {
 export const updateCampaign = (campaignId, campaignData) => {
 	if (!campaignId) {
 		return Promise.reject(new Error('Campaign ID is required.'));
+	}
+	if (isTrialMode()) {
+		const campaigns = JSON.parse(localStorage.getItem(TRIAL_CAMPAIGNS_KEY) || '[]');
+		const index = campaigns.findIndex(c => c.id == campaignId);
+		if (index === -1) {
+			return Promise.reject(new Error('Campaign not found.'));
+		}
+		campaigns[index] = { ...campaigns[index], ...campaignData, updated_at: new Date().toISOString() };
+		localStorage.setItem(TRIAL_CAMPAIGNS_KEY, JSON.stringify(campaigns));
+		return Promise.resolve(campaigns[index]);
 	}
 	return apiRequest(`${BASE_ENDPOINT}/${campaignId}`, {
 		method: 'PUT',
