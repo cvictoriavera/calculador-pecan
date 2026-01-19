@@ -53,7 +53,7 @@ export const createCampaign = (campaignData) => {
 		const campaigns = JSON.parse(localStorage.getItem(TRIAL_CAMPAIGNS_KEY) || '[]');
 		const newCampaign = {
 			...campaignData,
-			id: Date.now(), // Dummy ID
+			id: Date.now() + Math.random(), // Unique ID
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString(),
 		};

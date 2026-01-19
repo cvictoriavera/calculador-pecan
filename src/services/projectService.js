@@ -64,7 +64,7 @@ export const createProject = (projectData) => {
 		// Create project in localStorage
 		const projects = JSON.parse(localStorage.getItem(TRIAL_PROJECTS_KEY) || '[]');
 		const newProject = {
-			id: Date.now(), // Use timestamp as ID
+			id: Date.now() + Math.random(), // Unique ID
 			user_id: 0, // Dummy
 			project_name: projectData.project_name || 'Nuevo Proyecto',
 			description: projectData.description || '',

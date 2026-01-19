@@ -65,7 +65,7 @@ export const createMonte = (monteData: {
   if (isTrialMode()) {
     const montes = JSON.parse(localStorage.getItem(TRIAL_MONTES_KEY) || '[]');
     const newMonte: MonteDB = {
-      id: Date.now(),
+      id: Date.now() + Math.random(),
       project_id: monteData.project_id,
       campaign_created_id: 0, // Dummy
       monte_name: monteData.monte_name || 'Nuevo Monte',

@@ -72,7 +72,7 @@ export const saveAnnualRecord = (data) => {
 		const records = JSON.parse(localStorage.getItem(TRIAL_RECORDS_KEY) || '[]');
 		const newRecord = {
 			...data,
-			id: Date.now(), // Dummy ID
+			id: Date.now() + Math.random(), // Unique ID
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString(),
 		};

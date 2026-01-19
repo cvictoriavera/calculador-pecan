@@ -67,7 +67,7 @@ export const createCost = (costData) => {
 			category: costData.category,
 			total_value: costData.total_amount,
 			details: costData.details,
-			id: Date.now(),
+			id: Date.now() + Math.random(),
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString(),
 		};
