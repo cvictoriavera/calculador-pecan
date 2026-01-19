@@ -7,6 +7,15 @@ import { apiRequest } from './api';
 const BASE_ENDPOINT = 'ccp/v1/productions';
 
 /**
+ * Checks if the user is in trial mode.
+ *
+ * @returns {boolean} True if in trial mode.
+ */
+const isTrialMode = () => {
+	return localStorage.getItem('isTrialMode') === 'true';
+};
+
+/**
  * Fetches all productions for a given campaign.
  *
  * @param {number} campaignId - The ID of the campaign.
@@ -33,6 +42,14 @@ export const createProductionsByCampaign = (campaignId, productionData) => {
   if (!campaignId) {
     return Promise.reject(new Error('Campaign ID is required.'));
   }
+  if (isTrialMode()) {
+    // For trial mode, return fake result without API call
+    return Promise.resolve({
+      success: true,
+      campaign_id: campaignId,
+      productions: productionData.productions || [],
+    });
+  }
   return apiRequest(`${BASE_ENDPOINT}/by-campaign/${campaignId}`, {
     method: 'POST',
     body: JSON.stringify(productionData),
@@ -48,6 +65,10 @@ export const createProductionsByCampaign = (campaignId, productionData) => {
 export const deleteProductionsByCampaign = (campaignId) => {
   if (!campaignId) {
     return Promise.reject(new Error('Campaign ID is required.'));
+  }
+  if (isTrialMode()) {
+    // For trial mode, return fake result without API call
+    return Promise.resolve({ deleted: true });
   }
   return apiRequest(`${BASE_ENDPOINT}/by-campaign/${campaignId}`, {
     method: 'DELETE',
