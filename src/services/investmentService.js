@@ -61,6 +61,15 @@ export const getInvestmentsByCampaign = (projectId, campaignId) => {
  * @returns {Promise<object>} A promise that resolves to the created investment object.
  */
 export const createInvestment = (investmentData) => {
+	if (isTrialMode()) {
+		// For trial mode, return fake result without API call
+		return Promise.resolve({
+			id: Date.now() + Math.random(),
+			...investmentData,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		});
+	}
 	return apiRequest(BASE_ENDPOINT, {
 		method: 'POST',
 		body: JSON.stringify(investmentData),
@@ -82,6 +91,14 @@ export const updateInvestment = (investmentId, investmentData) => {
 	if (!investmentId) {
 		return Promise.reject(new Error('Investment ID is required.'));
 	}
+	if (isTrialMode()) {
+		// For trial mode, return fake result without API call
+		return Promise.resolve({
+			id: investmentId,
+			...investmentData,
+			updated_at: new Date().toISOString(),
+		});
+	}
 	return apiRequest(`${BASE_ENDPOINT}/${investmentId}`, {
 		method: 'PUT',
 		body: JSON.stringify(investmentData),
@@ -97,6 +114,10 @@ export const updateInvestment = (investmentId, investmentData) => {
 export const deleteInvestment = (investmentId) => {
 	if (!investmentId) {
 		return Promise.reject(new Error('Investment ID is required.'));
+	}
+	if (isTrialMode()) {
+		// For trial mode, return fake result without API call
+		return Promise.resolve({ deleted: true });
 	}
 	return apiRequest(`${BASE_ENDPOINT}/${investmentId}`, {
 		method: 'DELETE',
