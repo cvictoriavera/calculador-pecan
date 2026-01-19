@@ -7,7 +7,6 @@ const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
 >(({ className, value, ...props }, ref) => {
-  console.log('Slider received props:', { value, ...props });
   const thumbCount = Array.isArray(value) ? value.length : 1;
   return (
     <SliderPrimitive.Root

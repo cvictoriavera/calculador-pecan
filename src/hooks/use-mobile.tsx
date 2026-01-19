@@ -16,7 +16,6 @@ export function useIsMobile() {
     };
     mql.addEventListener("change", onChange);
     const initialIsMobile = window.innerWidth < MOBILE_BREAKPOINT;
-    console.log(`useIsMobile initial: window.innerWidth=${window.innerWidth}, MOBILE_BREAKPOINT=${MOBILE_BREAKPOINT}, isMobile=${initialIsMobile}`);
     setIsMobile(initialIsMobile);
     return () => mql.removeEventListener("change", onChange);
   }, []);
@@ -38,7 +37,6 @@ export function useIsLargeScreen() {
     };
     mql.addEventListener("change", onChange);
     const initialIsLarge = window.innerWidth >= LARGE_BREAKPOINT;
-    console.log(`useIsLargeScreen initial: window.innerWidth=${window.innerWidth}, LARGE_BREAKPOINT=${LARGE_BREAKPOINT}, isLarge=${initialIsLarge}`);
     setIsLarge(initialIsLarge);
     return () => mql.removeEventListener("change", onChange);
   }, []);

@@ -25,11 +25,9 @@ export const getProductionsByCampaign = (campaignId) => {
   if (!campaignId) {
     return Promise.reject(new Error('Campaign ID is required.'));
   }
-  console.log('DEBUG: getProductionsByCampaign called with campaignId:', campaignId, 'isTrialMode:', isTrialMode());
   if (isTrialMode()) {
     // For trial mode, load from localStorage
     const stored = localStorage.getItem(`productions_campaign_${campaignId}`);
-    console.log('DEBUG: Loading productions from localStorage:', stored);
     return Promise.resolve(stored ? JSON.parse(stored) : []);
   }
   return apiRequest(`${BASE_ENDPOINT}/by-campaign/${campaignId}`);

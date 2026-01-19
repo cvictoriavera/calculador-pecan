@@ -25,11 +25,9 @@ export const getYieldModelsByProject = (projectId) => {
 	if (!projectId) {
 		return Promise.reject(new Error('Project ID is required.'));
 	}
-	console.log('DEBUG: getYieldModelsByProject called with projectId:', projectId, 'isTrialMode:', isTrialMode());
 	if (isTrialMode()) {
 		// For trial mode, load from localStorage
 		const stored = localStorage.getItem(`yield_models_project_${projectId}`);
-		console.log('DEBUG: Loading yield models from localStorage:', stored);
 		return Promise.resolve(stored ? JSON.parse(stored) : []);
 	}
 	return apiRequest(`${BASE_ENDPOINT}/by-project/${projectId}`);

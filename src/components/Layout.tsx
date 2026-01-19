@@ -23,18 +23,15 @@ export function Layout({ children }: LayoutProps) {
 
   // 1. Detectamos si es pantalla gigante (> 1400px)
   const isLargeScreen = useIsLargeScreen();
-  console.log(`Layout: isLargeScreen=${isLargeScreen}`);
 
   // 2. Estado controlado del sidebar
   // Iniciamos el estado basado en si la pantalla es grande
   const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
-  console.log(`Layout: sidebarOpen=${sidebarOpen}`);
 
   // 3. Efecto reactivo:
   // - Si la pantalla crece (>1400), se abre (true).
   // - Si la pantalla se reduce (<1400), se cierra/contrae (false).
   useEffect(() => {
-    console.log(`Layout useEffect: setting sidebarOpen to ${isLargeScreen}`);
     setSidebarOpen(isLargeScreen);
   }, [isLargeScreen]);
 
