@@ -129,12 +129,12 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
     const data: ProduccionRecord[] = [];
     
     productions.forEach(prod => {
-      
-      const campaign = campaigns.find(c => String(c.id) === String(prod.campaign_id));      
-      
-      if (!campaign) return; 
 
-      const monteIdStr = String(prod.monte_id);
+      const campaign = campaigns.find(c => String(c.id) === String(prod.campaign_id));
+
+      if (!campaign) return;
+
+      const monteIdStr = String(prod.monte_id).split('.')[0]; // Use integer part
       const yearNum = Number(campaign.year);
       const quantity = Number(prod.quantity_kg);
 
@@ -164,7 +164,7 @@ export function EvolucionProductiva({ campaigns, montes }: EvolucionProductivaPr
   // Get production for a specific monte and year
   const getProduccion = (monteId: string, year: number): number | null => {
     const record = produccionData.find(
-      (p) => p.monteId === monteId && p.campanaYear === year
+      (p) => p.monteId === monteId.split('.')[0] && p.campanaYear === year
     );
     return record ? record.kgRecolectados : null;
   };
