@@ -42,6 +42,11 @@ const Onboarding = () => {
       const currentYear = new Date().getFullYear();
       const calculatedInitialYear = (currentYear - 10).toString();
       setInitialYear(calculatedInitialYear);
+      // Set default location for subscribers
+      setPais("Argentina");
+      setProvincia("Buenos Aires");
+      setDepartamento("");
+      setMunicipio("");
     }
   }, []);
 
@@ -114,7 +119,11 @@ const Onboarding = () => {
 
   const handleNext = () => {
     if (step === 1 && projectName && initialYear) {
-      setStep(2);
+      if (isTrialMode()) {
+        setStep(3);
+      } else {
+        setStep(2);
+      }
     } else if (step === 2 && pais && provincia && (pais !== "Argentina" || (departamento && municipio))) {
       setStep(3);
     } else if (step === 3) {
@@ -123,7 +132,12 @@ const Onboarding = () => {
   };
 
   const handleFinish = async () => {
-    if (!initialYear || !pais || !provincia || (pais === "Argentina" && (!departamento || !municipio)) || !allowBenchmarking) return;
+    console.log('handleFinish called', { initialYear, pais, provincia, departamento, municipio, allowBenchmarking, isTrialMode: isTrialMode() });
+    if (!initialYear || (isTrialMode() ? false : (!pais || !provincia || (pais === "Argentina" && (!departamento || !municipio)))) || !allowBenchmarking) {
+      console.log('Validation failed');
+      return;
+    }
+    console.log('Validation passed, proceeding to create project');
 
     setIsCreating(true);
     setError(null);
@@ -395,7 +409,7 @@ const Onboarding = () => {
         <Card className="max-w-2xl w-full border-border/50 shadow-xl">
           <CardHeader>
             <CardTitle className="text-3xl font-bold text-foreground">
-              Paso 3: Descripción
+              Paso {isTrialMode() ? 2 : 3}: Descripción
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -413,7 +427,7 @@ const Onboarding = () => {
             </div>
             <div className="flex justify-between pt-4">
               <Button
-                onClick={() => setStep(2)}
+                onClick={() => setStep(isTrialMode() ? 1 : 2)}
                 variant="outline"
                 className="gap-2 px-6 py-6"
               >
@@ -440,7 +454,7 @@ const Onboarding = () => {
         <Card className="max-w-2xl w-full border-border/50 shadow-xl">
           <CardHeader>
             <CardTitle className="text-3xl font-bold text-foreground">
-              Paso 4: Revisión
+              Paso {isTrialMode() ? 3 : 4}: Revisión
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -453,24 +467,28 @@ const Onboarding = () => {
                 <p className="text-sm text-muted-foreground">Año/Campaña inicial:</p>
                 <p className="text-xl font-semibold text-foreground">{initialYear}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">País:</p>
-                <p className="text-xl font-semibold text-foreground">{pais}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Provincia:</p>
-                <p className="text-xl font-semibold text-foreground">{provincia}</p>
-              </div>
-              {pais === "Argentina" && (
+              {!isTrialMode() && (
                 <>
                   <div>
-                    <p className="text-sm text-muted-foreground">Departamento:</p>
-                    <p className="text-xl font-semibold text-foreground">{departamento}</p>
+                    <p className="text-sm text-muted-foreground">País:</p>
+                    <p className="text-xl font-semibold text-foreground">{pais}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Municipio:</p>
-                    <p className="text-xl font-semibold text-foreground">{municipio}</p>
+                    <p className="text-sm text-muted-foreground">Provincia:</p>
+                    <p className="text-xl font-semibold text-foreground">{provincia}</p>
                   </div>
+                  {pais === "Argentina" && (
+                    <>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Departamento:</p>
+                        <p className="text-xl font-semibold text-foreground">{departamento}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Municipio:</p>
+                        <p className="text-xl font-semibold text-foreground">{municipio}</p>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
               <div>

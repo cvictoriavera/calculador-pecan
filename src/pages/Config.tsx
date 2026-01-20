@@ -220,91 +220,95 @@ const Config = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="pais">País</Label>
-            <Select value={pais} onValueChange={setPais}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un país" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Argentina">Argentina</SelectItem>
-                <SelectItem value="Brasil">Brasil</SelectItem>
-                <SelectItem value="Uruguay">Uruguay</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {pais === "Argentina" ? (
+          {!isTrialMode() && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="provincia">Provincia</Label>
-                <Select
-                  value={provincia}
-                  onValueChange={(value) => {
-                    setProvincia(value);
-                    setDepartamento("");
-                  }}
-                >
+                <Label htmlFor="pais">País</Label>
+                <Select value={pais} onValueChange={setPais}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una provincia" />
+                    <SelectValue placeholder="Selecciona un país" />
                   </SelectTrigger>
                   <SelectContent>
-                    {geoData.provinces.map((prov) => (
-                      <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                    ))}
+                    <SelectItem value="Argentina">Argentina</SelectItem>
+                    <SelectItem value="Brasil">Brasil</SelectItem>
+                    <SelectItem value="Uruguay">Uruguay</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="departamento">Departamento</Label>
-                <Select
-                  value={departamento}
-                  onValueChange={(value) => {
-                    setDepartamento(value);
-                    setMunicipio("");
-                  }}
-                  disabled={!provincia}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un departamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {provincia && geoData.departments[provincia]?.map((dept) => (
-                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {pais === "Argentina" ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="provincia">Provincia</Label>
+                    <Select
+                      value={provincia}
+                      onValueChange={(value) => {
+                        setProvincia(value);
+                        setDepartamento("");
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una provincia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {geoData.provinces.map((prov) => (
+                          <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="municipio">Municipio</Label>
-                <Select
-                  value={municipio}
-                  onValueChange={setMunicipio}
-                  disabled={!departamento}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un municipio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departamento && provincia && geoData.municipalities[`${provincia}-${departamento}`]?.map((mun) => (
-                      <SelectItem key={mun} value={mun}>{mun}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="departamento">Departamento</Label>
+                    <Select
+                      value={departamento}
+                      onValueChange={(value) => {
+                        setDepartamento(value);
+                        setMunicipio("");
+                      }}
+                      disabled={!provincia}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un departamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {provincia && geoData.departments[provincia]?.map((dept) => (
+                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="municipio">Municipio</Label>
+                    <Select
+                      value={municipio}
+                      onValueChange={setMunicipio}
+                      disabled={!departamento}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un municipio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departamento && provincia && geoData.municipalities[`${provincia}-${departamento}`]?.map((mun) => (
+                          <SelectItem key={mun} value={mun}>{mun}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="provincia">Provincia / Región</Label>
+                  <Input
+                    id="provincia"
+                    placeholder="Ej: São Paulo"
+                    value={provincia}
+                    onChange={(e) => setProvincia(e.target.value)}
+                  />
+                </div>
+              )}
             </>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="provincia">Provincia / Región</Label>
-              <Input
-                id="provincia"
-                placeholder="Ej: São Paulo"
-                value={provincia}
-                onChange={(e) => setProvincia(e.target.value)}
-              />
-            </div>
           )}
 
           <div className="space-y-2">
