@@ -52,6 +52,12 @@ const Campanas = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
+  const maxCampaigns = 5;
+  const currentYear = new Date().getFullYear();
+  const manualCampaigns = campaigns.filter(c => c.year > currentYear).length;
+  const isCampaignDisabled = isTrialMode() && manualCampaigns >= maxCampaigns;
+
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign, getTotalProductionByCampaign } = useCalculationsStore();
   const loadAllProductions = useDataStore((state) => state.loadAllProductions);
   
@@ -81,8 +87,18 @@ const Campanas = () => {
   }, [campaigns, loadAllProductions]);
   
   const handleNuevaCampana = async () => {
-    // Activamos el modo carga inmediatamente
-    setIsCreating(true);
+   // Verificar límite para usuarios suscriptores
+   if (isTrialMode() && manualCampaigns >= maxCampaigns) {
+     toast({
+       title: "Límite alcanzado",
+       description: `Como usuario suscriptor, puedes crear un máximo de ${maxCampaigns} campañas adicionales a partir del año actual.`,
+       variant: "destructive",
+     });
+     return;
+   }
+
+   // Activamos el modo carga inmediatamente
+   setIsCreating(true);
 
     // Encontrar el año más alto entre todas las campañas existentes
     const maxYear = safeCampaigns.length > 0 ? Math.max(...safeCampaigns.map(c => c.year)) : (initialYear || new Date().getFullYear());
@@ -101,10 +117,12 @@ const Campanas = () => {
     }
 
     try {
-      // 1. Cerrar la campaña actualmente activa (si existe)
-      await closeActiveCampaign({
-        project_id: currentProjectId!,
-      });
+      // 1. Cerrar la campaña actualmente activa (si existe) - solo para usuarios no suscriptores
+      if (!isTrialMode()) {
+        await closeActiveCampaign({
+          project_id: currentProjectId!,
+        });
+      }
 
       // 2. Crear la nueva campaña
       await createCampaign({
@@ -534,23 +552,30 @@ const Campanas = () => {
           <h1 className="text-3xl mb-2">Campañas</h1>
           <p className="text-muted-foreground">Gestión de ciclos anuales de producción</p>
         </div>
-        <Button 
-          onClick={handleNuevaCampana} 
-          disabled={isCreating} // Deshabilita el botón mientras crea
-          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-        >
-          {isCreating ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Creando...
-            </>
-          ) : (
-            <>
-              <Plus className="h-5 w-5" />
-              Nueva Campaña
-            </>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleNuevaCampana}
+            disabled={isCreating || isCampaignDisabled} // Deshabilita el botón mientras crea o si alcanza el límite
+            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Creando...
+              </>
+            ) : (
+              <>
+                <Plus className="h-5 w-5" />
+                Nueva Campaña
+              </>
+            )}
+          </Button>
+          {isTrialMode() && (
+            <span className="text-sm text-muted-foreground">
+              ({manualCampaigns}/{maxCampaigns})
+            </span>
           )}
-        </Button>
+        </div>
       </div>
 
       {/* Educational Card */}
