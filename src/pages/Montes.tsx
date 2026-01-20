@@ -27,6 +27,11 @@ import { toast } from "sonner";
 
 const Montes = () => {
   const { montes, currentCampaign, deleteMonte } = useApp();
+
+  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
+  const maxMontes = 3;
+  const currentMontes = montes.length;
+  const isDisabled = isTrialMode() && currentMontes >= maxMontes;
   const [editingMonte, setEditingMonte] = useState<Monte | null>(null);
   const [deletingMonte, setDeletingMonte] = useState<Monte | null>(null);
   
@@ -59,7 +64,14 @@ const Montes = () => {
           <h1 className="text-3xl mb-2">Mis Montes</h1>
           <p className="text-muted-foreground">Gestión de lotes de producción</p>
         </div>
-        <AddMonteDialog />
+        <div className="flex items-center gap-2">
+          <AddMonteDialog disabled={isDisabled} />
+          {isTrialMode() && (
+            <span className="text-sm text-muted-foreground">
+              ({currentMontes}/{maxMontes})
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Educational Card */}

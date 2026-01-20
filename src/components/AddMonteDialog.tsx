@@ -20,7 +20,11 @@ import { Plus } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 
-export function AddMonteDialog() {
+interface AddMonteDialogProps {
+  disabled?: boolean;
+}
+
+export function AddMonteDialog({ disabled = false }: AddMonteDialogProps = {}) {
   const { addMonte, montes } = useApp();
   const [open, setOpen] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -95,7 +99,10 @@ export function AddMonteDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+        <Button
+          disabled={disabled}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+        >
           <Plus className="h-5 w-5" />
           Agregar Monte
         </Button>
