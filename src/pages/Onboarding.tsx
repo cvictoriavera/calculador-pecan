@@ -25,6 +25,8 @@ const Onboarding = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
+
   const [geoData, setGeoData] = useState<{
     provinces: string[];
     departments: { [province: string]: string[] };
@@ -34,6 +36,14 @@ const Onboarding = () => {
     departments: {},
     municipalities: {},
   });
+
+  useEffect(() => {
+    if (isTrialMode()) {
+      const currentYear = new Date().getFullYear();
+      const calculatedInitialYear = (currentYear - 10).toString();
+      setInitialYear(calculatedInitialYear);
+    }
+  }, []);
 
   useEffect(() => {
     const loadGeoData = async () => {
@@ -199,16 +209,31 @@ const Onboarding = () => {
               <Label htmlFor="initialYear" className="text-base font-medium">
                 Año/Campaña inicial
               </Label>
-              <Select value={initialYear} onValueChange={setInitialYear}>
-                <SelectTrigger className="text-lg py-6">
-                  <SelectValue placeholder="Selecciona un año" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: new Date().getFullYear() - 1990 + 1 }, (_, i) => 1990 + i).reverse().map((year) => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isTrialMode() ? (
+                <div className="space-y-2">
+                  <Input
+                    id="initialYear"
+                    value={initialYear}
+                    disabled
+                    className="text-lg py-6"
+                    placeholder="Año calculado automáticamente"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Como usuario suscriptor, el año de inicio se calcula automáticamente como 10 años atrás del año actual para limitar el número de campañas.
+                  </p>
+                </div>
+              ) : (
+                <Select value={initialYear} onValueChange={setInitialYear}>
+                  <SelectTrigger className="text-lg py-6">
+                    <SelectValue placeholder="Selecciona un año" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: new Date().getFullYear() - 1990 + 1 }, (_, i) => 1990 + i).reverse().map((year) => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="flex justify-between pt-4">
               <Button

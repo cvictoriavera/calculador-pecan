@@ -341,9 +341,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       };
 
       try {
-        console.log(`Creating campaign for year ${y}:`, campaignData);
         const createdCampaign = await createCampaign(campaignData);
-        console.log(`Successfully created campaign for year ${y}:`, createdCampaign);
         createdCampaigns.push(createdCampaign);
       } catch (error) {
         console.error(`Error creating campaign for year ${y}:`, error);

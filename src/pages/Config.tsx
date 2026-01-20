@@ -19,6 +19,8 @@ const Config = () => {
   const { toast } = useToast();
   const { initialYear, currentProjectId, projects } = useApp();
 
+  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
+
   const [pais, setPais] = useState("Argentina");
   const [provincia, setProvincia] = useState("");
   const [departamento, setDepartamento] = useState("");
@@ -333,7 +335,7 @@ const Config = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="año-inicio">Año de Inicio de Registros</Label>
-            <Select value={añoInicio.toString()} onValueChange={(value) => setAñoInicio(parseInt(value))}>
+            <Select value={añoInicio.toString()} onValueChange={(value) => setAñoInicio(parseInt(value))} disabled={isTrialMode()}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un año" />
               </SelectTrigger>
@@ -343,12 +345,19 @@ const Config = () => {
                 ))}
               </SelectContent>
             </Select>
+            {isTrialMode() && (
+              <p className="text-sm text-muted-foreground">
+                El año de inicio está fijado automáticamente en {añoInicio} para cuentas de suscriptor.
+              </p>
+            )}
           </div>
 
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-            <Save className="h-5 w-5" />
-            Cambiar año de inicio
-          </Button>
+          {!isTrialMode() && (
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+              <Save className="h-5 w-5" />
+              Cambiar año de inicio
+            </Button>
+          )}
         </CardContent>
       </Card>
 
