@@ -404,28 +404,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateMonte = async (id: string, updatedData: Omit<Monte, "id">) => {
     try {
-      const updateData = {
-        monte_name: updatedData.nombre,
-        area_hectareas: updatedData.hectareas,
-        plantas_por_hectarea: updatedData.densidad,
-        fecha_plantacion: `${updatedData.añoPlantacion}-01-01`,
-      };
+      if (!isTrialMode) {
+        const updateData = {
+          monte_name: updatedData.nombre,
+          area_hectareas: updatedData.hectareas,
+          plantas_por_hectarea: updatedData.densidad,
+          fecha_plantacion: `${updatedData.añoPlantacion}-01-01`,
+        };
 
-      const updatedMonte = await updateMonteAPI(parseInt(id), updateData);
+        const updatedMonte = await updateMonteAPI(parseInt(id), updateData);
 
-      // Transform and update local state
-      const transformed: Monte = {
-        id: updatedMonte.id.toString(),
-        nombre: updatedMonte.monte_name,
-        hectareas: parseFloat(updatedMonte.area_hectareas),
-        densidad: updatedMonte.plantas_por_hectarea,
-        añoPlantacion: updatedMonte.fecha_plantacion ? parseInt(updatedMonte.fecha_plantacion.substring(0, 4)) : updatedData.añoPlantacion,
-        variedad: updatedMonte.variedad,
-      };
+        // Transform and update local state
+        const transformed: Monte = {
+          id: updatedMonte.id.toString(),
+          nombre: updatedMonte.monte_name,
+          hectareas: parseFloat(updatedMonte.area_hectareas),
+          densidad: updatedMonte.plantas_por_hectarea,
+          añoPlantacion: updatedMonte.fecha_plantacion ? parseInt(updatedMonte.fecha_plantacion.substring(0, 4)) : updatedData.añoPlantacion,
+          variedad: updatedMonte.variedad,
+        };
 
-      setMontes(montes.map(monte =>
-        monte.id === id ? transformed : monte
-      ));
+        setMontes(montes.map(monte =>
+          monte.id === id ? transformed : monte
+        ));
+      } else {
+        // For trial mode, just update local state
+        const updated: Monte = {
+          id,
+          ...updatedData,
+        };
+        setMontes(montes.map(monte =>
+          monte.id === id ? updated : monte
+        ));
+      }
     } catch (error) {
       console.error('Error updating monte:', error);
       throw error;
@@ -434,9 +445,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteMonteContext = async (id: string) => {
     try {
-      await deleteMonte(parseInt(id));
+      if (!isTrialMode) {
+        await deleteMonte(parseInt(id));
+      }
 
-      // Remove from local state
+      // Remove from local state (always, for both modes)
       setMontes(montes.filter(monte => monte.id !== id));
     } catch (error) {
       console.error('Error deleting monte:', error);
