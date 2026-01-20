@@ -351,7 +351,7 @@ const Config = () => {
             </Select>
             {isTrialMode() && (
               <p className="text-sm text-muted-foreground">
-                El año de inicio está fijado automáticamente en {añoInicio} para cuentas de suscriptor.
+                No puedes cambiar el año de inicio en modo prueba.
               </p>
             )}
           </div>

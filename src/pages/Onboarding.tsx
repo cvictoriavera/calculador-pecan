@@ -233,7 +233,7 @@ const Onboarding = () => {
                     placeholder="Año calculado automáticamente"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Como usuario suscriptor, el año de inicio se calcula automáticamente como 10 años atrás del año actual para limitar el número de campañas.
+                    En modo prueba no puedes cambiar el año de inicio.
                   </p>
                 </div>
               ) : (

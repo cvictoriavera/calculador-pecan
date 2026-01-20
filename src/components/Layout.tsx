@@ -145,9 +145,9 @@ export function Layout({ children }: LayoutProps) {
           </header>
           
           {isTrialMode && (
-            <div className="bg-yellow-100 border-b border-yellow-200 px-6 py-2">
-              <p className="text-yellow-800 text-sm">
-                <strong>Modo Prueba:</strong> Los datos de tus proyectos no se guardan permanentemente. Actualiza tu suscripción para guardar tus datos.
+            <div className="bg-yellow-100 border-b border-yellow-200 px-6 py-2 text-center">
+              <p className="text-yellow-800 text-sm mb-0">
+                <strong>Modo Prueba: Los datos de tus proyectos no se guardan permanentemente. Convertite en Socio de la CAPPECAN para acceder a todas las funciones de la herramienta. </strong> <a href="https://forms.gle/hcgwjZAgLoMjATcFA" target="_blank" rel="noopener noreferrer" className="underline font-semibold"><strong>HACE CLIC AQUI</strong></a>
               </p>
             </div>
           )}
