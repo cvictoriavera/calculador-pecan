@@ -71,7 +71,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const Costos = () => {
-  const { currentProjectId, campaigns, currentCampaign, costsLoading } = useApp();
+  const { currentProjectId, campaigns, currentCampaign, costsLoading, montes } = useApp();
   const { costs, addCost, updateCost, deleteCost } = useDataStore();
   const { getCostByCategory, getTotalCostsByCampaign } = useCalculationsStore();
 
@@ -84,6 +84,11 @@ const Costos = () => {
 
   // Total usando el store de cálculos
   const totalCostos = currentCampaignObj ? getTotalCostsByCampaign(currentCampaignObj.id) : 0;
+
+  // Total area plantada (acumulada hasta la campaña actual)
+  const totalAreaPlantada = montes
+    .filter(monte => monte.añoPlantacion <= currentCampaign)
+    .reduce((sum, monte) => sum + monte.hectareas, 0);
 
   // Filtrado de lista (Tabla inferior)
   const costosFiltered = useMemo(() => {
@@ -294,22 +299,41 @@ const Costos = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
-        <CardHeader>
-          <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-full bg-warning/10">
-              <TrendingUp className="h-8 w-8 text-warning" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
+          <CardHeader>
+            <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="p-4 rounded-full bg-warning/10">
+                <TrendingUp className="h-8 w-8 text-warning" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Costos Operativos</p>
+                <p className="text-4xl font-bold text-foreground">${totalCostos.toLocaleString()}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Costos Operativos</p>
-              <p className="text-4xl font-bold text-foreground">${totalCostos.toLocaleString()}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
+          <CardHeader>
+            <CardTitle className="text-foreground">Área Total Plantada</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="p-4 rounded-full bg-green-500/10">
+                <TrendingUp className="h-8 w-8 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Hectáreas Totales</p>
+                <p className="text-4xl font-bold text-foreground">{totalAreaPlantada.toLocaleString()} ha</p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="border-border/50 shadow-md">
         <CardHeader>

@@ -52,15 +52,24 @@ export interface ProductionCampaign {
 }
 
 export interface ProductionRecord {
-  id: number; 
-  project_id: number;
-  campaign_id: number; 
-  monte_id: number;    
-  entry_group_id: string; 
-  quantity_kg: number;
-  is_estimated: boolean; 
-  date: string; 
-}
+   id: number;
+   project_id: number;
+   campaign_id: number;
+   monte_id: number;
+   entry_group_id: string;
+   quantity_kg: number;
+   is_estimated: boolean;
+   date: string;
+ }
+
+export interface Monte {
+   id: string;
+   nombre: string;
+   hectareas: number;
+   densidad: number;
+   añoPlantacion: number;
+   variedad?: string;
+ }
 
 
 export interface DataBackup {

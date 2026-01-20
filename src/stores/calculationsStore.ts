@@ -15,6 +15,8 @@ interface CalculationsState {
   getTotalInvestmentsByCampaign: (campaignId: number | string) => number;
   getTotalProductionByCampaign: (campaignId: number | string) => number;
 
+  getTotalPlantedArea: (year: number) => number;
+
   getProfitabilityRatio: (campaignId: number | string) => number;
 
   // Production selectors
@@ -106,6 +108,12 @@ export const useCalculationsStore = create<CalculationsState>((_, get) => ({
 
 
     return total;
+  },
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getTotalPlantedArea: (_year: number): number => {
+    // TODO: Implement when montes are added to dataStore
+    return 0;
   },
 
   getProfitabilityRatio: (campaignId: number | string): number => {

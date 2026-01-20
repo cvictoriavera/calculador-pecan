@@ -411,6 +411,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           plantas_por_hectarea: updatedData.densidad,
           fecha_plantacion: `${updatedData.añoPlantacion}-01-01`,
         };
+        console.log('Sending update data for monte:', id, updateData);
 
         const updatedMonte = await updateMonteAPI(parseInt(id), updateData);
 
@@ -446,6 +447,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteMonteContext = async (id: string) => {
     try {
       if (!isTrialMode) {
+        console.log('Deleting monte:', id);
         await deleteMonte(parseInt(id));
       }
 
