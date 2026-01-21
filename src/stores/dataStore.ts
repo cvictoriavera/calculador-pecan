@@ -262,8 +262,13 @@ export const useDataStore = create<DataState>()(
     try {
       const allCosts: CostRecord[] = [];
       for (const campaign of campaigns) {
-        const campaignCosts = await getCostsByCampaign(projectId, campaign.id);
-        allCosts.push(...campaignCosts);
+        try {
+          const campaignCosts = await getCostsByCampaign(projectId, campaign.id);
+          allCosts.push(...campaignCosts);
+        } catch (error) {
+          console.error(`Error loading costs for campaign ${campaign.id}:`, error);
+          // Continue with other campaigns instead of failing completely
+        }
       }
       set({ costs: allCosts });
     } catch (error) {
@@ -276,17 +281,22 @@ export const useDataStore = create<DataState>()(
     try {
       const allInvestments: InvestmentRecord[] = [];
       for (const campaign of campaigns) {
-        const campaignInvestments = await getInvestmentsByCampaign(projectId, campaign.id);
-        const formattedInvestments = campaignInvestments.map(inv => ({
-          id: inv.id.toString(),
-          campaign_id: campaign.id,
-          category: inv.category,
-          description: inv.description,
-          amount: Number(inv.total_value) || 0,
-          date: new Date(inv.created_at),
-          data: inv.details,
-        }));
-        allInvestments.push(...formattedInvestments);
+        try {
+          const campaignInvestments = await getInvestmentsByCampaign(projectId, campaign.id);
+          const formattedInvestments = campaignInvestments.map(inv => ({
+            id: inv.id.toString(),
+            campaign_id: campaign.id,
+            category: inv.category,
+            description: inv.description,
+            amount: Number(inv.total_value) || 0,
+            date: new Date(inv.created_at),
+            data: inv.details,
+          }));
+          allInvestments.push(...formattedInvestments);
+        } catch (error) {
+          console.error(`Error loading investments for campaign ${campaign.id}:`, error);
+          // Continue with other campaigns instead of failing completely
+        }
       }
       set({ investments: allInvestments });
     } catch (error) {

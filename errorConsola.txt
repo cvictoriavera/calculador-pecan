@@ -1,167 +1,150 @@
-index-BaUHBjy0.js?ver=1.0.0:1  PUT https://cappecan.com/wp-json/ccp/v1/montes/1768941463742 500 (Internal Server Error)
-ue @ index-BaUHBjy0.js?ver=1.0.0:1
-fn @ index-BaUHBjy0.js?ver=1.0.0:1
-se @ index-BaUHBjy0.js?ver=1.0.0:1
-N @ index-BaUHBjy0.js?ver=1.0.0:1
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1 ❌ API Error: {code: 'update_failed', message: 'Could not update monte.', data: {…}}
-ue @ index-BaUHBjy0.js?ver=1.0.0:1
-await in ue
-fn @ index-BaUHBjy0.js?ver=1.0.0:1
-se @ index-BaUHBjy0.js?ver=1.0.0:1
-N @ index-BaUHBjy0.js?ver=1.0.0:1
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1 ☠️ Fetch Crash: Error: Could not update monte.
-    at ue (index-BaUHBjy0.js?ver=1.0.0:1:7705)
-    at async se (index-BaUHBjy0.js?ver=1.0.0:1:30570)
-    at async N (index-BaUHBjy0.js?ver=1.0.0:1:77336)
-ue @ index-BaUHBjy0.js?ver=1.0.0:1
-await in ue
-fn @ index-BaUHBjy0.js?ver=1.0.0:1
-se @ index-BaUHBjy0.js?ver=1.0.0:1
-N @ index-BaUHBjy0.js?ver=1.0.0:1
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1 Error updating monte: Error: Could not update monte.
-    at ue (index-BaUHBjy0.js?ver=1.0.0:1:7705)
-    at async se (index-BaUHBjy0.js?ver=1.0.0:1:30570)
-    at async N (index-BaUHBjy0.js?ver=1.0.0:1:77336)
-se @ index-BaUHBjy0.js?ver=1.0.0:1
-await in se
-N @ index-BaUHBjy0.js?ver=1.0.0:1
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1 Error updating monte: Error: Could not update monte.
-    at ue (index-BaUHBjy0.js?ver=1.0.0:1:7705)
-    at async se (index-BaUHBjy0.js?ver=1.0.0:1:30570)
-    at async N (index-BaUHBjy0.js?ver=1.0.0:1:77336)
-N @ index-BaUHBjy0.js?ver=1.0.0:1
-await in N
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1  DELETE https://cappecan.com/wp-json/ccp/v1/montes/1768941463742 500 (Internal Server Error)
-ue @ index-BaUHBjy0.js?ver=1.0.0:1
-jn @ index-BaUHBjy0.js?ver=1.0.0:1
-ae @ index-BaUHBjy0.js?ver=1.0.0:1
-w @ index-BaUHBjy0.js?ver=1.0.0:1
-(anonymous) @ vendor-C_XjUiP7.js:8
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1 ❌ API Error: {code: 'delete_failed', message: 'Could not delete monte.', data: {…}}
-ue @ index-BaUHBjy0.js?ver=1.0.0:1
-await in ue
-jn @ index-BaUHBjy0.js?ver=1.0.0:1
-ae @ index-BaUHBjy0.js?ver=1.0.0:1
-w @ index-BaUHBjy0.js?ver=1.0.0:1
-(anonymous) @ vendor-C_XjUiP7.js:8
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1 ☠️ Fetch Crash: Error: Could not delete monte.
-    at ue (index-BaUHBjy0.js?ver=1.0.0:1:7705)
-    at async ae (index-BaUHBjy0.js?ver=1.0.0:1:30936)
-    at async w (index-BaUHBjy0.js?ver=1.0.0:1:79303)
-ue @ index-BaUHBjy0.js?ver=1.0.0:1
-await in ue
-jn @ index-BaUHBjy0.js?ver=1.0.0:1
-ae @ index-BaUHBjy0.js?ver=1.0.0:1
-w @ index-BaUHBjy0.js?ver=1.0.0:1
-(anonymous) @ vendor-C_XjUiP7.js:8
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1 Error deleting monte: Error: Could not delete monte.
-    at ue (index-BaUHBjy0.js?ver=1.0.0:1:7705)
-    at async ae (index-BaUHBjy0.js?ver=1.0.0:1:30936)
-    at async w (index-BaUHBjy0.js?ver=1.0.0:1:79303)
-ae @ index-BaUHBjy0.js?ver=1.0.0:1
-await in ae
-w @ index-BaUHBjy0.js?ver=1.0.0:1
-(anonymous) @ vendor-C_XjUiP7.js:8
-Zn @ vendor-C_XjUiP7.js:5
-gB @ vendor-C_XjUiP7.js:5
-bB @ vendor-C_XjUiP7.js:5
-PO @ vendor-C_XjUiP7.js:5
-EO @ vendor-C_XjUiP7.js:5
-(anonymous) @ vendor-C_XjUiP7.js:5
-Vm @ vendor-C_XjUiP7.js:8
-Rr @ vendor-C_XjUiP7.js:5
-Vv @ vendor-C_XjUiP7.js:5
-Pv @ vendor-C_XjUiP7.js:5
-NB @ vendor-C_XjUiP7.js:5Understand this error
-index-BaUHBjy0.js?ver=1.0.0:1 Error deleting monte: Error: Could not delete monte.
-    at ue (index-BaUHBjy0.js?ver=1.0.0:1:7705)
-    at async ae (index-BaUHBjy0.js?ver=1.0.0:1:30936)
-    at async w (index-BaUHBjy0.js?ver=1.0.0:1:79303)
+
+index-5jYwVefb.js?ver=1.0.0:1 Changing to project: 1
+index-5jYwVefb.js?ver=1.0.0:1 Loading campaigns for project: 1
+index-5jYwVefb.js?ver=1.0.0:1 Loaded campaigns: Array(17)
+index-5jYwVefb.js?ver=1.0.0:1 Loading costs and investments for campaigns: 17
+index-5jYwVefb.js?ver=1.0.0:1 Costs loaded successfully
+index-5jYwVefb.js?ver=1.0.0:1 useIsLargeScreen: window.innerWidth=1920, LARGE_BREAKPOINT=1400, isLarge=true
+index-5jYwVefb.js?ver=1.0.0:1 Investments loaded successfully
+index-5jYwVefb.js?ver=1.0.0:1 Loading montes for project: 1
+index-5jYwVefb.js?ver=1.0.0:1 Montes loaded: 3
+index-5jYwVefb.js?ver=1.0.0:1 Changing to project: 22
+index-5jYwVefb.js?ver=1.0.0:1 Loading campaigns for project: 22
+index-5jYwVefb.js?ver=1.0.0:1 Loaded campaigns: Array(21)
+index-5jYwVefb.js?ver=1.0.0:1 Loading costs and investments for campaigns: 21
+wp-json/ccp/v1/costs/22/240:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+wp-json/ccp/v1/investments/22/11:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all investments: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+overrideMethod @ installHook.js:1Understand this error
+wp-json/ccp/v1/costs/22/239:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all costs: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+overrideMethod @ installHook.js:1Understand this error
+wp-json/ccp/v1/costs/22/10:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+wp-json/ccp/v1/investments/22/243:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+wp-json/ccp/v1/investments/22/240:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+wp-json/ccp/v1/costs/22/243:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+index-5jYwVefb.js?ver=1.0.0:1 Uncaught (in promise) Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all costs: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+overrideMethod @ installHook.js:1Understand this error
+index-5jYwVefb.js?ver=1.0.0:1 Uncaught (in promise) Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all costs: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all investments: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all investments: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async Object.loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32726)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all costs: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async Object.loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32726)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading costs: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async Object.loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
+    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32726)
+overrideMethod @ installHook.js:1Understand this error
+2index-5jYwVefb.js?ver=1.0.0:1 Uncaught (in promise) Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)Understand this error
+2index-5jYwVefb.js?ver=1.0.0:1 Uncaught (in promise) Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)Understand this error
+wp-json/ccp/v1/investments/22/233:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async Object.loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32875)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all investments: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async Object.loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32875)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading investments: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async Object.loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
+    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32875)
+overrideMethod @ installHook.js:1Understand this error
+index-5jYwVefb.js?ver=1.0.0:1 Loading montes for project: 22
+wp-json/ccp/v1/montes/by-project/22:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async fe (index-5jYwVefb.js?ver=1.0.0:1:33142)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading montes for project: 22 Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async fe (index-5jYwVefb.js?ver=1.0.0:1:33142)
+overrideMethod @ installHook.js:1Understand this error
+wp-json/ccp/v1/productions/by-campaign/233:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+installHook.js:1 ❌ API Error: Object
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllProductions (index-5jYwVefb.js?ver=1.0.0:1:23051)
+overrideMethod @ installHook.js:1Understand this error
+installHook.js:1 Error loading all productions: Error: An unknown error occurred.
+    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
+    at async loadAllProductions (index-5jYwVefb.js?ver=1.0.0:1:23051)

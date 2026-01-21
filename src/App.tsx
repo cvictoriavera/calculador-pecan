@@ -13,6 +13,7 @@ import Inversiones from "./pages/Inversiones";
 import Costos from "./pages/Costos";
 import Config from "./pages/Config";
 import Onboarding from "./pages/Onboarding";
+import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,14 @@ function ProtectedRoutes() {
             element={
               <Layout>
                 <Config />
+              </Layout>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <Layout>
+                <Projects />
               </Layout>
             }
           />

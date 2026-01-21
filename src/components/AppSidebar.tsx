@@ -1,4 +1,4 @@
-import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package } from "lucide-react";
+import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -16,7 +16,7 @@ const menuItems = [
   { title: "Inicio", url: "/", icon: Home },
   { title: "Mis Montes", url: "/montes", icon: Sprout },
   { title: "Campañas", url: "/campanas", icon: CalendarRange },
-  { title: "Producción", url: "/produccion", icon: Package }, 
+  { title: "Producción", url: "/produccion", icon: Package },
   { title: "Inversiones", url: "/inversiones", icon: DollarSign },
   { title: "Costos Operativos", url: "/costos", icon: TrendingUp },
   { title: "Configuración", url: "/config", icon: Settings },
@@ -27,7 +27,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarContent className="bg-sidebar">
+      <SidebarContent className="flex flex-col h-full bg-sidebar">
         <div className="p-3 border-b border-sidebar-border">
           {open && (
             <div className="flex items-center gap-2">
@@ -63,6 +63,23 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <div className="mt-auto p-3 border-t border-sidebar-border">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <NavLink
+                  to="/projects"
+                  className="hover:bg-sidebar-accent transition-colors no-underline"
+                  activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                  {open && <span className="ml-3">Volver a Mis Proyectos</span>}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
       </SidebarContent>
     </Sidebar>
   );

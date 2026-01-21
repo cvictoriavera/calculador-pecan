@@ -546,23 +546,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
           name: c.campaign_name
         }));
 
-        // Load costs
+        // Load costs with error handling
         setCostsLoading(true);
         try {
           await useDataStore.getState().loadAllCosts(projectId, campaignsForStore as any);
           console.log('Costs loaded successfully');
         } catch (error) {
           console.error('Error loading costs:', error);
+          // Don't fail the entire project switch for cost loading errors
         } finally {
           setCostsLoading(false);
         }
 
-        // Load investments
+        // Load investments with error handling
         try {
           await useDataStore.getState().loadAllInvestments(projectId, campaignsForStore as any);
           console.log('Investments loaded successfully');
         } catch (error) {
           console.error('Error loading investments:', error);
+          // Don't fail the entire project switch for investment loading errors
         }
       }
     } catch (error) {
