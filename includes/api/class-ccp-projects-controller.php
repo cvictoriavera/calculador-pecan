@@ -110,6 +110,17 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
 					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
 				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+					'args'                => array(
+						'id' => array(
+							'description' => __( 'Unique identifier for the project.', 'calculador-pecan' ),
+							'type'        => 'integer',
+						),
+					),
+				),
 			)
 		);
 	}
@@ -247,6 +258,45 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 
 		$response = rest_ensure_response( $updated_project );
 		return $response;
+	}
+
+	/**
+		* Check if a given request has access to delete an item.
+		*
+		* @param WP_REST_Request $request Full data about the request.
+		* @return bool|WP_Error True if the request has access to delete items, WP_Error object otherwise.
+		*/
+	public function delete_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You must be logged in to delete a project.', 'calculador-pecan' ), array( 'status' => 401 ) );
+		}
+		return true;
+	}
+
+	/**
+		* Delete one item from the collection.
+		*
+		* @param WP_REST_Request $request Full data about the request.
+		* @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+		*/
+	public function delete_item( $request ) {
+		$user_id = get_current_user_id();
+		$project_id = (int) $request->get_param( 'id' );
+
+		// Verify ownership
+		$existing_project = $this->proyectos_db->get_by_id( $project_id, $user_id );
+		if ( is_null( $existing_project ) ) {
+			return new WP_Error( 'rest_project_invalid_id', __( 'Invalid project ID or access denied.', 'calculador-pecan' ), array( 'status' => 404 ) );
+		}
+
+		// Delete the project
+		$result = $this->proyectos_db->delete( $project_id, $user_id );
+
+		if ( ! $result ) {
+			return new WP_Error( 'delete_failed', __( 'Could not delete project.', 'calculador-pecan' ), array( 'status' => 500 ) );
+		}
+
+		return new WP_REST_Response( null, 204 );
 	}
 
 	/**

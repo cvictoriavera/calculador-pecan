@@ -112,3 +112,29 @@ export const updateProject = (projectId, projectData) => {
 		body: JSON.stringify(projectData),
 	});
 };
+
+/**
+	* Deletes an existing project.
+	*
+	* @param {number} projectId - The ID of the project to delete.
+	* @returns {Promise<boolean>} A promise that resolves to true on success.
+	*/
+export const deleteProject = (projectId) => {
+	if (!projectId) {
+		return Promise.reject(new Error('Project ID is required.'));
+	}
+	if (isTrialMode()) {
+		// Delete project from localStorage
+		const projects = JSON.parse(localStorage.getItem(TRIAL_PROJECTS_KEY) || '[]');
+		const index = projects.findIndex(p => p.id == projectId);
+		if (index === -1) {
+			return Promise.reject(new Error('Project not found.'));
+		}
+		projects.splice(index, 1);
+		localStorage.setItem(TRIAL_PROJECTS_KEY, JSON.stringify(projects));
+		return Promise.resolve(true);
+	}
+	return apiRequest(`${BASE_ENDPOINT}/${projectId}`, {
+		method: 'DELETE',
+	});
+};

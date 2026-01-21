@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { createCampaign, getCampaignsByProject, updateCampaign } from "@/services/campaignService";
-import { getProjects } from "@/services/projectService";
+import { getProjects, deleteProject } from "@/services/projectService";
 import { getMontesByProject, createMonte, updateMonte as updateMonteAPI, deleteMonte } from "@/services/monteService";
 import { getCurrentUser } from "@/services/userService";
 import { useDataStore } from "@/stores";
@@ -77,6 +77,7 @@ interface AppContextType {
   deleteMonte: (id: string) => void;
   updateCampaign: (campaignId: number, data: any) => Promise<any>;
   changeProject: (projectId: number) => void;
+  deleteProject: (projectId: number) => Promise<void>;
   loadCampaigns: () => Promise<void>;
   isOnboardingComplete: boolean;
   isLoading: boolean;
@@ -484,6 +485,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // The useEffect on currentProjectId will handle loading campaigns and montes
   };
 
+  const deleteProjectContext = async (projectId: number) => {
+    try {
+      await deleteProject(projectId);
+
+      // Remove from projects list
+      setProjects(projects.filter(p => p.id !== projectId));
+
+      // If this was the current project, clear it and redirect to onboarding
+      if (currentProjectId === projectId) {
+        setCurrentProjectId(null);
+        setProjectName("");
+        setCampaigns([]);
+        setMontes([]);
+        localStorage.removeItem("currentProjectId");
+        localStorage.removeItem("projectName");
+        // The app will redirect to onboarding due to isOnboardingComplete check
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      throw error;
+    }
+  };
+
 
 
   return (
@@ -512,6 +536,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteMonte: deleteMonteContext,
         updateCampaign: updateCampaignInContext,
         changeProject,
+        deleteProject: deleteProjectContext,
         loadCampaigns,
         isOnboardingComplete,
         isLoading,

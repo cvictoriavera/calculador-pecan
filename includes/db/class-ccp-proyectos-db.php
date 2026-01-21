@@ -233,8 +233,26 @@ class CCP_Proyectos_DB {
 	 * @return bool True on success, false on failure.
 	 */
 	public function delete( $project_id, $user_id ) {
-		// Stub: Implementation to be added later.
-		return false;
+		if ( ! is_numeric( $project_id ) || ! is_numeric( $user_id ) ) {
+			return false;
+		}
+
+		// Verify the user owns the project.
+		$project_owner = $this->wpdb->get_var(
+			$this->wpdb->prepare( "SELECT user_id FROM {$this->table_name} WHERE id = %d", $project_id )
+		);
+
+		if ( absint( $project_owner ) !== absint( $user_id ) ) {
+			return false; // User does not own the project.
+		}
+
+		$result = $this->wpdb->delete(
+			$this->table_name,
+			array( 'id' => absint( $project_id ) ),
+			array( '%d' )
+		);
+
+		return false !== $result;
 	}
 
 	/**

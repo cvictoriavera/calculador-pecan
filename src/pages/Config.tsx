@@ -11,13 +11,15 @@ import { apiRequest } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useApp } from "@/contexts/AppContext";
 import { updateProject } from "@/services/projectService";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 const Config = () => {
   const [producerName, setProducerName] = useState("");
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isMigrating, setIsMigrating] = useState(false);
   const { toast } = useToast();
-  const { initialYear, currentProjectId, projects } = useApp();
+  const { initialYear, currentProjectId, projects, deleteProject } = useApp();
 
   const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
 
@@ -27,6 +29,7 @@ const Config = () => {
   const [municipio, setMunicipio] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [añoInicio, setAñoInicio] = useState(initialYear || 2020);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [geoData, setGeoData] = useState<{
     provinces: string[];
@@ -193,6 +196,36 @@ const Config = () => {
       });
     } finally {
       setIsMigrating(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!currentProjectId) {
+      toast({
+        title: "Error",
+        description: "No hay proyecto seleccionado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteProject(currentProjectId);
+      toast({
+        title: "Proyecto eliminado",
+        description: "El proyecto ha sido eliminado exitosamente.",
+      });
+      // The context will handle clearing state and redirecting if needed
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el proyecto.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
   return (
@@ -362,6 +395,50 @@ const Config = () => {
               Cambiar año de inicio
             </Button>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/50 shadow-md">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Trash2 className="h-5 w-5 text-destructive" />
+            <CardTitle className="text-foreground">Eliminar Proyecto</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Esta acción eliminará permanentemente el proyecto actual y todos sus datos asociados (campañas, montes, producciones, costos, inversiones).
+              Esta acción no se puede deshacer.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Eliminar Proyecto
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción eliminará permanentemente el proyecto "{projects.find(p => p.id === currentProjectId)?.project_name}" y todos sus datos.
+                    Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteProject}
+                    disabled={isDeleting}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {isDeleting ? "Eliminando..." : "Eliminar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
 

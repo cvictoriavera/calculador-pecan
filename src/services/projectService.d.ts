@@ -30,4 +30,5 @@ declare module '@/services/projectService' {
   export function getProjectById(projectId: number): Promise<Project>;
   export function createProject(projectData: ProjectData): Promise<Project>;
   export function updateProject(projectId: number, projectData: UpdateProjectData): Promise<Project>;
+  export function deleteProject(projectId: number): Promise<boolean>;
 }
