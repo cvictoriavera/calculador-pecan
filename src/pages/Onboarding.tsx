@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useApp } from "@/contexts/AppContext";
 import { createProject } from "@/services/projectService";
 import { ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react";
+import { ProjectCreationForm } from "@/components/ProjectCreationForm";
+import { useProjectForm } from "@/hooks/useProjectForm";
+import type { ProjectFormData } from "@/types/project";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -27,15 +27,36 @@ const Onboarding = () => {
 
   const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
 
-  const [geoData, setGeoData] = useState<{
-    provinces: string[];
-    departments: { [province: string]: string[] };
-    municipalities: { [key: string]: string[] };
-  }>({
-    provinces: [],
-    departments: {},
-    municipalities: {},
-  });
+  // Use the new hook for geo data management
+  const { geoData, loadGeoDataForCountry } = useProjectForm();
+
+  // Create formData object from existing state
+  const formData: ProjectFormData = {
+    projectName,
+    initialYear,
+    pais,
+    provincia,
+    departamento,
+    municipio,
+    descripcion,
+    allowBenchmarking,
+  };
+
+  // Handler for form data changes
+  const handleFormDataChange = (updates: Partial<ProjectFormData>) => {
+    if (updates.projectName !== undefined) setProjectName(updates.projectName);
+    if (updates.initialYear !== undefined) setInitialYear(updates.initialYear);
+    if (updates.pais !== undefined) {
+      setPais(updates.pais);
+      // Load geo data when country changes
+      loadGeoDataForCountry(updates.pais);
+    }
+    if (updates.provincia !== undefined) setProvincia(updates.provincia);
+    if (updates.departamento !== undefined) setDepartamento(updates.departamento);
+    if (updates.municipio !== undefined) setMunicipio(updates.municipio);
+    if (updates.descripcion !== undefined) setDescripcion(updates.descripcion);
+    if (updates.allowBenchmarking !== undefined) setAllowBenchmarking(updates.allowBenchmarking);
+  };
 
   useEffect(() => {
     if (isTrialMode()) {
@@ -50,68 +71,12 @@ const Onboarding = () => {
     }
   }, []);
 
+  // Load initial geo data if Argentina is selected
   useEffect(() => {
-    const loadGeoData = async () => {
-      try {
-        // Dynamic import to load only when needed
-        const data = await import('../../public/geo-argentina.json');
-
-        const provincesSet = new Set<string>();
-        const departmentsMap: { [province: string]: Set<string> } = {};
-        const municipalitiesMap: { [key: string]: Set<string> } = {};
-
-        data.default.localidades_censales.forEach((loc: any) => {
-          const province = loc.provincia.nombre;
-          const department = loc.departamento.nombre;
-          const municipality = loc.nombre;
-
-          provincesSet.add(province);
-
-          if (!departmentsMap[province]) {
-            departmentsMap[province] = new Set();
-          }
-          departmentsMap[province].add(department);
-
-          const key = `${province}-${department}`;
-          if (!municipalitiesMap[key]) {
-            municipalitiesMap[key] = new Set();
-          }
-          municipalitiesMap[key].add(municipality);
-        });
-
-        const provinces = Array.from(provincesSet).sort();
-        const departments: { [province: string]: string[] } = {};
-        const municipalities: { [key: string]: string[] } = {};
-
-        Object.keys(departmentsMap).forEach(prov => {
-          departments[prov] = Array.from(departmentsMap[prov]).sort();
-        });
-
-        Object.keys(municipalitiesMap).forEach(key => {
-          municipalities[key] = Array.from(municipalitiesMap[key]).sort();
-        });
-
-        setGeoData({
-          provinces,
-          departments,
-          municipalities,
-        });
-      } catch (error) {
-        console.error("Error loading geo data:", error);
-      }
-    };
-
     if (pais === "Argentina") {
-      loadGeoData();
-    } else {
-      // Clear geo data if not Argentina
-      setGeoData({
-        provinces: [],
-        departments: {},
-        municipalities: {},
-      });
+      loadGeoDataForCountry(pais);
     }
-  }, [pais]);
+  }, []); // Only run once on mount
 
   const handleStart = () => {
     setStep(1);
@@ -206,68 +171,32 @@ const Onboarding = () => {
               Paso 1: Las Bases
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="projectName" className="text-base font-medium">
-                Nombre del proyecto
-              </Label>
-              <Input
-                id="projectName"
-                placeholder="Finca Los Arroyos"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="text-lg py-6"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="initialYear" className="text-base font-medium">
-                Año/Campaña inicial
-              </Label>
-              {isTrialMode() ? (
-                <div className="space-y-2">
-                  <Input
-                    id="initialYear"
-                    value={initialYear}
-                    disabled
-                    className="text-lg py-6"
-                    placeholder="Año calculado automáticamente"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    En modo prueba no puedes cambiar el año de inicio.
-                  </p>
-                </div>
-              ) : (
-                <Select value={initialYear} onValueChange={setInitialYear}>
-                  <SelectTrigger className="text-lg py-6">
-                    <SelectValue placeholder="Selecciona un año" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: new Date().getFullYear() - 1990 + 1 }, (_, i) => 1990 + i).reverse().map((year) => (
-                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            <div className="flex justify-between pt-4">
-              <Button
-                onClick={() => setStep(0)}
-                variant="outline"
-                className="gap-2 px-6 py-6"
-              >
-                <ChevronLeft className="h-5 w-5" />
-                Volver
-              </Button>
-              <Button
-                onClick={handleNext}
-                disabled={!projectName || !initialYear}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
-              >
-                Siguiente
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-          </CardContent>
+          <ProjectCreationForm
+            step={1}
+            formData={formData}
+            geoData={geoData}
+            isTrialMode={isTrialMode()}
+            onFormDataChange={handleFormDataChange}
+            onGeoDataLoad={() => {}} // Not needed for step 1
+          />
+          <div className="flex justify-between pt-4 px-6 pb-6">
+            <Button
+              onClick={() => setStep(0)}
+              variant="outline"
+              className="gap-2 px-6 py-6"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              Volver
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={!projectName || !initialYear}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
+            >
+              Siguiente
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
         </Card>
       </div>
     );
@@ -282,122 +211,32 @@ const Onboarding = () => {
               Paso 2: Ubicación
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="pais" className="text-base font-medium">
-                País
-              </Label>
-              <Select value={pais} onValueChange={setPais}>
-                <SelectTrigger className="text-lg py-6">
-                  <SelectValue placeholder="Selecciona un país" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Argentina">Argentina</SelectItem>
-                  <SelectItem value="Brasil">Brasil</SelectItem>
-                  <SelectItem value="Uruguay">Uruguay</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {pais === "Argentina" ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="provincia" className="text-base font-medium">
-                    Provincia
-                  </Label>
-                  <Select
-                    value={provincia}
-                    onValueChange={(value) => {
-                      setProvincia(value);
-                      setDepartamento("");
-                    }}
-                  >
-                    <SelectTrigger className="text-lg py-6">
-                      <SelectValue placeholder="Selecciona una provincia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {geoData.provinces.map((prov) => (
-                        <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="departamento" className="text-base font-medium">
-                    Departamento
-                  </Label>
-                  <Select
-                    value={departamento}
-                    onValueChange={(value) => {
-                      setDepartamento(value);
-                      setMunicipio("");
-                    }}
-                    disabled={!provincia}
-                  >
-                    <SelectTrigger className="text-lg py-6">
-                      <SelectValue placeholder="Selecciona un departamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {provincia && geoData.departments[provincia]?.map((dept) => (
-                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="municipio" className="text-base font-medium">
-                    Municipio
-                  </Label>
-                  <Select
-                    value={municipio}
-                    onValueChange={setMunicipio}
-                    disabled={!departamento}
-                  >
-                    <SelectTrigger className="text-lg py-6">
-                      <SelectValue placeholder="Selecciona un municipio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departamento && provincia && geoData.municipalities[`${provincia}-${departamento}`]?.map((mun) => (
-                        <SelectItem key={mun} value={mun}>{mun}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="provincia" className="text-base font-medium">
-                  Provincia / Región
-                </Label>
-                <Input
-                  id="provincia"
-                  placeholder="Ej: São Paulo"
-                  value={provincia}
-                  onChange={(e) => setProvincia(e.target.value)}
-                  className="text-lg py-6"
-                />
-              </div>
-            )}
-            <div className="flex justify-between pt-4">
-              <Button
-                onClick={() => setStep(1)}
-                variant="outline"
-                className="gap-2 px-6 py-6"
-              >
-                <ChevronLeft className="h-5 w-5" />
-                Volver
-              </Button>
-              <Button
-                onClick={handleNext}
-                disabled={!pais || !provincia || (pais === "Argentina" && (!departamento || !municipio))}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
-              >
-                Siguiente
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-          </CardContent>
+          <ProjectCreationForm
+            step={2}
+            formData={formData}
+            geoData={geoData}
+            isTrialMode={isTrialMode()}
+            onFormDataChange={handleFormDataChange}
+            onGeoDataLoad={() => {}} // Not needed for step 2
+          />
+          <div className="flex justify-between pt-4 px-6 pb-6">
+            <Button
+              onClick={() => setStep(1)}
+              variant="outline"
+              className="gap-2 px-6 py-6"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              Volver
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={!pais || !provincia || (pais === "Argentina" && (!departamento || !municipio))}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
+            >
+              Siguiente
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
         </Card>
       </div>
     );
@@ -412,37 +251,31 @@ const Onboarding = () => {
               Paso {isTrialMode() ? 2 : 3}: Descripción
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="descripcion" className="text-base font-medium">
-                Descripción del Proyecto
-              </Label>
-              <Textarea
-                id="descripcion"
-                placeholder="Breve descripción del proyecto"
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                className="text-lg min-h-[100px]"
-              />
-            </div>
-            <div className="flex justify-between pt-4">
-              <Button
-                onClick={() => setStep(isTrialMode() ? 1 : 2)}
-                variant="outline"
-                className="gap-2 px-6 py-6"
-              >
-                <ChevronLeft className="h-5 w-5" />
-                Volver
-              </Button>
-              <Button
-                onClick={handleNext}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
-              >
-                Siguiente
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-          </CardContent>
+          <ProjectCreationForm
+            step={3}
+            formData={formData}
+            geoData={geoData}
+            isTrialMode={isTrialMode()}
+            onFormDataChange={handleFormDataChange}
+            onGeoDataLoad={() => {}} // Not needed for step 3
+          />
+          <div className="flex justify-between pt-4 px-6 pb-6">
+            <Button
+              onClick={() => setStep(isTrialMode() ? 1 : 2)}
+              variant="outline"
+              className="gap-2 px-6 py-6"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              Volver
+            </Button>
+            <Button
+              onClick={handleNext}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
+            >
+              Siguiente
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
         </Card>
       </div>
     );
