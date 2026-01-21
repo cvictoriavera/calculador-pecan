@@ -763,16 +763,21 @@ const Campanas = () => {
                       variant="outline"
                       className="flex-1"
                       onClick={() => {
-                        const hayDatos = campaign ? getTotalProductionByCampaign(campaign.id) > 0 : false;
-
-                        if (hayDatos) {
-                          // SI HAY DATOS: Abrimos el formulario de edición
-                          handleOpenEdit(campaign!);
-                        } else {
-                          // SI NO HAY DATOS: Abrimos el formulario de registro
+                        if (isTrialMode()) {
                           setCurrentCampaign(year);
-                          setEditingData(null);
-                          setWizardOpen(true);
+                          navigate('/produccion');
+                        } else {
+                          const hayDatos = campaign ? getTotalProductionByCampaign(campaign.id) > 0 : false;
+
+                          if (hayDatos) {
+                            // SI HAY DATOS: Abrimos el formulario de edición
+                            handleOpenEdit(campaign!);
+                          } else {
+                            // SI NO HAY DATOS: Abrimos el formulario de registro
+                            setCurrentCampaign(year);
+                            setEditingData(null);
+                            setWizardOpen(true);
+                          }
                         }
                       }}
                     >
@@ -783,7 +788,11 @@ const Campanas = () => {
                       className="flex-1"
                       onClick={() => {
                         setCurrentCampaign(year);
-                        setCostoSheetOpen(true);
+                        if (isTrialMode()) {
+                          navigate('/costos');
+                        } else {
+                          setCostoSheetOpen(true);
+                        }
                       }}
                     >
                       {campaign && getTotalCostsByCampaign(campaign.id) > 0 ? 'Editar Costos' : 'Registrar Costos'}
@@ -793,10 +802,14 @@ const Campanas = () => {
                       className="flex-1"
                       onClick={() => {
                         setCurrentCampaign(year);
-                        if (campaign && investments.filter(inv => inv.campaign_id === campaign.id).length > 0) {
+                        if (isTrialMode()) {
                           navigate('/inversiones');
                         } else {
-                          setInversionSheetOpen(true);
+                          if (campaign && investments.filter(inv => inv.campaign_id === campaign.id).length > 0) {
+                            navigate('/inversiones');
+                          } else {
+                            setInversionSheetOpen(true);
+                          }
                         }
                       }}
                     >
