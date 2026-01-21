@@ -3,9 +3,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, User } from "lucide-react";
+import { User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import { useUiStore } from "@/stores";
@@ -17,7 +17,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, changeProject, montes, isTrialMode } = useApp();
+  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
 
@@ -74,35 +74,9 @@ export function Layout({ children }: LayoutProps) {
               {/* Bloque de selectores... igual a tu código */}
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Proyecto:</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-[180px] sm:w-[200px] justify-between bg-cream truncate">
-                      <span className="truncate">
-                        {projects.find(p => p.id === currentProjectId)?.project_name || "Seleccionar"}
-                      </span>
-                      <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-[200px]">
-                    <DropdownMenuLabel>Proyectos Recientes</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {projects.map((project) => (
-                      <DropdownMenuItem
-                        key={project.id}
-                        onClick={() => changeProject(project.id)}
-                        className={project.id === currentProjectId ? "bg-accent" : ""}
-                      >
-                        {project.project_name}
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <Button variant="ghost" className="w-full justify-start p-0">
-                        Crear Nuevo Proyecto
-                      </Button>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <span className="text-sm font-semibold text-foreground truncate">
+                  {projects.find(p => p.id === currentProjectId)?.project_name || "Sin proyecto"}
+                </span>
               </div>
               
               <div className="flex items-center gap-3">
