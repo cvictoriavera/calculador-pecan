@@ -314,6 +314,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const completeOnboarding = async (name: string, year: number, projectId: number) => {
+    // Clear existing data before setting new project
+    setMontes([]);
+    setMontesLoading(true);
+    setCampaigns([]);
+    setCurrentCampaignId(null);
+    // Clear data stores
+    useDataStore.getState().clearAllData();
+
     setProjectName(name);
     setCurrentProjectId(projectId);
     setInitialYear(year);
@@ -366,6 +374,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const sortedCampaigns = createdCampaigns.sort((a, b) => a.year - b.year);
     setCampaigns(sortedCampaigns);
     setCurrentCampaign(currentYear);
+
+    // Load montes for the new project
+    try {
+      const montesData = await getMontesByProject(projectId);
+      if (montesData && Array.isArray(montesData)) {
+        const transformedMontes = montesData.map(monte => ({
+          id: monte.id.toString(),
+          nombre: monte.monte_name,
+          hectareas: parseFloat(monte.area_hectareas),
+          densidad: monte.plantas_por_hectarea,
+          añoPlantacion: monte.fecha_plantacion ? parseInt(monte.fecha_plantacion.substring(0, 4)) : new Date().getFullYear(),
+          variedad: monte.variedad,
+        }));
+        setMontes(transformedMontes);
+      } else {
+        setMontes([]);
+      }
+    } catch (error) {
+      console.error('Error loading montes for new project:', error);
+      setMontes([]);
+    } finally {
+      setMontesLoading(false);
+    }
   };
 
   const addMonte = async (monte: Omit<Monte, "id">) => {

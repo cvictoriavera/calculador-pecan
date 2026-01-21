@@ -5,10 +5,11 @@ import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { User } from "lucide-react";
+import { User, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import { useUiStore } from "@/stores";
+import { CreateProjectModal } from "./CreateProjectModal";
 // Importamos tus hooks personalizados
 import { useIsLargeScreen } from "@/hooks/use-mobile";
 
@@ -17,7 +18,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode } = useApp();
+  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode, user } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
 
@@ -27,6 +28,9 @@ export function Layout({ children }: LayoutProps) {
   // 2. Estado controlado del sidebar
   // Iniciamos el estado basado en si la pantalla es grande
   const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
+
+  // 3. Estado del modal de crear proyecto
+  const [createProjectModalOpen, setCreateProjectModalOpen] = useState(false);
 
   // 3. Efecto reactivo:
   // - Si la pantalla crece (>1400), se abre (true).
@@ -111,9 +115,15 @@ export function Layout({ children }: LayoutProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => window.location.href = '/'}>Volver a Cappecan</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/config')}>Configuración</DropdownMenuItem>
-                </DropdownMenuContent>
+                   {user && !user.roles?.includes('subscriber') && (
+                     <DropdownMenuItem onClick={() => setCreateProjectModalOpen(true)}>
+                       <Plus className="h-4 w-4 mr-2" />
+                       Crear nuevo proyecto
+                     </DropdownMenuItem>
+                   )}
+                   <DropdownMenuItem onClick={() => navigate('/config')}>Configuración</DropdownMenuItem>
+                   <DropdownMenuItem onClick={() => window.location.href = '/'}>Volver a Cappecan</DropdownMenuItem>
+                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </header>
@@ -130,6 +140,11 @@ export function Layout({ children }: LayoutProps) {
           </main>
         </div>
       </div>
+
+      <CreateProjectModal
+        open={createProjectModalOpen}
+        onOpenChange={setCreateProjectModalOpen}
+      />
     </SidebarProvider>
   );
 }
