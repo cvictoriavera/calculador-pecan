@@ -12,6 +12,7 @@ import { useUiStore } from "@/stores";
 import { CreateProjectModal } from "./CreateProjectModal";
 // Importamos tus hooks personalizados
 import { useIsLargeScreen } from "@/hooks/use-mobile";
+import { useLocation } from "react-router-dom";
 
 interface LayoutProps {
   children: ReactNode;
@@ -21,6 +22,8 @@ export function Layout({ children }: LayoutProps) {
   const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode, user, changeProject } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isProjectsPage = location.pathname === '/projects';
 
   // 1. Detectamos si es pantalla gigante (> 1400px)
   const isLargeScreen = useIsLargeScreen();
@@ -76,38 +79,44 @@ export function Layout({ children }: LayoutProps) {
               <SidebarTrigger className="text-foreground" />
               
               {/* Bloque de selectores... igual a tu código */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Proyecto:</span>
-                <span className="text-sm font-semibold text-foreground truncate">
-                  {projects.find(p => p.id === currentProjectId)?.project_name || "Sin proyecto"}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Campaña:</span>
-                <Select
-                  value={currentCampaign.toString()}
-                  onValueChange={(value) => handleCampaignChange(parseInt(value))}
-                >
-                  <SelectTrigger className="w-[140px] sm:w-[180px] bg-cream">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campaigns.filter(c => c && c.year).map((campaign) => (
-                      <SelectItem key={campaign.id} value={campaign.year.toString()}>
-                        Campaña {campaign.year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!isProjectsPage && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Proyecto:</span>
+                    <span className="text-sm font-semibold text-foreground truncate">
+                      {projects.find(p => p.id === currentProjectId)?.project_name || "Sin proyecto"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Campaña:</span>
+                    <Select
+                      value={currentCampaign.toString()}
+                      onValueChange={(value) => handleCampaignChange(parseInt(value))}
+                    >
+                      <SelectTrigger className="w-[140px] sm:w-[180px] bg-cream">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {campaigns.filter(c => c && c.year).map((campaign) => (
+                          <SelectItem key={campaign.id} value={campaign.year.toString()}>
+                            Campaña {campaign.year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-4 text-sm">
-              <div className="text-right hidden sm:block">
-                <p className="text-muted-foreground m-0 text-xs">Área Total</p>
-                <p className="font-semibold text-foreground m-0">{totalArea.toFixed(1)} ha</p>
-              </div>
+              {!isProjectsPage && (
+                <div className="text-right hidden sm:block">
+                  <p className="text-muted-foreground m-0 text-xs">Área Total</p>
+                  <p className="font-semibold text-foreground m-0">{totalArea.toFixed(1)} ha</p>
+                </div>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full bg-cream">

@@ -1,4 +1,4 @@
-import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft } from "lucide-react";
+import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft, HelpCircle } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -11,8 +11,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useLocation } from "react-router-dom";
 
-const menuItems = [
+const projectMenuItems = [
   { title: "Inicio", url: "/", icon: Home },
   { title: "Mis Montes", url: "/montes", icon: Sprout },
   { title: "Campañas", url: "/campanas", icon: CalendarRange },
@@ -22,8 +23,15 @@ const menuItems = [
   { title: "Configuración", url: "/config", icon: Settings },
 ];
 
+const projectsMenuItems = [
+  { title: "Mis Proyectos", url: "/projects", icon: Package },
+];
+
 export function AppSidebar() {
   const { open } = useSidebar();
+  const location = useLocation();
+  const isProjectsPage = location.pathname === '/projects';
+  const menuItems = isProjectsPage ? projectsMenuItems : projectMenuItems;
 
   return (
     <Sidebar collapsible="icon">
@@ -68,14 +76,23 @@ export function AppSidebar() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <NavLink
-                  to="/projects"
-                  className="hover:bg-sidebar-accent transition-colors no-underline"
-                  activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                  {open && <span className="ml-3">Volver a Mis Proyectos</span>}
-                </NavLink>
+                {isProjectsPage ? (
+                  <button
+                    className="hover:bg-sidebar-accent transition-colors no-underline w-full text-left"
+                  >
+                    <HelpCircle className="h-5 w-5" />
+                    {open && <span className="ml-3">Ayuda / Soporte</span>}
+                  </button>
+                ) : (
+                  <NavLink
+                    to="/projects"
+                    className="hover:bg-sidebar-accent transition-colors no-underline"
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                    {open && <span className="ml-3">Volver a Mis Proyectos</span>}
+                  </NavLink>
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
