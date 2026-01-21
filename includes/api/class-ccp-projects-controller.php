@@ -223,6 +223,9 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 
 		// Prepare update data
 		$update_data = array();
+		if ( isset( $params['project_name'] ) ) {
+			$update_data['project_name'] = sanitize_text_field( $params['project_name'] );
+		}
 		if ( isset( $params['pais'] ) ) {
 			$update_data['pais'] = sanitize_text_field( $params['pais'] );
 		}

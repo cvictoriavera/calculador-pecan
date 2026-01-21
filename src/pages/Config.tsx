@@ -30,6 +30,8 @@ const Config = () => {
   const [descripcion, setDescripcion] = useState("");
   const [añoInicio, setAñoInicio] = useState(initialYear || 2020);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [isUpdatingProject, setIsUpdatingProject] = useState(false);
 
   const [geoData, setGeoData] = useState<{
     provinces: string[];
@@ -55,6 +57,16 @@ const Config = () => {
     };
     fetchUser();
   }, []);
+
+  // Initialize project name when component mounts or project changes
+  useEffect(() => {
+    if (projects.length > 0 && currentProjectId) {
+      const currentProject = projects.find(p => p.id === currentProjectId);
+      if (currentProject) {
+        setProjectName(currentProject.project_name);
+      }
+    }
+  }, [projects, currentProjectId]);
 
   useEffect(() => {
     const loadGeoData = async () => {
@@ -132,37 +144,6 @@ const Config = () => {
     }
   }, [currentProjectId, projects]);
 
-  const handleSave = async () => {
-    if (!currentProjectId) {
-      toast({
-        title: "Error",
-        description: "No hay proyecto seleccionado.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await updateProject(currentProjectId, {
-        pais,
-        provincia,
-        departamento,
-        municipio,
-        description: descripcion,
-      });
-      toast({
-        title: "Éxito",
-        description: "Los cambios han sido guardados.",
-      });
-    } catch (error) {
-      console.error("Error saving project:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron guardar los cambios.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleMigrateProduction = async () => {
     if (!confirm("¿Estás seguro de que quieres migrar los datos de producción? Esta acción no se puede deshacer.")) {
@@ -228,6 +209,72 @@ const Config = () => {
       setIsDeleting(false);
     }
   };
+
+  const handleSaveProjectData = async () => {
+    if (!currentProjectId || !projectName.trim()) {
+      toast({
+        title: "Error",
+        description: "El nombre del proyecto no puede estar vacío.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdatingProject(true);
+    try {
+      await updateProject(currentProjectId, {
+        project_name: projectName.trim(),
+        description: descripcion.trim()
+      });
+      toast({
+        title: "Éxito",
+        description: "Los datos del proyecto han sido actualizados.",
+      });
+    } catch (error) {
+      console.error("Error updating project data:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar los datos del proyecto.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingProject(false);
+    }
+  };
+
+  const handleSaveLocationData = async () => {
+    if (!currentProjectId) {
+      toast({
+        title: "Error",
+        description: "No hay proyecto seleccionado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdatingProject(true);
+    try {
+      await updateProject(currentProjectId, {
+        pais,
+        provincia,
+        departamento,
+        municipio
+      });
+      toast({
+        title: "Éxito",
+        description: "Los datos de ubicación han sido actualizados.",
+      });
+    } catch (error) {
+      console.error("Error updating location data:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar los datos de ubicación.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingProject(false);
+    }
+  };
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
@@ -239,7 +286,7 @@ const Config = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-accent" />
-            <CardTitle className="text-foreground">Información General</CardTitle>
+            <CardTitle className="text-foreground">Información del Proyecto</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -253,96 +300,15 @@ const Config = () => {
             />
           </div>
 
-          {!isTrialMode() && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="pais">País</Label>
-                <Select value={pais} onValueChange={setPais}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un país" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Argentina">Argentina</SelectItem>
-                    <SelectItem value="Brasil">Brasil</SelectItem>
-                    <SelectItem value="Uruguay">Uruguay</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {pais === "Argentina" ? (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="provincia">Provincia</Label>
-                    <Select
-                      value={provincia}
-                      onValueChange={(value) => {
-                        setProvincia(value);
-                        setDepartamento("");
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una provincia" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {geoData.provinces.map((prov) => (
-                          <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="departamento">Departamento</Label>
-                    <Select
-                      value={departamento}
-                      onValueChange={(value) => {
-                        setDepartamento(value);
-                        setMunicipio("");
-                      }}
-                      disabled={!provincia}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un departamento" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {provincia && geoData.departments[provincia]?.map((dept) => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="municipio">Municipio</Label>
-                    <Select
-                      value={municipio}
-                      onValueChange={setMunicipio}
-                      disabled={!departamento}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un municipio" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departamento && provincia && geoData.municipalities[`${provincia}-${departamento}`]?.map((mun) => (
-                          <SelectItem key={mun} value={mun}>{mun}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="provincia">Provincia / Región</Label>
-                  <Input
-                    id="provincia"
-                    placeholder="Ej: São Paulo"
-                    value={provincia}
-                    onChange={(e) => setProvincia(e.target.value)}
-                  />
-                </div>
-              )}
-            </>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="nombre-proyecto">Nombre del Proyecto</Label>
+            <Input
+              id="nombre-proyecto"
+              placeholder="Ej: Finca Los Arroyos"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+            />
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="descripcion">Descripción del Proyecto</Label>
@@ -354,13 +320,124 @@ const Config = () => {
             />
           </div>
 
-
-          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 mt-4">
+          <Button
+            onClick={handleSaveProjectData}
+            disabled={isUpdatingProject || !projectName.trim()}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 mt-4"
+          >
             <Save className="h-5 w-5" />
-            Guardar Cambios
+            {isUpdatingProject ? "Guardando..." : "Guardar Cambios"}
           </Button>
         </CardContent>
       </Card>
+
+      {!isTrialMode() && (
+        <Card className="border-border/50 shadow-md">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-accent" />
+              <CardTitle className="text-foreground">Ubicación del Proyecto</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="pais">País</Label>
+              <Select value={pais} onValueChange={setPais}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un país" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Argentina">Argentina</SelectItem>
+                  <SelectItem value="Brasil">Brasil</SelectItem>
+                  <SelectItem value="Uruguay">Uruguay</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {pais === "Argentina" ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="provincia">Provincia</Label>
+                  <Select
+                    value={provincia}
+                    onValueChange={(value) => {
+                      setProvincia(value);
+                      setDepartamento("");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una provincia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {geoData.provinces.map((prov) => (
+                        <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="departamento">Departamento</Label>
+                  <Select
+                    value={departamento}
+                    onValueChange={(value) => {
+                      setDepartamento(value);
+                      setMunicipio("");
+                    }}
+                    disabled={!provincia}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un departamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {provincia && geoData.departments[provincia]?.map((dept) => (
+                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="municipio">Municipio</Label>
+                  <Select
+                    value={municipio}
+                    onValueChange={setMunicipio}
+                    disabled={!departamento}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un municipio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departamento && provincia && geoData.municipalities[`${provincia}-${departamento}`]?.map((mun) => (
+                        <SelectItem key={mun} value={mun}>{mun}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="provincia">Provincia / Región</Label>
+                <Input
+                  id="provincia"
+                  placeholder="Ej: São Paulo"
+                  value={provincia}
+                  onChange={(e) => setProvincia(e.target.value)}
+                />
+              </div>
+            )}
+
+            <Button
+              onClick={handleSaveLocationData}
+              disabled={isUpdatingProject}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 mt-4"
+            >
+              <Save className="h-5 w-5" />
+              {isUpdatingProject ? "Guardando..." : "Guardar Ubicación"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-border/50 shadow-md">
         <CardHeader>

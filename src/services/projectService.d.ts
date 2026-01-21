@@ -4,6 +4,7 @@ export interface ProjectData {
 }
 
 export interface UpdateProjectData {
+  project_name?: string;
   pais?: string;
   provincia?: string;
   departamento?: string;
