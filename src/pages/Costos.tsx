@@ -90,6 +90,9 @@ const Costos = () => {
     .filter(monte => monte.añoPlantacion <= currentCampaign)
     .reduce((sum, monte) => sum + monte.hectareas, 0);
 
+  // Costo total por hectárea
+  const costoPorHectarea = totalAreaPlantada > 0 ? totalCostos / totalAreaPlantada : 0;
+
   // Filtrado de lista (Tabla inferior)
   const costosFiltered = useMemo(() => {
     if (!currentCampaignObj) return [];
@@ -319,16 +322,16 @@ const Costos = () => {
 
         <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
           <CardHeader>
-            <CardTitle className="text-foreground">Área Total Plantada</CardTitle>
+            <CardTitle className="text-foreground">Costo por Hectárea {currentCampaign}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
-              <div className="p-4 rounded-full bg-green-500/10">
-                <TrendingUp className="h-8 w-8 text-green-600" />
+              <div className="p-4 rounded-full bg-blue-500/10">
+                <TrendingUp className="h-8 w-8 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Hectáreas Totales</p>
-                <p className="text-4xl font-bold text-foreground">{totalAreaPlantada.toLocaleString()} ha</p>
+                <p className="text-sm text-muted-foreground">Costo Total por ha</p>
+                <p className="text-4xl font-bold text-foreground">${costoPorHectarea.toLocaleString()} <span className="text-lg font-normal text-muted-foreground">USD/Ha</span></p>
               </div>
             </div>
           </CardContent>
