@@ -506,6 +506,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
+    console.log('Changing to project:', projectId);
+
+    // Clear existing data before switching
+    setMontes([]);
+    setMontesLoading(true);
+    // Clear data stores
+    useDataStore.getState().clearAllData();
+
     setCurrentProjectId(projectId);
     setProjectName(project.project_name);
 
@@ -513,7 +521,79 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const currentYear = new Date().getFullYear();
     setCurrentCampaign(currentYear);
 
-    // The useEffect on currentProjectId will handle loading campaigns and montes
+    // Load campaigns first
+    try {
+      console.log('Loading campaigns for project:', projectId);
+      const campaignsData = await getCampaignsByProject(projectId);
+      const campaignsArray = Array.isArray(campaignsData) ? campaignsData : [];
+      console.log('Loaded campaigns:', campaignsArray);
+      setCampaigns(campaignsArray);
+
+      // Set current campaign ID
+      const currentCamp = campaignsArray.find(c => c.year === currentYear);
+      if (currentCamp) {
+        setCurrentCampaignId(currentCamp.id);
+      } else {
+        setCurrentCampaignId(null);
+      }
+
+      // Load costs and investments immediately after campaigns
+      if (campaignsArray.length > 0) {
+        console.log('Loading costs and investments for campaigns:', campaignsArray.length);
+        const campaignsForStore = campaignsArray.map(c => ({
+          ...c,
+          projectId: c.project_id,
+          name: c.campaign_name
+        }));
+
+        // Load costs
+        setCostsLoading(true);
+        try {
+          await useDataStore.getState().loadAllCosts(projectId, campaignsForStore as any);
+          console.log('Costs loaded successfully');
+        } catch (error) {
+          console.error('Error loading costs:', error);
+        } finally {
+          setCostsLoading(false);
+        }
+
+        // Load investments
+        try {
+          await useDataStore.getState().loadAllInvestments(projectId, campaignsForStore as any);
+          console.log('Investments loaded successfully');
+        } catch (error) {
+          console.error('Error loading investments:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+      setCampaigns([]);
+    }
+
+    // Load montes for the new project
+    try {
+      console.log('Loading montes for project:', projectId);
+      const montesData = await getMontesByProject(projectId);
+      if (montesData && Array.isArray(montesData)) {
+        const transformedMontes = montesData.map(monte => ({
+          id: monte.id.toString(),
+          nombre: monte.monte_name,
+          hectareas: parseFloat(monte.area_hectareas),
+          densidad: monte.plantas_por_hectarea,
+          añoPlantacion: monte.fecha_plantacion ? parseInt(monte.fecha_plantacion.substring(0, 4)) : new Date().getFullYear(),
+          variedad: monte.variedad,
+        }));
+        setMontes(transformedMontes);
+        console.log('Montes loaded:', transformedMontes.length);
+      } else {
+        setMontes([]);
+      }
+    } catch (error) {
+      console.error('Error loading montes for project:', projectId, error);
+      setMontes([]);
+    } finally {
+      setMontesLoading(false);
+    }
   };
 
   const deleteProjectContext = async (projectId: number) => {

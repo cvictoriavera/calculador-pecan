@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { User, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode, user } = useApp();
+  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode, user, changeProject } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
 
@@ -121,6 +121,27 @@ export function Layout({ children }: LayoutProps) {
                        Crear nuevo proyecto
                      </DropdownMenuItem>
                    )}
+                   {projects.length > 1 && (
+                     <>
+                       <DropdownMenuSeparator />
+                       <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                         Proyectos recientes
+                       </div>
+                       {projects.slice(0, 5).map((project) => (
+                         <DropdownMenuItem
+                           key={project.id}
+                           onClick={() => changeProject(project.id)}
+                           className={project.id === currentProjectId ? "bg-accent" : ""}
+                         >
+                           {project.project_name}
+                           {project.id === currentProjectId && (
+                             <span className="ml-auto text-xs text-muted-foreground">actual</span>
+                           )}
+                         </DropdownMenuItem>
+                       ))}
+                     </>
+                   )}
+                   <DropdownMenuSeparator />
                    <DropdownMenuItem onClick={() => navigate('/config')}>Configuración</DropdownMenuItem>
                    <DropdownMenuItem onClick={() => window.location.href = '/'}>Volver a Cappecan</DropdownMenuItem>
                  </DropdownMenuContent>
