@@ -372,7 +372,7 @@ const Costos = () => {
 
       <Card className="border-border/50 shadow-md">
         <CardHeader>
-          <CardTitle className="text-foreground">Tabla de Evolución de Costos</CardTitle>
+          <CardTitle className="text-foreground">Evolución de Costos</CardTitle>
         </CardHeader>
         <CardContent>
           <ScrollArea className="max-w-full">
@@ -397,7 +397,7 @@ const Costos = () => {
                         )}
                       >
                         <div className="flex items-center justify-center gap-1">
-                          <span>{year}</span>
+                          <span className="text-muted-foreground">{year}</span>
                         </div>
                         {isCurrentYear && nextYear && (
                           <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
@@ -428,7 +428,8 @@ const Costos = () => {
                         <td
                           key={year}
                           className={cn(
-                            "text-center p-2 sm:p-3 text-sm font-semibold text-foreground",
+                            "text-center p-2 sm:p-3 text-sm ",
+                            amount === 0 ? "text-gray-300" : "font-semibold text-foreground",  // Gris super claro para 0, normal para valores
                             isHistorical && "bg-slate-50/20"
                           )}
                         >
