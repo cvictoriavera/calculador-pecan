@@ -114,6 +114,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [montes, setMontes] = useState<Monte[]>([]);
   const [montesLoading, setMontesLoading] = useState(false);
   const [costsLoading, setCostsLoading] = useState(false);
+  const [isChangingProject, setIsChangingProject] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const isOnboardingComplete = !!currentProjectId;
@@ -141,7 +142,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Sincronizar Contexto con Zustand
   useEffect(() => {
-    if (currentProjectId && campaigns.length > 0) {
+    if (currentProjectId && campaigns.length > 0 && !isChangingProject) {
 
       // Mapeamos las campañas para adaptar las propiedades que faltan
       const campaignsForStore = campaigns.map(c => ({
@@ -157,7 +158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Cargar Inversiones
       loadAllInvestments(currentProjectId, campaignsForStore as any);
     }
-  }, [currentProjectId, campaigns, loadAllCosts, loadAllInvestments]);
+  }, [currentProjectId, campaigns, loadAllCosts, loadAllInvestments, isChangingProject]);
 
   useEffect(() => {
     localStorage.setItem("projectName", projectName);
@@ -396,6 +397,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setMontes([]);
     } finally {
       setMontesLoading(false);
+      setIsChangingProject(false);
     }
   };
 
@@ -507,6 +509,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!project) return;
 
     console.log('Changing to project:', projectId);
+
+    // Set flag to prevent automatic loading
+    setIsChangingProject(true);
 
     // Clear existing data before switching
     setMontes([]);
