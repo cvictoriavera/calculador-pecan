@@ -5,12 +5,10 @@ import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { User, Plus } from "lucide-react";
+import { User, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import { useUiStore } from "@/stores";
-import { CreateProjectModal } from "./CreateProjectModal";
-// Importamos tus hooks personalizados
 import { useIsLargeScreen } from "@/hooks/use-mobile";
 import { useLocation } from "react-router-dom";
 
@@ -19,7 +17,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode, user, changeProject } = useApp();
+  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,9 +29,6 @@ export function Layout({ children }: LayoutProps) {
   // 2. Estado controlado del sidebar
   // Iniciamos el estado basado en si la pantalla es grande
   const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
-
-  // 3. Estado del modal de crear proyecto
-  const [createProjectModalOpen, setCreateProjectModalOpen] = useState(false);
 
   // 3. Efecto reactivo:
   // - Si la pantalla crece (>1400), se abre (true).
@@ -124,32 +119,10 @@ export function Layout({ children }: LayoutProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                   {user && !user.roles?.includes('subscriber') && (
-                     <DropdownMenuItem onClick={() => setCreateProjectModalOpen(true)}>
-                       <Plus className="h-4 w-4 mr-2" />
-                       Crear nuevo proyecto
-                     </DropdownMenuItem>
-                   )}
-                   {projects.length > 1 && (
-                     <>
-                       <DropdownMenuSeparator />
-                       <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                         Proyectos recientes
-                       </div>
-                       {projects.slice(0, 5).map((project) => (
-                         <DropdownMenuItem
-                           key={project.id}
-                           onClick={() => changeProject(project.id)}
-                           className={project.id === currentProjectId ? "bg-accent" : ""}
-                         >
-                           {project.project_name}
-                           {project.id === currentProjectId && (
-                             <span className="ml-auto text-xs text-muted-foreground">actual</span>
-                           )}
-                         </DropdownMenuItem>
-                       ))}
-                     </>
-                   )}
+                   <DropdownMenuItem onClick={() => navigate('/projects')}>
+                     <ArrowLeft className="h-4 w-4 mr-2" />
+                     Volver a proyectos
+                   </DropdownMenuItem>
                    <DropdownMenuSeparator />
                    <DropdownMenuItem onClick={() => navigate('/config')}>Configuración</DropdownMenuItem>
                    <DropdownMenuItem onClick={() => window.location.href = '/'}>Volver a Cappecan</DropdownMenuItem>
@@ -170,11 +143,6 @@ export function Layout({ children }: LayoutProps) {
           </main>
         </div>
       </div>
-
-      <CreateProjectModal
-        open={createProjectModalOpen}
-        onOpenChange={setCreateProjectModalOpen}
-      />
     </SidebarProvider>
   );
 }

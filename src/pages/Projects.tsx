@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Sprout, AlertTriangle, CheckCircle } from "lucide-react";
+import { MapPin, Calendar, Sprout, AlertTriangle, CheckCircle, Trees } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useNavigate } from "react-router-dom";
 import { getMontesByProject } from "@/services/monteService";
 import { getCampaignsByProject } from "@/services/campaignService";
+import { CreateProjectModal } from "@/components/CreateProjectModal";
 
 interface ProjectHealth {
   id: number;
@@ -14,6 +15,7 @@ interface ProjectHealth {
   location: string;
   campaignsCount: number;
   totalArea: number;
+  montesCount: number;
   status: 'active' | 'inactive';
   alerts: string[];
 }
@@ -23,6 +25,8 @@ const Projects = () => {
   const navigate = useNavigate();
   const [projectsHealth, setProjectsHealth] = useState<ProjectHealth[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProjects, setLoadingProjects] = useState<Set<number>>(new Set());
+  const [createProjectModalOpen, setCreateProjectModalOpen] = useState(false);
 
   useEffect(() => {
     const loadProjectsHealth = async () => {
@@ -38,6 +42,7 @@ const Projects = () => {
           // Load montes to get total area
           const montes = await getMontesByProject(project.id);
           const totalArea = montes ? montes.reduce((sum, monte) => sum + parseFloat(monte.area_hectareas || '0'), 0) : 0;
+          const montesCount = montes ? montes.length : 0;
 
           // Load campaigns
           const campaigns = await getCampaignsByProject(project.id);
@@ -58,6 +63,7 @@ const Projects = () => {
             location,
             campaignsCount,
             totalArea,
+            montesCount,
             status: project.status === 'active' ? 'active' : 'inactive',
             alerts
           });
@@ -70,6 +76,7 @@ const Projects = () => {
             location: '',
             campaignsCount: 0,
             totalArea: 0,
+            montesCount: 0,
             status: 'inactive',
             alerts: ['Error al cargar datos']
           });
@@ -84,6 +91,7 @@ const Projects = () => {
   }, [projects]);
 
   const handleSelectProject = async (projectId: number) => {
+    setLoadingProjects(prev => new Set(prev).add(projectId));
     try {
       await changeProject(projectId);
       // Store as last project
@@ -91,6 +99,12 @@ const Projects = () => {
       navigate('/');
     } catch (error) {
       console.error('Error changing project:', error);
+    } finally {
+      setLoadingProjects(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(projectId);
+        return newSet;
+      });
     }
   };
 
@@ -112,6 +126,9 @@ const Projects = () => {
           <h1 className="text-3xl ">Mis Proyectos</h1>
           <p className="text-muted-foreground">Selecciona un proyecto para continuar</p>
         </div>
+        <Button onClick={() => setCreateProjectModalOpen(true)}>
+          Nuevo Proyecto
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -135,16 +152,20 @@ const Projects = () => {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{project.campaignsCount} campañas</span>
-                </div>
-                <div className="flex items-center">
-                  <Sprout className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{project.totalArea.toFixed(1)} ha</span>
-                </div>
-              </div>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                 <div className="flex items-center">
+                   <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                   <span>{project.campaignsCount} campañas</span>
+                 </div>
+                 <div className="flex items-center">
+                   <Sprout className="h-4 w-4 mr-2 text-muted-foreground" />
+                   <span>{project.totalArea.toFixed(1)} ha</span>
+                 </div>
+                 <div className="flex items-center">
+                   <Trees className="h-4 w-4 mr-2 text-muted-foreground" />
+                   <span>{project.montesCount} montes</span>
+                 </div>
+               </div>
 
               {project.alerts.length > 0 && (
                 <div className="space-y-2">
@@ -170,9 +191,21 @@ const Projects = () => {
                 </div>
               )}
 
-              <Button className="w-full mt-4" onClick={(e) => { e.stopPropagation(); handleSelectProject(project.id); }}>
-                Seguir trabajando
-              </Button>
+              {(() => {
+                const isLoading = loadingProjects.has(project.id);
+                return (
+                  <Button className="w-full mt-4" disabled={isLoading} onClick={(e) => { e.stopPropagation(); handleSelectProject(project.id); }}>
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                        Cargando Proyecto...
+                      </>
+                    ) : (
+                      'Seguir trabajando'
+                    )}
+                  </Button>
+                );
+              })()}
             </CardContent>
           </Card>
         ))}
@@ -186,6 +219,11 @@ const Projects = () => {
           <Button>Crear Proyecto</Button>
         </div>
       )}
+
+      <CreateProjectModal
+        open={createProjectModalOpen}
+        onOpenChange={setCreateProjectModalOpen}
+      />
     </div>
   );
 };
