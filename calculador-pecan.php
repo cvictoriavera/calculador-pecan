@@ -3,7 +3,7 @@
  * Plugin Name: Calculador Pecan
  * Plugin URI: https://cappecam.com.ar
  * Description: Dashboard interactivo para registro de produccion, costos operativos e inversiones del cultivo de pecan.
- * Version: 2.0.8
+ * Version: 2.0.9
  * Author: Conrrado Venturelli
  * Text Domain: calculador-pecan
  */
