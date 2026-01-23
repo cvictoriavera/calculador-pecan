@@ -5,6 +5,53 @@ import { getCostsByCampaign, createCost, createCostBatch, updateCost as updateCo
 import { getInvestmentsByCampaign } from '../services/investmentService';
 import { getProductionsByCampaign, createProductionsByCampaign } from '../services/productionService';
 
+// Sistema de Cache Inteligente
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+  ttl: number; // Time to live in milliseconds
+}
+
+class DataCache {
+  private cache = new Map<string, CacheEntry>();
+
+  set(key: string, data: any, ttl = 5 * 60 * 1000) { // 5 min default
+    this.cache.set(key, { data, timestamp: Date.now(), ttl });
+  }
+
+  get(key: string): any | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() - entry.timestamp > entry.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  invalidate(key: string) {
+    this.cache.delete(key);
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  // Invalidate por patrón (ej: todos los keys que empiecen con "costs_")
+  invalidatePattern(pattern: string) {
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+// Instancia global del cache
+const dataCache = new DataCache();
+
 // Interfaces base
 export interface Project {
   id: number;
@@ -260,16 +307,31 @@ export const useDataStore = create<DataState>()(
 
   loadAllCosts: async (projectId, campaigns) => {
     try {
-      const allCosts: CostRecord[] = [];
-      for (const campaign of campaigns) {
-        try {
-          const campaignCosts = await getCostsByCampaign(projectId, campaign.id);
-          allCosts.push(...campaignCosts);
-        } catch (error) {
-          console.error(`Error loading costs for campaign ${campaign.id}:`, error);
-          // Continue with other campaigns instead of failing completely
-        }
+      const cacheKey = `costs_${projectId}`;
+
+      // Verificar cache primero
+      const cachedCosts = dataCache.get(cacheKey);
+      if (cachedCosts) {
+        console.log('Loading costs from cache for project:', projectId);
+        set({ costs: cachedCosts });
+        return;
       }
+
+      // Carga paralela de costos para todas las campañas
+      const costPromises = campaigns.map(campaign =>
+        getCostsByCampaign(projectId, campaign.id)
+          .catch(error => {
+            console.error(`Error loading costs for campaign ${campaign.id}:`, error);
+            return []; // Retornar array vacío en caso de error para continuar con otras campañas
+          })
+      );
+
+      const costResults = await Promise.all(costPromises);
+      const allCosts = costResults.flat();
+
+      // Cachear los resultados (TTL: 2 minutos para datos que cambian frecuentemente)
+      dataCache.set(cacheKey, allCosts, 2 * 60 * 1000);
+
       set({ costs: allCosts });
     } catch (error) {
       console.error('Error loading all costs:', error);
@@ -279,25 +341,49 @@ export const useDataStore = create<DataState>()(
 
   loadAllInvestments: async (projectId, campaigns) => {
     try {
-      const allInvestments: InvestmentRecord[] = [];
-      for (const campaign of campaigns) {
-        try {
-          const campaignInvestments = await getInvestmentsByCampaign(projectId, campaign.id);
-          const formattedInvestments = campaignInvestments.map(inv => ({
-            id: inv.id.toString(),
-            campaign_id: campaign.id,
-            category: inv.category,
-            description: inv.description,
-            amount: Number(inv.total_value) || 0,
-            date: new Date(inv.created_at),
-            data: inv.details,
-          }));
-          allInvestments.push(...formattedInvestments);
-        } catch (error) {
-          console.error(`Error loading investments for campaign ${campaign.id}:`, error);
-          // Continue with other campaigns instead of failing completely
-        }
+      const cacheKey = `investments_${projectId}`;
+
+      // Verificar cache primero
+      const cachedInvestments = dataCache.get(cacheKey);
+      if (cachedInvestments) {
+        console.log('Loading investments from cache for project:', projectId);
+        set({ investments: cachedInvestments });
+        return;
       }
+
+      // Carga paralela de inversiones para todas las campañas
+      const investmentPromises = campaigns.map(campaign =>
+        getInvestmentsByCampaign(projectId, campaign.id)
+          .then(campaignInvestments => ({
+            campaignId: campaign.id,
+            investments: campaignInvestments
+          }))
+          .catch(error => {
+            console.error(`Error loading investments for campaign ${campaign.id}:`, error);
+            return { campaignId: campaign.id, investments: [] }; // Retornar estructura vacía en caso de error
+          })
+      );
+
+      const investmentResults = await Promise.all(investmentPromises);
+
+      // Formatear todos los resultados
+      const allInvestments: InvestmentRecord[] = [];
+      investmentResults.forEach(({ campaignId, investments }) => {
+        const formattedInvestments = investments.map(inv => ({
+          id: inv.id.toString(),
+          campaign_id: campaignId,
+          category: inv.category,
+          description: inv.description,
+          amount: Number(inv.total_value) || 0,
+          date: new Date(inv.created_at),
+          data: inv.details,
+        }));
+        allInvestments.push(...formattedInvestments);
+      });
+
+      // Cachear los resultados (TTL: 2 minutos)
+      dataCache.set(cacheKey, allInvestments, 2 * 60 * 1000);
+
       set({ investments: allInvestments });
     } catch (error) {
       console.error('Error loading all investments:', error);
@@ -314,6 +400,9 @@ export const useDataStore = create<DataState>()(
         details: costData.details,
         total_amount: costData.total_amount,
       });
+
+      // Invalidar cache de costos para este proyecto
+      dataCache.invalidate(`costs_${costData.project_id}`);
 
       // Reload costs for this campaign, keeping others
       const updatedCosts = await getCostsByCampaign(costData.project_id, costData.campaign_id);
@@ -354,6 +443,9 @@ export const useDataStore = create<DataState>()(
       // Reload costs for this campaign, keeping others
       const currentCost = get().costs.find(c => c.id === id);
       if (currentCost) {
+        // Invalidar cache de costos para este proyecto
+        dataCache.invalidate(`costs_${currentCost.project_id}`);
+
         const updatedCosts = await getCostsByCampaign(currentCost.project_id, currentCost.campaign_id);
         set((state) => {
           const otherCosts = state.costs.filter(c => c.campaign_id !== currentCost.campaign_id);
@@ -373,6 +465,9 @@ export const useDataStore = create<DataState>()(
       // Reload costs for this campaign, keeping others
       const currentCost = get().costs.find(c => c.id === id);
       if (currentCost) {
+        // Invalidar cache de costos para este proyecto
+        dataCache.invalidate(`costs_${currentCost.project_id}`);
+
         const updatedCosts = await getCostsByCampaign(currentCost.project_id, currentCost.campaign_id);
         set((state) => {
           const otherCosts = state.costs.filter(c => c.campaign_id !== currentCost.campaign_id);
