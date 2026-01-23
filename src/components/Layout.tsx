@@ -73,7 +73,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-foreground" />
               
-              {/* Bloque de selectores... igual a tu código */}
+              {/* Bloque de selectores */}
               {!isProjectsPage && (
                 <>
                   <div className="flex items-center gap-3">

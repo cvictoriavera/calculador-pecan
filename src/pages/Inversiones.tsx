@@ -266,13 +266,13 @@ const Inversiones = () => {
       </Card>
 
       {/* Summary Card */}
-      <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
+      <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">
         <CardHeader>
           <CardTitle className="text-foreground">Resumen de Inversiones {currentCampaign}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-full bg-primary/10">
+            <div className="p-3 rounded-full bg-primary/10">
               <DollarSign className="h-8 w-8 text-primary" />
             </div>
             <div>
@@ -376,7 +376,8 @@ const Inversiones = () => {
                         <td
                           key={year}
                           className={cn(
-                            "text-center p-2 sm:p-3 text-sm font-semibold text-foreground",
+                            "text-center p-2 sm:p-3 text-sm ",
+                            amount === 0 ? "text-gray-300" : "font-semibold text-foreground",  // Gris super claro para 0, normal para valores
                             isHistorical && "bg-slate-50/20"
                           )}
                         >

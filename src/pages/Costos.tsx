@@ -303,13 +303,13 @@ const Costos = () => {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
+        <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">
           <CardHeader>
             <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
-              <div className="p-4 rounded-full bg-warning/10">
+              <div className="p-3 rounded-full bg-warning/10">
                 <TrendingUp className="h-8 w-8 text-warning" />
               </div>
               <div>
@@ -320,13 +320,13 @@ const Costos = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 shadow-md bg-gradient-to-br from-card to-secondary/30">
+        <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">
           <CardHeader>
             <CardTitle className="text-foreground">Costo por Hectárea {currentCampaign}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
-              <div className="p-4 rounded-full bg-blue-500/10">
+              <div className="p-3 rounded-full bg-blue-500/10">
                 <TrendingUp className="h-8 w-8 text-blue-600" />
               </div>
               <div>

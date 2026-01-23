@@ -158,7 +158,7 @@ const Montes = () => {
             </DropdownMenu>
             <CardHeader>
               <div className="flex justify-between items-start pr-8">
-                <CardTitle className="text-lg font-bold text-foreground">{monte.nombre}</CardTitle>
+                <CardTitle className="text-lg text-foreground">{monte.nombre}</CardTitle>
                 {monte.edad < 7 ? (
                   <Badge variant="secondary" className="bg-warning text-warning-foreground">
                     En Crecimiento
