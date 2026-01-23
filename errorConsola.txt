@@ -1,150 +1,114 @@
-
-index-5jYwVefb.js?ver=1.0.0:1 Changing to project: 1
-index-5jYwVefb.js?ver=1.0.0:1 Loading campaigns for project: 1
-index-5jYwVefb.js?ver=1.0.0:1 Loaded campaigns: Array(17)
-index-5jYwVefb.js?ver=1.0.0:1 Loading costs and investments for campaigns: 17
-index-5jYwVefb.js?ver=1.0.0:1 Costs loaded successfully
-index-5jYwVefb.js?ver=1.0.0:1 useIsLargeScreen: window.innerWidth=1920, LARGE_BREAKPOINT=1400, isLarge=true
-index-5jYwVefb.js?ver=1.0.0:1 Investments loaded successfully
-index-5jYwVefb.js?ver=1.0.0:1 Loading montes for project: 1
-index-5jYwVefb.js?ver=1.0.0:1 Montes loaded: 3
-index-5jYwVefb.js?ver=1.0.0:1 Changing to project: 22
-index-5jYwVefb.js?ver=1.0.0:1 Loading campaigns for project: 22
-index-5jYwVefb.js?ver=1.0.0:1 Loaded campaigns: Array(21)
-index-5jYwVefb.js?ver=1.0.0:1 Loading costs and investments for campaigns: 21
-wp-json/ccp/v1/costs/22/240:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-wp-json/ccp/v1/investments/22/11:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all investments: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-overrideMethod @ installHook.js:1Understand this error
-wp-json/ccp/v1/costs/22/239:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all costs: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-overrideMethod @ installHook.js:1Understand this error
-wp-json/ccp/v1/costs/22/10:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-wp-json/ccp/v1/investments/22/243:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-wp-json/ccp/v1/investments/22/240:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-wp-json/ccp/v1/costs/22/243:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-index-5jYwVefb.js?ver=1.0.0:1 Uncaught (in promise) Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all costs: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-overrideMethod @ installHook.js:1Understand this error
-index-5jYwVefb.js?ver=1.0.0:1 Uncaught (in promise) Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all costs: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all investments: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all investments: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async Object.loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32726)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all costs: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async Object.loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32726)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading costs: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async Object.loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)
-    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32726)
-overrideMethod @ installHook.js:1Understand this error
-2index-5jYwVefb.js?ver=1.0.0:1 Uncaught (in promise) Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllCosts (index-5jYwVefb.js?ver=1.0.0:1:17801)Understand this error
-2index-5jYwVefb.js?ver=1.0.0:1 Uncaught (in promise) Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)Understand this error
-wp-json/ccp/v1/investments/22/233:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async Object.loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32875)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all investments: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async Object.loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32875)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading investments: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async Object.loadAllInvestments (index-5jYwVefb.js?ver=1.0.0:1:17981)
-    at async fe (index-5jYwVefb.js?ver=1.0.0:1:32875)
-overrideMethod @ installHook.js:1Understand this error
-index-5jYwVefb.js?ver=1.0.0:1 Loading montes for project: 22
-wp-json/ccp/v1/montes/by-project/22:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async fe (index-5jYwVefb.js?ver=1.0.0:1:33142)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading montes for project: 22 Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async fe (index-5jYwVefb.js?ver=1.0.0:1:33142)
-overrideMethod @ installHook.js:1Understand this error
-wp-json/ccp/v1/productions/by-campaign/233:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
-installHook.js:1 ❌ API Error: Object
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 ☠️ Fetch Crash: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllProductions (index-5jYwVefb.js?ver=1.0.0:1:23051)
-overrideMethod @ installHook.js:1Understand this error
-installHook.js:1 Error loading all productions: Error: An unknown error occurred.
-    at xe (index-5jYwVefb.js?ver=1.0.0:1:7705)
-    at async loadAllProductions (index-5jYwVefb.js?ver=1.0.0:1:23051)
+index-PkGVDCuE.js?ver=1.0.0:1 Computing chartData - campaigns: 27 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Unique years: (27) ['2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026']
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2000: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2000 data: {year: '2000', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2001: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2001 data: {year: '2001', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2002: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2002 data: {year: '2002', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2003: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2003 data: {year: '2003', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2004: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2004 data: {year: '2004', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2005: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2005 data: {year: '2005', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2006: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2006 data: {year: '2006', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2007: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2007 data: {year: '2007', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2008: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2008 data: {year: '2008', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2009: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2009 data: {year: '2009', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2010: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2010 data: {year: '2010', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2011: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2011 data: {year: '2011', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2012: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2012 data: {year: '2012', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2013: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2013 data: {year: '2013', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2014: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2014 data: {year: '2014', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2015: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2015 data: {year: '2015', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2016: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2016 data: {year: '2016', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2017: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2017 data: {year: '2017', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2018: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2018 data: {year: '2018', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2019: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2019 data: {year: '2019', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2020: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2020 data: {year: '2020', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2021: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2021 data: {year: '2021', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2022: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2022 data: {year: '2022', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2023: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2023 data: {year: '2023', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2024: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2024 data: {year: '2024', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2025: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2025 data: {year: '2025', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2026: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2026 data: {year: '2026', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Final chartData: (27) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+index-PkGVDCuE.js?ver=1.0.0:1 Computing chartData - campaigns: 27 investments: 1
+index-PkGVDCuE.js?ver=1.0.0:1 Unique years: (27) ['2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026']
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2000: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2000 data: {year: '2000', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2001: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2001 data: {year: '2001', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2002: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2002 data: {year: '2002', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2003: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2003 data: {year: '2003', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2004: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2004 data: {year: '2004', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2005: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2005 data: {year: '2005', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2006: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2006 data: {year: '2006', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2007: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2007 data: {year: '2007', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2008: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2008 data: {year: '2008', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2009: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2009 data: {year: '2009', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2010: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2010 data: {year: '2010', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2011: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2011 data: {year: '2011', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2012: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2012 data: {year: '2012', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2013: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2013 data: {year: '2013', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2014: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2014 data: {year: '2014', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2015: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2015 data: {year: '2015', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2016: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2016 data: {year: '2016', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2017: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2017 data: {year: '2017', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2018: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2018 data: {year: '2018', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2019: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2019 data: {year: '2019', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2020: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2020 data: {year: '2020', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2021: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2021 data: {year: '2021', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2022: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2022 data: {year: '2022', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2023: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2023 data: {year: '2023', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2024: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2024 data: {year: '2024', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2025: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2025 data: {year: '2025', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2026: campaigns: 1 investments: 0
+index-PkGVDCuE.js?ver=1.0.0:1 Year 2026 data: {year: '2026', tierra: 0, mejoras: 0, implantacion: 0, riego: 0, …}implantacion: 0maquinaria: 0mejoras: 0riego: 0tierra: 0year: "2026"[[Prototype]]: Object
+index-PkGVDCuE.js?ver=1.0.0:1 Final chartData: (27) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]

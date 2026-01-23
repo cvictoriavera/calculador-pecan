@@ -1,8 +1,8 @@
 // Data Store - Datos principales de la aplicación
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { getCostsByCampaign, createCost, createCostBatch, updateCost as updateCostApi, deleteCost as deleteCostApi } from '../services/costService';
-import { getInvestmentsByCampaign } from '../services/investmentService';
+import { getCostsByCampaign, getCostsBatch, createCost, createCostBatch, updateCost as updateCostApi, deleteCost as deleteCostApi } from '../services/costService';
+import { getInvestmentsBatch } from '../services/investmentService';
 import { getProductionsByCampaign, createProductionsByCampaign } from '../services/productionService';
 
 // Sistema de Cache Inteligente
@@ -317,17 +317,15 @@ export const useDataStore = create<DataState>()(
         return;
       }
 
-      // Carga paralela de costos para todas las campañas
-      const costPromises = campaigns.map(campaign =>
-        getCostsByCampaign(projectId, campaign.id)
-          .catch(error => {
-            console.error(`Error loading costs for campaign ${campaign.id}:`, error);
-            return []; // Retornar array vacío en caso de error para continuar con otras campañas
-          })
-      );
+      // Usar API batch para obtener todos los costos en una sola llamada
+      const campaignIds = campaigns.map(c => c.id);
+      const batchResult = await getCostsBatch(projectId, campaignIds);
 
-      const costResults = await Promise.all(costPromises);
-      const allCosts = costResults.flat();
+      // Aplanar los resultados agrupados por campaña
+      const allCosts: CostRecord[] = [];
+      Object.values(batchResult).forEach((campaignCosts: any) => {
+        allCosts.push(...campaignCosts);
+      });
 
       // Cachear los resultados (TTL: 2 minutos para datos que cambian frecuentemente)
       dataCache.set(cacheKey, allCosts, 2 * 60 * 1000);
@@ -351,32 +349,21 @@ export const useDataStore = create<DataState>()(
         return;
       }
 
-      // Carga paralela de inversiones para todas las campañas
-      const investmentPromises = campaigns.map(campaign =>
-        getInvestmentsByCampaign(projectId, campaign.id)
-          .then(campaignInvestments => ({
-            campaignId: campaign.id,
-            investments: campaignInvestments
-          }))
-          .catch(error => {
-            console.error(`Error loading investments for campaign ${campaign.id}:`, error);
-            return { campaignId: campaign.id, investments: [] }; // Retornar estructura vacía en caso de error
-          })
-      );
+      // Usar API batch para obtener todas las inversiones en una sola llamada
+      const campaignIds = campaigns.map(c => c.id);
+      const batchResult = await getInvestmentsBatch(projectId, campaignIds);
 
-      const investmentResults = await Promise.all(investmentPromises);
-
-      // Formatear todos los resultados
+      // Aplanar y formatear los resultados agrupados por campaña
       const allInvestments: InvestmentRecord[] = [];
-      investmentResults.forEach(({ campaignId, investments }) => {
-        const formattedInvestments = investments.map(inv => ({
+      Object.entries(batchResult).forEach(([campaignId, investments]: [string, any]) => {
+        const formattedInvestments = investments.map((inv: any) => ({
           id: inv.id.toString(),
-          campaign_id: campaignId,
+          campaign_id: parseInt(campaignId),
           category: inv.category,
           description: inv.description,
-          amount: Number(inv.total_value) || 0,
-          date: new Date(inv.created_at),
-          data: inv.details,
+          amount: Number(inv.amount) || 0,
+          date: new Date(inv.date),
+          data: inv.data,
         }));
         allInvestments.push(...formattedInvestments);
       });

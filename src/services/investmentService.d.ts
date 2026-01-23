@@ -18,6 +18,8 @@ export declare function getInvestmentsByProject(projectId: number): Promise<Inve
 
 export declare function getInvestmentsByCampaign(projectId: number, campaignId: number): Promise<Investment[]>;
 
+export declare function getInvestmentsBatch(projectId: number, campaignIds: number[]): Promise<Record<number, Investment[]>>;
+
 export declare function createInvestment(investmentData: {
 	project_id: number;
 	campaign_id?: number;

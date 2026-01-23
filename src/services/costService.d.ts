@@ -4,6 +4,8 @@
 
 export declare function getCostsByCampaign(projectId: number, campaignId: number): Promise<any[]>;
 
+export declare function getCostsBatch(projectId: number, campaignIds: number[]): Promise<Record<number, any[]>>;
+
 export declare function createCost(costData: {
   project_id: number;
   campaign_id: number;

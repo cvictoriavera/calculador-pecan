@@ -49,6 +49,41 @@ export const getInvestmentsByCampaign = (projectId, campaignId) => {
 };
 
 /**
+ * Fetches investments for multiple campaigns in batch.
+ *
+ * @param {number} projectId - The ID of the project.
+ * @param {number[]} campaignIds - Array of campaign IDs.
+ * @returns {Promise<Object>} A promise that resolves to an object with campaign IDs as keys and investment arrays as values.
+ */
+export const getInvestmentsBatch = (projectId, campaignIds) => {
+	if (!projectId || !Array.isArray(campaignIds) || campaignIds.length === 0) {
+		return Promise.reject(new Error('Project ID and campaign IDs array are required.'));
+	}
+	if (isTrialMode()) {
+		const records = JSON.parse(localStorage.getItem(TRIAL_RECORDS_KEY) || '[]');
+		const grouped = {};
+
+		campaignIds.forEach(campaignId => {
+			const filtered = records.filter(r =>
+				r.project_id == projectId &&
+				r.campaign_id == campaignId &&
+				r.type === 'investment'
+			);
+			grouped[campaignId] = filtered;
+		});
+
+		return Promise.resolve(grouped);
+	}
+
+	const params = new URLSearchParams({
+		project_id: projectId.toString(),
+		campaign_ids: campaignIds.join(',')
+	});
+
+	return apiRequest(`${BASE_ENDPOINT}/batch?${params}`);
+};
+
+/**
  * Creates a new investment.
  *
  * @param {object} investmentData - The data for the new investment.

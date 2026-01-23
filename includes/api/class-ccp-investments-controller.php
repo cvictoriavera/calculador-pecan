@@ -115,6 +115,20 @@ class CCP_Investments_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// NEW: Route for batch getting investments for multiple campaigns
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/batch',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_investments_batch' ),
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'args'                => $this->get_batch_params(),
+				),
+			)
+		);
 	}
 
 	/**
@@ -357,6 +371,100 @@ class CCP_Investments_Controller extends WP_REST_Controller {
 			'investment_id' => array(
 				'validate_callback' => function( $param ) { return is_numeric( $param ); },
 				'required'          => true,
+			),
+		);
+	}
+
+	/**
+	 * Get investments for multiple campaigns in batch.
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+	 */
+	public function get_investments_batch( $request ) {
+		$user_id      = get_current_user_id();
+		$project_id   = (int) $request->get_param( 'project_id' );
+		$campaign_ids_param = $request->get_param( 'campaign_ids' );
+
+		// Handle comma-separated string or array
+		if ( is_string( $campaign_ids_param ) ) {
+			$campaign_ids = array_map( 'intval', explode( ',', $campaign_ids_param ) );
+		} elseif ( is_array( $campaign_ids_param ) ) {
+			$campaign_ids = array_map( 'intval', $campaign_ids_param );
+		} else {
+			$campaign_ids = array();
+		}
+
+		if ( ! $project_id || empty( $campaign_ids ) ) {
+			return new WP_Error( 'invalid_params', 'Project ID and campaign IDs are required', array( 'status' => 400 ) );
+		}
+
+		// Validate campaign IDs
+		foreach ( $campaign_ids as $campaign_id ) {
+			if ( ! is_numeric( $campaign_id ) || $campaign_id <= 0 ) {
+				return new WP_Error( 'invalid_params', 'All campaign IDs must be positive integers', array( 'status' => 400 ) );
+			}
+		}
+
+		global $wpdb;
+
+		// Create dynamic placeholders for the IN clause
+		$placeholders = str_repeat( '%d,', count( $campaign_ids ) - 1 ) . '%d';
+		$query        = $wpdb->prepare(
+			"SELECT * FROM {$wpdb->prefix}pecan_investments
+			 WHERE project_id = %d
+			 AND campaign_id IN ($placeholders)
+			 ORDER BY campaign_id, created_at DESC",
+			array_merge( array( $project_id ), $campaign_ids )
+		);
+
+		$results = $wpdb->get_results( $query );
+
+		if ( $results === false ) {
+			return new WP_Error( 'db_error', 'Database query failed', array( 'status' => 500 ) );
+		}
+
+		// Group results by campaign_id
+		$grouped = array();
+		foreach ( $results as $investment ) {
+			$campaign_id = (int) $investment->campaign_id;
+			if ( ! isset( $grouped[ $campaign_id ] ) ) {
+				$grouped[ $campaign_id ] = array();
+			}
+
+			$grouped[ $campaign_id ][] = array(
+				'id'          => (int) $investment->id,
+				'campaign_id' => $campaign_id,
+				'category'    => $investment->category,
+				'description' => $investment->description,
+				'amount'      => (float) $investment->total_value,
+				'date'        => $investment->created_at,
+				'data'        => json_decode( $investment->details, true ),
+			);
+		}
+
+		$response = rest_ensure_response( $grouped );
+		return $response;
+	}
+
+	/**
+	 * Get the query parameters for batch route.
+	 *
+	 * @return array
+	 */
+	private function get_batch_params() {
+		return array(
+			'project_id' => array(
+				'validate_callback' => function( $param ) {
+					return is_numeric( $param );
+				},
+				'required' => true,
+			),
+			'campaign_ids' => array(
+				'validate_callback' => function( $param ) {
+					return true; // Accept any value, validate in method
+				},
+				'required' => true,
 			),
 		);
 	}

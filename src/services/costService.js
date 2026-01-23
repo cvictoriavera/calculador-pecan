@@ -47,6 +47,50 @@ export const getCostsByCampaign = (projectId, campaignId) => {
 };
 
 /**
+ * Fetches costs for multiple campaigns in batch.
+ *
+ * @param {number} projectId - The ID of the project.
+ * @param {number[]} campaignIds - Array of campaign IDs.
+ * @returns {Promise<Object>} A promise that resolves to an object with campaign IDs as keys and cost arrays as values.
+ */
+export const getCostsBatch = (projectId, campaignIds) => {
+	if (!projectId || !Array.isArray(campaignIds) || campaignIds.length === 0) {
+		return Promise.reject(new Error('Project ID and campaign IDs array are required.'));
+	}
+	if (isTrialMode()) {
+		const records = JSON.parse(localStorage.getItem(TRIAL_RECORDS_KEY) || '[]');
+		const grouped = {};
+
+		campaignIds.forEach(campaignId => {
+			const filtered = records.filter(r =>
+				r.project_id == projectId &&
+				r.campaign_id == campaignId &&
+				r.type === 'cost'
+			);
+			grouped[campaignId] = filtered.map(r => ({
+				id: r.id,
+				project_id: r.project_id,
+				campaign_id: r.campaign_id,
+				category: r.category,
+				details: r.details,
+				total_amount: r.total_value,
+				created_at: r.created_at,
+				updated_at: r.updated_at,
+			}));
+		});
+
+		return Promise.resolve(grouped);
+	}
+
+	const params = new URLSearchParams({
+		project_id: projectId.toString(),
+		campaign_ids: campaignIds.join(',')
+	});
+
+	return apiRequest(`${BASE_ENDPOINT}/batch?${params}`);
+};
+
+/**
  * Creates a new cost.
  *
  * @param {object} costData - The data for the new cost.

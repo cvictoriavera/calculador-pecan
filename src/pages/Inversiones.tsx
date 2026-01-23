@@ -65,7 +65,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const Inversiones = () => {
-  const { currentProjectId, campaigns, currentCampaign, currentCampaignId } = useApp();
+  const { currentProjectId, campaigns, currentCampaign } = useApp();
   const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
 
   // Calculate displayed years - only campaign years
@@ -80,13 +80,13 @@ const Inversiones = () => {
 
   // Get investment for a specific category and year
   const getInvestmentForCategoryAndYear = (category: string, year: number): number => {
-    // Find the campaign for this year
-    const campaign = campaigns.find(c => c.year === year);
-    if (!campaign) return 0;
+    // Find all campaigns for this year
+    const yearCampaigns = campaigns.filter(c => c.year === year);
+    if (yearCampaigns.length === 0) return 0;
 
     return investments
       .filter(inv =>
-        inv.campaign_id === campaign.id &&
+        yearCampaigns.some(c => String(c.id) === String(inv.campaign_id)) &&
         inv.category === category
       )
       .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
@@ -97,36 +97,39 @@ const Inversiones = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [inversionToDelete, setInversionToDelete] = useState<any>(null);
 
-  // Filtrado de lista (Tabla inferior)
+  // Filtrado de lista (Tabla inferior) - Mostrar todas las inversiones
   const inversionesFiltered = useMemo(() => {
-    // Usar campaign_id para filtrar inversiones de la campaña actual
-    return investments.filter((inv: any) => inv.campaign_id === currentCampaignId);
-  }, [investments, currentCampaignId]);
+    return investments; // Mostrar todas las inversiones del proyecto
+  }, [investments]);
 
-  const totalInversionesCampaña = inversionesFiltered.reduce((acc, inv) => acc + inv.amount, 0);
+  const totalInversiones = inversionesFiltered.reduce((acc, inv) => acc + inv.amount, 0);
 
 
   // Prepare data for stacked bar chart - investments by year and category
   const chartData = useMemo(() => {
-    return campaigns
-      .sort((a, b) => a.year - b.year)
-      .map((campaign) => {
-        const year = campaign.year;
+    // Get unique years from campaigns
+    const uniqueYears = [...new Set(campaigns.map(c => c.year))].sort((a, b) => a - b);
 
-        // Filter investments by campaign_id
-        const campaignInvestments = investments.filter((inv) => inv.campaign_id === campaign.id);
+    return uniqueYears.map((year) => {
+      // Find all campaigns for this year
+      const yearCampaigns = campaigns.filter(c => c.year === year);
 
-        const yearData: any = { year };
-        Object.keys(categoriaLabels).forEach((category) => {
-          const categoryInvestments = campaignInvestments.filter((inv) => inv.category === category);
+      // Filter investments by all campaigns for this year
+      const yearInvestments = investments.filter((inv) =>
+        yearCampaigns.some(c => String(c.id) === String(inv.campaign_id))
+      );
 
-          // Aseguramos que amount sea número al sumar
-          const total = categoryInvestments.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
-          yearData[category] = total;
-        });
+      const yearData: any = { year };
+      Object.keys(categoriaLabels).forEach((category) => {
+        const categoryInvestments = yearInvestments.filter((inv) => inv.category === category);
 
-        return yearData;
+        // Aseguramos que amount sea número al sumar
+        const total = categoryInvestments.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+        yearData[category] = total;
       });
+
+      return yearData;
+    });
   }, [campaigns, investments]);
   
 
@@ -274,7 +277,7 @@ const Inversiones = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Invertido</p>
-              <p className="text-4xl font-bold text-foreground">{formatCurrency(totalInversionesCampaña, true)}</p>
+              <p className="text-4xl font-bold text-foreground">{formatCurrency(totalInversiones, true)}</p>
             </div>
           </div>
         </CardContent>
@@ -438,9 +441,14 @@ const Inversiones = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {inversionesFiltered.map((inversion) => (
-                    <tr key={inversion.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                      <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
+                  {inversionesFiltered.map((inversion) => {
+                    // Find the campaign for this investment to get the year
+                    const investmentCampaign = campaigns.find(c => c.id === inversion.campaign_id);
+                    const investmentYear = investmentCampaign ? investmentCampaign.year : currentCampaign;
+
+                    return (
+                      <tr key={inversion.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
+                        <td className="p-3 text-sm font-medium text-foreground">{investmentYear}</td>
                       <td className="p-3 text-sm">
                         <Badge
                           style={{
@@ -476,7 +484,8 @@ const Inversiones = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
