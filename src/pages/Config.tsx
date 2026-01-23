@@ -29,7 +29,7 @@ const Config = () => {
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isMigrating, setIsMigrating] = useState(false);
   const { toast } = useToast();
-  const { initialYear, setInitialYear, currentProjectId, projects, deleteProject, loadCampaigns } = useApp();
+  const { initialYear, setInitialYear, currentProjectId, projects, deleteProject, loadCampaigns, loadProjects } = useApp();
   const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
 
   const [pais, setPais] = useState("Argentina");
@@ -73,9 +73,11 @@ const Config = () => {
   }, []);
 
   useEffect(() => {
+    console.log('Config: useEffect for projects triggered', { projectsLength: projects.length, currentProjectId });
     if (projects.length > 0 && currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
       if (currentProject) {
+        console.log('Config: Setting project data from context', currentProject);
         setProjectName(currentProject.project_name);
         // Cargar descripción si existe
         if (currentProject.description) setDescripcion(currentProject.description);
@@ -235,55 +237,61 @@ const Config = () => {
   };
 
   const handleSaveProjectData = async () => {
-     if (!currentProjectId || !projectName.trim()) {
-        toast({
-            title: "Error",
-            description: "El nombre del proyecto no puede estar vacío.",
-            variant: "destructive",
-        });
-        return;
-     }
+      if (!currentProjectId || !projectName.trim()) {
+         toast({
+             title: "Error",
+             description: "El nombre del proyecto no puede estar vacío.",
+             variant: "destructive",
+         });
+         return;
+      }
 
-     setIsUpdatingProject(true);
-     try {
-        // CORRECCIÓN AQUÍ: description (clave API) : descripcion (variable estado)
-        await updateProject(currentProjectId, { 
-            project_name: projectName.trim(), 
-            description: descripcion.trim() 
-        });
-        toast({ title: "Éxito", description: "Los datos del proyecto han sido actualizados." });
-     } catch(error) { 
-        console.error("Error updating project data:", error);
-        toast({
-            title: "Error",
-            description: "No se pudieron actualizar los datos del proyecto.",
-            variant: "destructive",
-        });
-     } finally { setIsUpdatingProject(false); }
-  };
+      setIsUpdatingProject(true);
+      console.log('Config: Updating project data', { currentProjectId, projectName, descripcion });
+      try {
+         // CORRECCIÓN AQUÍ: description (clave API) : descripcion (variable estado)
+         await updateProject(currentProjectId, {
+             project_name: projectName.trim(),
+             description: descripcion.trim()
+         });
+         console.log('Config: Project updated successfully, reloading projects');
+         await loadProjects();
+         toast({ title: "Éxito", description: "Los datos del proyecto han sido actualizados." });
+      } catch(error) {
+         console.error("Error updating project data:", error);
+         toast({
+             title: "Error",
+             description: "No se pudieron actualizar los datos del proyecto.",
+             variant: "destructive",
+         });
+      } finally { setIsUpdatingProject(false); }
+   };
 
   const handleSaveLocationData = async () => {
-      if (!currentProjectId) {
-        toast({
-            title: "Error",
-            description: "No hay proyecto seleccionado.",
-            variant: "destructive",
-        });
-        return;
-      }
-      setIsUpdatingProject(true);
-      try {
-         await updateProject(currentProjectId, { pais, provincia, departamento, municipio });
-         toast({ title: "Éxito", description: "Los datos de ubicación han sido actualizados." });
-      } catch(error) { 
-        console.error("Error updating location data:", error);
-        toast({
-            title: "Error",
-            description: "No se pudieron actualizar los datos de ubicación.",
-            variant: "destructive",
-        });
-      } finally { setIsUpdatingProject(false); }
-  };
+       if (!currentProjectId) {
+         toast({
+             title: "Error",
+             description: "No hay proyecto seleccionado.",
+             variant: "destructive",
+         });
+         return;
+       }
+       setIsUpdatingProject(true);
+       console.log('Config: Updating location data', { currentProjectId, pais, provincia, departamento, municipio });
+       try {
+          await updateProject(currentProjectId, { pais, provincia, departamento, municipio });
+          console.log('Config: Location updated successfully, reloading projects');
+          await loadProjects();
+          toast({ title: "Éxito", description: "Los datos de ubicación han sido actualizados." });
+       } catch(error) {
+         console.error("Error updating location data:", error);
+         toast({
+             title: "Error",
+             description: "No se pudieron actualizar los datos de ubicación.",
+             variant: "destructive",
+         });
+       } finally { setIsUpdatingProject(false); }
+   };
 
   return (
     <div className="space-y-6 max-w-4xl">

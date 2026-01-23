@@ -54,16 +54,17 @@ interface Project {
 }
 
 interface AppContextType {
-  user: User | null;
-  isTrialMode: boolean;
-  projectName: string;
-  setProjectName: (name: string) => void;
-  currentProjectId: number | null;
-  setCurrentProjectId: (id: number) => void;
-  initialYear: number | null;
-  setInitialYear: (year: number) => void;
-  projects: Project[];
-  projectsLoading: boolean;
+   user: User | null;
+   isTrialMode: boolean;
+   projectName: string;
+   setProjectName: (name: string) => void;
+   currentProjectId: number | null;
+   setCurrentProjectId: (id: number) => void;
+   initialYear: number | null;
+   setInitialYear: (year: number) => void;
+   projects: Project[];
+   projectsLoading: boolean;
+   loadProjects: () => Promise<void>;
   campaigns: Campaign[];
   campaignsLoading: boolean;
   currentCampaign: number;
@@ -104,6 +105,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
+
+  // Log when projects change
+  useEffect(() => {
+    console.log('AppContext: Projects state updated', projects);
+  }, [projects]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [currentCampaign, setCurrentCampaign] = useState(() => {
@@ -182,20 +188,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [currentCampaign]);
 
 
-  // Load campaigns function
-  const loadCampaigns = async () => {
-    if (!currentProjectId) {
-      setCampaigns([]);
-      return;
-    }
-
-    setCampaignsLoading(true);
+  // Load projects function
+  const loadProjects = async () => {
+    console.log('AppContext: Loading projects');
+    setProjectsLoading(true);
     try {
+      const fetchedProjects = await getProjects();
+      console.log('AppContext: Refetched projects', fetchedProjects);
+      setProjects(fetchedProjects || []);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      setProjects([]);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
 
-      const data = await getCampaignsByProject(currentProjectId);
+  // Load campaigns function
+   const loadCampaigns = async () => {
+     if (!currentProjectId) {
+       setCampaigns([]);
+       return;
+     }
 
-      const campaignsData = Array.isArray(data) ? data : [];
-      setCampaigns(campaignsData);
+     setCampaignsLoading(true);
+     try {
+
+       const data = await getCampaignsByProject(currentProjectId);
+
+       const campaignsData = Array.isArray(data) ? data : [];
+       setCampaigns(campaignsData);
 
       // Set current campaign ID
       updateCurrentCampaignId(campaignsData);
@@ -249,13 +271,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [currentCampaign, campaigns]);
 
   // Check for existing projects on mount
-  useEffect(() => {
-    const checkExistingProjects = async () => {
-      setProjectsLoading(true);
-      try {
-        const fetchedProjects = await getProjects();
-        if (fetchedProjects && fetchedProjects.length > 0) {
-          setProjects(fetchedProjects);
+   useEffect(() => {
+     const checkExistingProjects = async () => {
+       setProjectsLoading(true);
+       console.log('AppContext: Loading projects on mount');
+       try {
+         const fetchedProjects = await getProjects();
+         console.log('AppContext: Fetched projects', fetchedProjects);
+         if (fetchedProjects && fetchedProjects.length > 0) {
+           setProjects(fetchedProjects);
           // Load the first project
           const project = fetchedProjects[0];
           setCurrentProjectId(project.id);
@@ -633,16 +657,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        user,
-        isTrialMode,
-        projectName,
-        setProjectName,
-        currentProjectId,
-        setCurrentProjectId,
-        initialYear,
-        setInitialYear,
-        projects,
-        projectsLoading,
+         user,
+         isTrialMode,
+         projectName,
+         setProjectName,
+         currentProjectId,
+         setCurrentProjectId,
+         initialYear,
+         setInitialYear,
+         projects,
+         projectsLoading,
+         loadProjects,
         campaigns,
         campaignsLoading,
         currentCampaign,
