@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import type { ProjectFormData } from "@/types/project";
 const Onboarding = () => {
   const navigate = useNavigate();
   const { completeOnboarding } = useApp();
+  const [modalOpen, setModalOpen] = useState(true);
   const [step, setStep] = useState(0);
   const [projectName, setProjectName] = useState("");
   const [initialYear, setInitialYear] = useState("");
@@ -78,12 +80,10 @@ const Onboarding = () => {
     }
   }, []); // Only run once on mount
 
-  const handleStart = () => {
-    setStep(1);
-  };
-
   const handleNext = () => {
-    if (step === 1 && projectName && initialYear) {
+    if (step === 0) {
+      setStep(1);
+    } else if (step === 1 && projectName && initialYear) {
       if (isTrialMode()) {
         setStep(3);
       } else {
@@ -136,255 +136,231 @@ const Onboarding = () => {
     }
   };
 
-  if (step === 0) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full border-border/50 shadow-xl">
-          <CardHeader className="text-center pb-8">
-            <CardTitle className="text-4xl font-bold text-foreground mb-4">
-              Configura tu Proyecto
-            </CardTitle>
-            <p className="text-lg text-muted-foreground">
-              Para que puedas empezar a registrar los datos de tus campañas primero defini las bases de tu proyecto.
-            </p>
-          </CardHeader>
-          <CardContent className="flex justify-center pb-8">
-            <Button
-              onClick={handleStart}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-8 py-6 text-lg"
-            >
-              Comenzar
-              <ChevronRight className="h-6 w-6" />
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const getStepTitle = () => {
+    switch (step) {
+      case 0: return "";
+      case 1: return "Paso 1: Las Bases";
+      case 2: return "Paso 2: Ubicación";
+      case 3: return `Paso ${isTrialMode() ? 2 : 3}: Descripción`;
+      case 4: return `Paso ${isTrialMode() ? 3 : 4}: Revisión`;
+      default: return "";
+    }
+  };
 
-  if (step === 1) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full border-border/50 shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-foreground">
-              Paso 1: Las Bases
-            </CardTitle>
-          </CardHeader>
-          <ProjectCreationForm
-            step={1}
-            formData={formData}
-            geoData={geoData}
-            isTrialMode={isTrialMode()}
-            onFormDataChange={handleFormDataChange}
-            onGeoDataLoad={() => {}} // Not needed for step 1
-          />
-          <div className="flex justify-between pt-4 px-6 pb-6">
-            <Button
-              onClick={() => setStep(0)}
-              variant="outline"
-              className="gap-2 px-6 py-6"
-            >
-              <ChevronLeft className="h-5 w-5" />
-              Volver
-            </Button>
-            <Button
-              onClick={handleNext}
-              disabled={!projectName || !initialYear}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
-            >
-              Siguiente
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+  const renderStepContent = () => {
+    if (step === 0) {
+      return (
+        <div className="text-center pb-8">
+          <h2 className="text-4xl text-foreground mb-4">
+            Configura tu Proyecto
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Para que puedas empezar a registrar los datos de tus campañas primero define las bases de tu proyecto.
+          </p>
+        </div>
+      );
+    }
 
-  if (step === 2) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full border-border/50 shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-foreground">
-              Paso 2: Ubicación
-            </CardTitle>
-          </CardHeader>
-          <ProjectCreationForm
-            step={2}
-            formData={formData}
-            geoData={geoData}
-            isTrialMode={isTrialMode()}
-            onFormDataChange={handleFormDataChange}
-            onGeoDataLoad={() => {}} // Not needed for step 2
-          />
-          <div className="flex justify-between pt-4 px-6 pb-6">
-            <Button
-              onClick={() => setStep(1)}
-              variant="outline"
-              className="gap-2 px-6 py-6"
-            >
-              <ChevronLeft className="h-5 w-5" />
-              Volver
-            </Button>
-            <Button
-              onClick={handleNext}
-              disabled={!pais || !provincia || (pais === "Argentina" && (!departamento || !municipio))}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
-            >
-              Siguiente
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (step === 3) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full border-border/50 shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-foreground">
-              Paso {isTrialMode() ? 2 : 3}: Descripción
-            </CardTitle>
-          </CardHeader>
-          <ProjectCreationForm
-            step={3}
-            formData={formData}
-            geoData={geoData}
-            isTrialMode={isTrialMode()}
-            onFormDataChange={handleFormDataChange}
-            onGeoDataLoad={() => {}} // Not needed for step 3
-          />
-          <div className="flex justify-between pt-4 px-6 pb-6">
-            <Button
-              onClick={() => setStep(isTrialMode() ? 1 : 2)}
-              variant="outline"
-              className="gap-2 px-6 py-6"
-            >
-              <ChevronLeft className="h-5 w-5" />
-              Volver
-            </Button>
-            <Button
-              onClick={handleNext}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
-            >
-              Siguiente
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (step === 4) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full border-border/50 shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-foreground">
-              Paso {isTrialMode() ? 3 : 4}: Revisión
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-secondary/20 rounded-lg p-6 space-y-3">
-              <div>
-                <p className="text-sm text-muted-foreground">Proyecto:</p>
-                <p className="text-xl font-semibold text-foreground">{projectName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Año/Campaña inicial:</p>
-                <p className="text-xl font-semibold text-foreground">{initialYear}</p>
-              </div>
-              {!isTrialMode() && (
-                <>
-                  <div>
-                    <p className="text-sm text-muted-foreground">País:</p>
-                    <p className="text-xl font-semibold text-foreground">{pais}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Provincia:</p>
-                    <p className="text-xl font-semibold text-foreground">{provincia}</p>
-                  </div>
-                  {pais === "Argentina" && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Departamento:</p>
-                        <p className="text-xl font-semibold text-foreground">{departamento}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Municipio:</p>
-                        <p className="text-xl font-semibold text-foreground">{municipio}</p>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-              <div>
-                <p className="text-sm text-muted-foreground">Descripción:</p>
-                <p className="text-lg text-foreground">{descripcion}</p>
-              </div>
+    if (step === 4) {
+      // Review step
+      return (
+        <div className="space-y-6">
+          <div className="bg-secondary/20 rounded-lg p-6 space-y-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Proyecto:</p>
+              <p className="text-xl font-semibold text-foreground">{projectName}</p>
             </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="allowBenchmarking"
-                  checked={allowBenchmarking}
-                  onChange={(e) => setAllowBenchmarking(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <Label htmlFor="allowBenchmarking" className="text-sm font-medium">
-                  He leído y acepto las políticas de privacidad
-                </Label>
-              </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Año/Campaña inicial:</p>
+              <p className="text-xl font-semibold text-foreground">{initialYear}</p>
             </div>
-
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                <p className="text-destructive text-sm">{error}</p>
-              </div>
-            )}
-
-            <div className="flex justify-between pt-4">
-              <Button
-                onClick={() => setStep(3)}
-                variant="outline"
-                className="gap-2 px-6 py-6"
-              >
-                <ChevronLeft className="h-5 w-5" />
-                Volver
-              </Button>
-              <Button
-                onClick={handleFinish}
-                disabled={isCreating || !allowBenchmarking}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6 py-6"
-              >
-                {isCreating ? (
+            {!isTrialMode() && (
+              <>
+                <div>
+                  <p className="text-sm text-muted-foreground">País:</p>
+                  <p className="text-xl font-semibold text-foreground">{pais}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Provincia:</p>
+                  <p className="text-xl font-semibold text-foreground">{provincia}</p>
+                </div>
+                {pais === "Argentina" && (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Creando proyecto...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-5 w-5" />
-                    Crear proyecto
+                    <div>
+                      <p className="text-sm text-muted-foreground">Departamento:</p>
+                      <p className="text-xl font-semibold text-foreground">{departamento}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Municipio:</p>
+                      <p className="text-xl font-semibold text-foreground">{municipio}</p>
+                    </div>
                   </>
                 )}
-              </Button>
+              </>
+            )}
+            <div>
+              <p className="text-sm text-muted-foreground">Descripción:</p>
+              <p className="text-lg text-foreground">{descripcion}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="allowBenchmarking"
+                checked={allowBenchmarking}
+                onChange={(e) => setAllowBenchmarking(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <Label htmlFor="allowBenchmarking" className="text-sm font-medium">
+                He leído y acepto las políticas de privacidad
+              </Label>
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-destructive text-sm">{error}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <ProjectCreationForm
+        step={step as 1 | 2 | 3}
+        formData={formData}
+        geoData={geoData}
+        isTrialMode={isTrialMode()}
+        onFormDataChange={handleFormDataChange}
+        onGeoDataLoad={() => {}}
+      />
+    );
+  };
+
+  const renderNavigation = () => {
+    if (step === 0) {
+      return (
+        <div className="flex justify-center pb-6">
+          <Button
+            onClick={handleNext}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-8 py-6 text-lg"
+          >
+            Comenzar
+            <ChevronRight className="h-6 w-6" />
+          </Button>
+        </div>
+      );
+    }
+
+    if (step === 4) {
+      return (
+        <div className="flex justify-between pt-4">
+          <Button
+            onClick={() => setStep(3)}
+            variant="outline"
+            className="gap-2"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            Volver
+          </Button>
+          <Button
+            onClick={handleFinish}
+            disabled={isCreating || !allowBenchmarking}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Creando proyecto...
+              </>
+            ) : (
+              <>
+                <Check className="h-5 w-5" />
+                Crear proyecto
+              </>
+            )}
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex justify-between pt-4">
+        <Button
+          onClick={() => setStep(step - 1)}
+          variant="outline"
+          className="gap-2"
+          disabled={step === 1}
+        >
+          <ChevronLeft className="h-5 w-5" />
+          Volver
+        </Button>
+        <Button
+          onClick={handleNext}
+          disabled={
+            (step === 1 && (!projectName || !initialYear)) ||
+            (step === 2 && (!pais || !provincia ||
+              (pais === "Argentina" && (!departamento || !municipio))))
+          }
+          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+        >
+          Siguiente
+          <ChevronRight className="h-5 w-5" />
+        </Button>
       </div>
     );
-  }
+  };
 
-  return null;
+  return (
+    <div className="space-y-6">
+      {!modalOpen && (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Card className="max-w-2xl w-full border-border/50 ">
+            <CardHeader className="text-center pb-8">
+              <CardTitle className="text-4xl text-foreground mb-4">
+                No tienes un proyecto
+              </CardTitle>
+              <p className="text-lg text-muted-foreground">
+                Crea tu primer proyecto para comenzar a registrar tus campañas. Hacé clic en el botón para iniciar.
+              </p>
+            </CardHeader>
+            <CardContent className="flex justify-center pb-8">
+              <Button
+                onClick={() => setModalOpen(true)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-8 py-6 text-lg"
+              >
+                Crear Proyecto
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-foreground">
+              Crear Nuevo Proyecto
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {step !== 0 && step !== 4 && (
+              <div className="text-center">
+                <h3 className="text-xl text-foreground mb-2">
+                  {getStepTitle()}
+                </h3>
+              </div>
+            )}
+            {renderStepContent()}
+            {renderNavigation()}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 };
 
 export default Onboarding;

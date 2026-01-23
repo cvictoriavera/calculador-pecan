@@ -115,7 +115,7 @@ const App = () => (
         <Sonner />
         <HashRouter>
           <Routes>
-            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/onboarding" element={<Layout><Onboarding /></Layout>} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </HashRouter>

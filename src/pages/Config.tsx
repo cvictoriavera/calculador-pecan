@@ -350,7 +350,7 @@ const Config = () => {
                     </Select>
                    </div>
                    <div className="space-y-2">
-                    <Label htmlFor="departamento">Departamento</Label>
+                    <Label htmlFor="departamento">Departamento/Partido</Label>
                     <Select value={departamento} onValueChange={(v) => { setDepartamento(v); setMunicipio(""); }} disabled={!provincia}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>{provincia && geoData.departments[provincia]?.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
