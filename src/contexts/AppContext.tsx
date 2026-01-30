@@ -123,8 +123,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isChangingProject, setIsChangingProject] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isOnboardingComplete = !!currentProjectId;
-
+  const isOnboardingComplete = projects.length > 0 || !!currentProjectId;
   // Fetch user data and set trial mode
   useEffect(() => {
     const fetchUser = async () => {
@@ -629,28 +628,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   };
 
-  const deleteProjectContext = async (projectId: number) => {
-    try {
-      await deleteProject(projectId);
+  // AppContext.tsx
 
-      // Remove from projects list
-      setProjects(projects.filter(p => p.id !== projectId));
+const deleteProjectContext = async (projectId: number) => {
+  try {
+    await deleteProject(projectId);
 
-      // If this was the current project, clear it and redirect to onboarding
-      if (currentProjectId === projectId) {
-        setCurrentProjectId(null);
-        setProjectName("");
-        setCampaigns([]);
-        setMontes([]);
-        localStorage.removeItem("currentProjectId");
-        localStorage.removeItem("projectName");
-        // The app will redirect to onboarding due to isOnboardingComplete check
-      }
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      throw error;
+    // 1. Actualizar lista local
+    const remainingProjects = projects.filter(p => p.id !== projectId);
+    setProjects(remainingProjects);
+
+    // 2. Si borramos el proyecto que estábamos usando
+    if (currentProjectId === projectId) {
+      
+      // Limpiamos la selección actual (dejamos al usuario "en el limbo" dentro de la app)
+      setCurrentProjectId(null);
+      setProjectName("");
+      
+      // Limpiamos persistencia y datos de Zustand
+      localStorage.removeItem("currentProjectId");
+      localStorage.removeItem("projectName");
+      localStorage.removeItem("initialYear"); 
+      localStorage.removeItem("currentCampaign");
+      
+      useDataStore.getState().clearAllData();
+      
+      // NOTA: No hacemos navigate aquí porque el Context no suele tener el hook de navegación.
+      // La redirección la haremos desde el componente que tiene el botón de borrar.
     }
-  };
+    
+    // Si no quedaran proyectos (remainingProjects.length === 0), 
+    // la variable isOnboardingComplete pasará a false automáticamente 
+    // y el App.tsx redirigirá a Onboarding. Eso es correcto.
+
+  } catch (error) {
+    console.error('Error al eliminar:', error);
+    throw error;
+  }
+};
 
 
 

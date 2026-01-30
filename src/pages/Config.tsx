@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useApp } from "@/contexts/AppContext";
 import { updateProject } from "@/services/projectService";
 import { createCampaign } from "@/services/campaignService";
+import { useNavigate } from "react-router-dom";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const Config = () => {
+
   const [producerName, setProducerName] = useState("");
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isMigrating, setIsMigrating] = useState(false);
@@ -42,8 +44,12 @@ const Config = () => {
   const [añoInicio, setAñoInicio] = useState(initialYear || new Date().getFullYear());
   
   const [isDeleting, setIsDeleting] = useState(false);
+
   const [projectName, setProjectName] = useState("");
   const [isUpdatingProject, setIsUpdatingProject] = useState(false);
+
+  const navigate = useNavigate(); // <--- Inicializamos el hook
+  
   const [isUpdatingHistory, setIsUpdatingHistory] = useState(false);
 
   const [geoData, setGeoData] = useState<{
@@ -214,26 +220,36 @@ const Config = () => {
   };
 
   const handleDeleteProject = async () => {
-     if (!currentProjectId) {
+      if (!currentProjectId) {
         toast({
             title: "Error",
             description: "No hay proyecto seleccionado.",
             variant: "destructive",
         });
         return;
-     }
-     setIsDeleting(true);
-     try {
+      }
+      
+      setIsDeleting(true);
+      
+      try {
+        // 1. Llamamos a borrar (esto limpiará el estado en el contexto)
         await deleteProject(currentProjectId);
+        
         toast({ title: "Proyecto eliminado", description: "El proyecto ha sido eliminado exitosamente." });
-     } catch(error) { 
+        
+        // 2. FORZAMOS la navegación a la lista de proyectos
+        navigate('/projects'); 
+
+      } catch(error) { 
         console.error("Error deleting project:", error);
         toast({
             title: "Error",
             description: "No se pudo eliminar el proyecto.",
             variant: "destructive",
         });
-     } finally { setIsDeleting(false); }
+      } finally { 
+        setIsDeleting(false); 
+      }
   };
 
   const handleSaveProjectData = async () => {

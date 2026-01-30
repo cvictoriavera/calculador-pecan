@@ -241,64 +241,60 @@ const Campanas = () => {
   };
 
   const handleSaveProduccion = async (data: any) => {
-    if (!currentProjectId) return;
-
-    // Usamos el ID de la campaña que se está editando (guardado en el estado o hook)
-    // OJO: En tu código actual usas 'currentCampaign' (año) o 'currentCampaignId'.
-    // Asegúrate de tener el ID correcto. Si el wizard setea el año en 'currentCampaign',
-    // buscamos el ID así:
-    const targetCampaign = campaigns.find(c => Number(c.year) === currentCampaign);
-    if (!targetCampaign) return;
-    const campaignId = targetCampaign.id;
-
     try {
-      // 1. Calcular totales para actualizar la cabecera de la campaña
-      const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + (p.kgRecolectados || 0), 0);
+      // Determine if this is an edit operation (has existing data)
+      const isEdit = editingData !== null || editData !== null;
 
-      // 2. Preparar el array para la API (Mapeo exacto de nombres)
+      // Calculate total production
+      const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
+
+      // Prepare productions data for the API
       const productionsData = data.produccionPorMonte
         .filter((p: any) => p.kgRecolectados > 0)
         .map((p: any) => ({
-          monte_id: parseInt(p.monteId), // Asegurar número
+          monte_id: parseInt(p.monteId),
           quantity_kg: p.kgRecolectados,
-          is_estimated: data.metodo === 'total' ? 1 : 0,
+          is_estimated: data.metodo === 'total' ? 1 : 0, // Mark as estimated if using total method
         }));
 
-      // 3. ENVIAR A LA BASE DE DATOS (Nueva Tabla)
-      await createProductionsByCampaign(campaignId, {
-        project_id: currentProjectId,
-        productions: productionsData,
-        input_type: data.metodo === 'detallado' ? 'detail' : 'total',
-      });
+      // Save productions to database using the new API
+      if (currentCampaignId && currentProjectId) {
+        await createProductionsByCampaign(currentCampaignId, {
+          project_id: currentProjectId,
+          productions: productionsData,
+          input_type: data.metodo === 'detallado' ? 'detail' : 'total', // Map to API expected values
+        });
 
-      // 4. ACTUALIZAR LA CAMPAÑA (Solo precio y totales, limpiamos los JSON viejos)
-      await updateCampaign(campaignId, {
-        average_price: data.precioPromedio,
-        total_production: totalKg, // Esto actualiza la tarjeta visualmente rápido
-        montes_contribuyentes: null, // Limpieza
-        montes_production: null,     // Limpieza
-      });
+        // Update campaign with summary data (only price and total production)
+        await updateCampaign(currentCampaignId, {
+          average_price: data.precioPromedio,
+          total_production: totalKg,
+          // Remove old JSON fields - no longer needed
+          montes_contribuyentes: null,
+          montes_production: null,
+        });
 
-      // 5. RECARGAR EL STORE (Crucial para que las gráficas y tablas se actualicen)
-      const { loadAllProductions } = useDataStore.getState();
-      await loadAllProductions(campaigns);
+      }
+      // Reload production data from database to update local stores
+      if (currentCampaignId) {
+        const { loadProductions } = useDataStore.getState();
+        await loadProductions(currentCampaignId);
+      }
 
-      toast({
-        title: "Éxito",
-        description: "Datos de producción guardados correctamente.",
-      });
-
-      // Cerrar modales
       setEditingData(null);
       setWizardOpen(false);
       setEditData(null);
       setEditOpen(false);
 
+      toast({
+        title: "Datos Guardados ...",
+        description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
+      });
     } catch (error) {
       console.error('Error saving production:', error);
       toast({
         title: "Error",
-        description: "No se pudieron guardar los datos.",
+        description: "No se pudieron guardar los cambios",
         variant: "destructive",
       });
     }
