@@ -65,7 +65,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const Inversiones = () => {
-  const { currentProjectId, campaigns, currentCampaign } = useApp();
+  const { currentProjectId, campaigns, currentCampaign, currentCampaignId  } = useApp();
   const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
 
   // Calculate displayed years - only campaign years
@@ -97,12 +97,20 @@ const Inversiones = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [inversionToDelete, setInversionToDelete] = useState<any>(null);
 
-  // Filtrado de lista (Tabla inferior) - Mostrar todas las inversiones
   const inversionesFiltered = useMemo(() => {
     return investments; // Mostrar todas las inversiones del proyecto
   }, [investments]);
 
-  const totalInversiones = inversionesFiltered.reduce((acc, inv) => acc + inv.amount, 0);
+  // Total de inversiones FILTRADO POR CAMPAÑA ACTUAL
+  const totalInversiones = useMemo(() => {
+    if (!currentCampaignId) return 0;
+    
+    return investments
+      .filter(inv => Number(inv.campaign_id) === Number(currentCampaignId))
+      .reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0);
+  }, [investments, currentCampaignId]);
+
+
 
 
   // Prepare data for stacked bar chart - investments by year and category
@@ -444,7 +452,7 @@ const Inversiones = () => {
                 <tbody>
                   {inversionesFiltered.map((inversion) => {
                     // Find the campaign for this investment to get the year
-                    const investmentCampaign = campaigns.find(c => c.id === inversion.campaign_id);
+                    const investmentCampaign = campaigns.find(c => Number(c.id) === Number(inversion.campaign_id));
                     const investmentYear = investmentCampaign ? investmentCampaign.year : currentCampaign;
 
                     return (
