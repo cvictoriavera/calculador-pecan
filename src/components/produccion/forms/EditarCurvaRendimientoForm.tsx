@@ -24,16 +24,17 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Info, Save, X, Plus } from "lucide-react";
+import { Info, Save, X, Plus, Loader2 } from "lucide-react"; // Agregado Loader2
 
 interface EditarCurvaRendimientoProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: YieldCurveFormData) => void;
   editingData?: YieldCurveFormData;
+  isSaving?: boolean; // Agregada prop isSaving
 }
 
-export function EditarCurvaRendimientoForm({ open, onOpenChange, onSave, editingData }: EditarCurvaRendimientoProps) {
+export function EditarCurvaRendimientoForm({ open, onOpenChange, onSave, editingData, isSaving = false }: EditarCurvaRendimientoProps) {
   const {
     control,
     handleSubmit,
@@ -55,7 +56,7 @@ export function EditarCurvaRendimientoForm({ open, onOpenChange, onSave, editing
       setValue("rows", editingData.rows);
     }
   }, [editingData, setValue]);
-
+  
   const watchedRows = watch("rows");
 
   // Prepare chart data
@@ -63,17 +64,17 @@ export function EditarCurvaRendimientoForm({ open, onOpenChange, onSave, editing
     age: row.age,
     kg: row.yield_kg,
   }));
-
+  
   const addNewRow = () => {
     const maxAge = Math.max(...watchedRows.map(row => row.age));
     const newRow = { age: maxAge + 1, yield_kg: 0 };
     setValue("rows", [...watchedRows, newRow]);
   };
-
+  
   const onFormSubmit = (data: YieldCurveFormData) => {
     onSave(data);
   };
-
+  
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-6xl overflow-y-auto">
@@ -130,6 +131,7 @@ export function EditarCurvaRendimientoForm({ open, onOpenChange, onSave, editing
                     variant="outline"
                     onClick={addNewRow}
                     className="gap-2 mt-4 w-full"
+                    disabled={isSaving} // Deshabilitar si guarda
                   >
                     <Plus className="h-4 w-4" />
                     Agregar Año
@@ -181,6 +183,7 @@ export function EditarCurvaRendimientoForm({ open, onOpenChange, onSave, editing
               variant="outline"
               onClick={() => onOpenChange(false)}
               className="gap-2"
+              disabled={isSaving} // Deshabilitar cancelar si guarda
             >
               <X className="h-4 w-4" />
               Cancelar
@@ -189,9 +192,19 @@ export function EditarCurvaRendimientoForm({ open, onOpenChange, onSave, editing
               type="button"
               onClick={handleSubmit(onFormSubmit)}
               className="gap-2"
+              disabled={isSaving} // Deshabilitar guardar
             >
-              <Save className="h-4 w-4" />
-              Guardar y Recalcular Proyecciones
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Guardar y Recalcular Proyecciones
+                </>
+              )}
             </Button>
           </div>
         </div>

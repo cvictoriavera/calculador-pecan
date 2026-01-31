@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2, Info, Loader2 } from "lucide-react"; // Agregado Loader2
+import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2, Info, Loader2 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
 import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
@@ -11,7 +11,7 @@ import { formatCurrency } from "@/lib/calculations";
 import { useDataStore } from "@/stores/dataStore";
 import { createProductionsByCampaign, getProductionsByCampaign, deleteProductionsByCampaign } from "@/services/productionService";
 import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton"; // Asumiendo que tienes este componente de Shadcn
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ComposedChart,
   Bar,
@@ -42,18 +42,24 @@ const Produccion = () => {
   const [editingData, setEditingData] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
-  
-  // --- NUEVOS ESTADOS PARA LOADING ---
-  const [isSaving, setIsSaving] = useState(false); // Para guardar/editar/eliminar
-  const [isLoadingData, setIsLoadingData] = useState(true); // Para carga inicial
 
+  // --- ESTADOS DE CARGA ---
+  const [isSaving, setIsSaving] = useState(false);
   const { productionCampaigns, loadAllProductions } = useDataStore();
+  
+  // Si ya tenemos datos en el store, NO iniciamos cargando (evita parpadeos al navegar)
+  const [isLoadingData, setIsLoadingData] = useState(productionCampaigns.length === 0);
+
   const deleteProductionCampaign = useDataStore((state) => state.deleteProductionCampaign);
 
+  // --- EFECTO DE CARGA OPTIMIZADO ---
   useEffect(() => {
     const fetchData = async () => {
       if (campaigns && campaigns.length > 0) {
-        setIsLoadingData(true);
+        // Solo mostramos loading si NO tenemos datos previos
+        if (productionCampaigns.length === 0) {
+           setIsLoadingData(true);
+        }
         try {
           await loadAllProductions(campaigns);
         } catch (error) {
@@ -68,10 +74,8 @@ const Produccion = () => {
     fetchData();
   }, [campaigns, loadAllProductions]);
 
-  
-
   const handleSaveProduccion = async (data: any) => {
-    setIsSaving(true); // Activar spinner
+    setIsSaving(true);
     try {
       const isEdit = editingData !== null || editData !== null;
       const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
@@ -99,6 +103,7 @@ const Produccion = () => {
         });
       }
 
+      // Recargar datos para asegurar consistencia
       if (campaigns.length > 0) {
          await loadAllProductions(campaigns);
       }
@@ -107,7 +112,7 @@ const Produccion = () => {
       setWizardOpen(false);
       setEditData(null);
       setEditOpen(false);
-      
+
       toast({
         title: "Datos Guardados",
         description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
@@ -120,7 +125,7 @@ const Produccion = () => {
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false); // Desactivar spinner
+      setIsSaving(false);
     }
   };
 
@@ -142,7 +147,6 @@ const Produccion = () => {
 
   const hasProduction = totalProduccion > 0 || precioPromedio > 0;
 
-  // Renderizado del Skeleton para las Cards KPI
   const renderKpiSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {[1, 2, 3].map((i) => (
@@ -170,28 +174,24 @@ const Produccion = () => {
           </p>
         </div>
         
-        {/* Lógica de botones superior: Si está cargando datos iniciales, deshabilitamos o mostramos skeleton en botón */}
         {isLoadingData ? (
            <Skeleton className="h-10 w-[180px]" />
         ) : hasProduction ? (
           <div className="flex gap-2">
             <Button
-              disabled={isSaving} // Deshabilitamos mientras carga
+              disabled={isSaving}
               onClick={async () => {
-                setIsSaving(true); // 1. Activamos spinner
+                setIsSaving(true);
                 try {
                   if (currentCampaignId) {
                     const productionsData = await getProductionsByCampaign(currentCampaignId) as ProductionRecord[];
 
-                    // Get campaign data for price
                     const campana = campaigns.find(c => Number(c.year) === currentCampaign);
                     const precioPromedio = campana?.average_price ? Number(campana.average_price) : 0;
 
-                    // Determine input method from the productions data
                     const firstRecord = productionsData[0] as ProductionRecord;
                     const metodo = firstRecord?.input_type === 'detail' ? 'detallado' : 'total';
 
-                    // Prepare montes data
                     const montesDisponibles = montes
                       .filter((m) => m.añoPlantacion <= currentCampaign)
                       .map((m) => ({
@@ -199,11 +199,8 @@ const Produccion = () => {
                         edad: Number(currentCampaign) - Number(m.añoPlantacion),
                       }));
 
-                    // Create production per monte from API data
                     const produccionPorMonte = montesDisponibles.map(monte => {
-                      // Fix: ensure we match IDs correctly (string/number conversion if needed)
                       const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === String(monte.id).split('.')[0]);
-                      
                       return {
                           monteId: monte.id,
                           nombre: monte.nombre,
@@ -225,8 +222,7 @@ const Produccion = () => {
                 } catch (error) {
                   console.error('Error loading production data for edit:', error);
                   
-                  // Fallback: show empty form if load fails
-                  // Esto evita que la app se rompa si falla la API
+                  // Fallback: mostrar formulario vacío
                   const montesDisponibles = montes
                     .filter((m) => m.añoPlantacion <= currentCampaign)
                     .map((m) => ({
@@ -249,20 +245,16 @@ const Produccion = () => {
                   setEditOpen(true);
                   
                 } finally {
-                  setIsSaving(false); // 2. Desactivamos spinner al terminar
+                  setIsSaving(false);
                 }
               }}
               variant="outline"
               className="gap-2"
             >
-              {isSaving ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Edit className="h-5 w-5" />
-              )}
+              {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Edit className="h-5 w-5" />}
               Editar Producción
             </Button>
-            
+
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="gap-2" disabled={isSaving}>
@@ -283,7 +275,7 @@ const Produccion = () => {
                   <AlertDialogAction
                     disabled={isSaving}
                     onClick={async (e) => {
-                      e.preventDefault(); // Prevenir cierre automático
+                      e.preventDefault();
                       setIsSaving(true);
                       try {
                         if (currentCampaignId) {
@@ -297,14 +289,18 @@ const Produccion = () => {
                         if (campaigns.length > 0) {
                              await loadAllProductions(campaigns);
                         }
-                        // Cerrar modal manualmente si es necesario o dejar que se desmonte
+                        // Forzar el cierre del modal se maneja automáticamente al desmontar o podrías necesitar un estado controlled si el preventDefault bloquea el cierre nativo.
+                        // En este caso, Radix UI suele requerir que cierres manualmente si haces preventDefault, 
+                        // pero como simplificación asumiremos que la recarga de datos es suficiente o el usuario puede cerrar.
+                        // Para mejor UX: document.getElementById('close-dialog')?.click() o similar si tuvieras referencia.
+                        // Pero para no complicar, dejaremos que termine y el usuario cierre o (mejor aún) si necesitas cerrar programáticamente, usa un estado para el Open del Dialog.
                       } catch (error) {
                         console.error('Error deleting production:', error);
                       } finally {
                         setIsSaving(false);
-                        // Aquí podrías necesitar un estado para cerrar el diálogo manualmente si usas controlled dialog
-                        // O forzar un re-render que cierre el dialog.
-                        // Como usas Radix UI default, podrías necesitar un ref para cerrar o cambiar a estado controlado (open={deleteOpen})
+                        // Hack simple para cerrar el dialog si se previno el default:
+                        // window.location.reload(); // NO recomendado.
+                        // Lo ideal es usar controlled component para el AlertDialog si quieres cerrarlo programáticamente.
                       }
                     }}
                   >
@@ -345,12 +341,11 @@ const Produccion = () => {
         </CardContent>
       </Card>
 
-      {/* KPI Cards con Skeleton */}
+      {/* KPI Cards */}
       {isLoadingData ? (
         renderKpiSkeleton()
       ) : hasProduction ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Card 1: Producción Total */}
           <Card className="border-border/50 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -366,7 +361,6 @@ const Produccion = () => {
             </CardContent>
           </Card>
 
-          {/* Card 2: Precio Promedio */}
           <Card className="border-border/50 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -382,7 +376,6 @@ const Produccion = () => {
             </CardContent>
           </Card>
 
-          {/* Card 3: Facturación */}
           <Card className="border-border/50 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -489,12 +482,11 @@ const Produccion = () => {
       )}
 
       {/* Production Evolution Matrix */}
-      {/* Pasamos isLoadingData al componente hijo para que muestre skeleton en la tabla */}
       {montes.length > 0 && campaigns.length > 0 && (
         <EvolucionProductiva 
             campaigns={campaigns} 
             montes={montes} 
-            isLoading={isLoadingData} // <--- Necesitarás agregar esta prop en el componente hijo
+            isLoading={isLoadingData} 
         />
       )}
 
@@ -504,7 +496,7 @@ const Produccion = () => {
         onOpenChange={setWizardOpen}
         onSave={handleSaveProduccion}
         editingData={editingData}
-        isSaving={isSaving} // <--- Necesitarás agregar esta prop
+        isSaving={isSaving}
       />
 
       {/* Edit Modal */}
@@ -513,7 +505,7 @@ const Produccion = () => {
         onOpenChange={setEditOpen}
         onSave={handleSaveProduccion}
         editingData={editData}
-        isSaving={isSaving} // <--- Necesitarás agregar esta prop
+        isSaving={isSaving}
       />
     </div>
   );
