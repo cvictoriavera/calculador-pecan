@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, TrendingUp, Loader2, Pencil, X , Info} from "lucide-react";
+import { Plus, Calendar, TrendingUp, Loader2, Pencil, X, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useApp } from "@/contexts/AppContext";
@@ -18,7 +18,7 @@ import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
 import { createInvestment, updateInvestment as updateInvestmentApi } from "@/services/investmentService";
 import { createProductionsByCampaign, getProductionsByCampaign } from "@/services/productionService";
 import type { ProductionRecord } from '@/stores/dataStore';
-
+import { Skeleton } from "@/components/ui/skeleton";
 
 const categoriaLabels: Record<string, string> = {
   tierra: "Tierra",
@@ -49,7 +49,6 @@ interface Campaign {
 }
 
 const Campanas = () => {
-
   const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign, currentCampaignId, montes } = useApp();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -61,14 +60,19 @@ const Campanas = () => {
   const isCampaignDisabled = isTrialMode() && manualCampaigns >= maxCampaigns;
 
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign, getTotalProductionByCampaign } = useCalculationsStore();
-  const loadAllProductions = useDataStore((state) => state.loadAllProductions);
   
+  // Stores
+  const loadAllProductions = useDataStore((state) => state.loadAllProductions);
+  const productionCampaigns = useDataStore((state) => state.productionCampaigns); // Necesario para verificar si ya hay datos
   const costs = useDataStore((state) => state.costs);
   const addCost = useDataStore((state) => state.addCost);
   const updateCost = useDataStore((state) => state.updateCost);
   const investments = useDataStore((state) => state.investments);
   const addInvestment = useDataStore((state) => state.addInvestment);
   const updateInvestment = useDataStore((state) => state.updateInvestment);
+  const loadProductions = useDataStore((state) => state.loadProductions);
+
+  // States
   const [isCreating, setIsCreating] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
@@ -78,19 +82,41 @@ const Campanas = () => {
   const [editingCosto, setEditingCosto] = useState<any>(null);
   const [inversionSheetOpen, setInversionSheetOpen] = useState(false);
   const [editingInversion, setEditingInversion] = useState<any>(null);
+  
+  // UI States for specific interactions
   const [editingMonth, setEditingMonth] = useState<{ [year: number]: boolean }>({});
   const [updatingMonth, setUpdatingMonth] = useState<{ [year: number]: boolean }>({});
+  const [loadingAction, setLoadingAction] = useState<{ [year: number]: string | null }>({}); // Controla spinner en botones
   
+  // Estado de carga inteligente (Stale-while-revalidate)
+  const [isLoadingData, setIsLoadingData] = useState(productionCampaigns.length === 0);
 
-
+  // Efecto de carga optimizado
   useEffect(() => {
-    if (campaigns && campaigns.length > 0) {
-      loadAllProductions(campaigns);
-    }
+    const fetchData = async () => {
+      if (campaigns && campaigns.length > 0) {
+        
+        // Solo mostramos el indicador de carga si NO tenemos datos previos.
+        // Si ya hay datos, el usuario los ve mientras actualizamos en "silencio".
+        if (productionCampaigns.length === 0) {
+           setIsLoadingData(true);
+        }
+
+        try {
+          await loadAllProductions(campaigns);
+        } catch (error) {
+          console.error("Error loading productions:", error);
+        } finally {
+          setIsLoadingData(false);
+        }
+      } else {
+         setIsLoadingData(false);
+      }
+    };
+    fetchData();
   }, [campaigns, loadAllProductions]);
-  
+
   const handleNuevaCampana = async () => {
-   // Verificar límite para usuarios suscriptores
    if (isTrialMode() && manualCampaigns >= maxCampaigns) {
      toast({
        title: "Límite alcanzado",
@@ -100,35 +126,27 @@ const Campanas = () => {
      return;
    }
 
-   // Activamos el modo carga inmediatamente
    setIsCreating(true);
-
-    // Encontrar el año más alto entre todas las campañas existentes
     const maxYear = safeCampaigns.length > 0 ? Math.max(...safeCampaigns.map(c => c.year)) : (initialYear || new Date().getFullYear());
     const nextYear = maxYear + 1;
-
-    // ... validación de existente (aunque debería ser redundante ahora) ...
     const existing = safeCampaigns.find(c => c.year === nextYear);
-    
     if (existing) {
       toast({
         title: "Error",
         description: `Ya existe una campaña para el año ${nextYear}`,
         variant: "destructive",
       });
-      setIsCreating(false); // Importante: desactivar si hay error temprano
+      setIsCreating(false);
       return;
     }
 
     try {
-      // 1. Cerrar la campaña actualmente activa (si existe) - solo para usuarios no suscriptores
       if (!isTrialMode()) {
         await closeActiveCampaign({
           project_id: currentProjectId!,
         });
       }
 
-      // 2. Crear la nueva campaña
       await createCampaign({
         project_id: currentProjectId!,
         campaign_name: `Campaña ${nextYear}`,
@@ -138,18 +156,12 @@ const Campanas = () => {
         status: 'open',
         is_current: 1,
       });
-
       toast({
         title: "Éxito",
         description: `Campaña ${nextYear} creada exitosamente`,
       });
-
-      // 3. Recargar datos
       await loadCampaigns();
-
-      // 4. Cambiar el año actual
       setCurrentCampaign(nextYear);
-
     } catch (error) {
       console.error('Error creating campaign:', error);
       toast({
@@ -158,23 +170,18 @@ const Campanas = () => {
         variant: "destructive",
       });
     } finally {
-      // 5. Desactivar carga SIEMPRE (haya éxito o error)
       setIsCreating(false);
     }
   };
 
-  // Ensure campaigns is always an array
   const safeCampaigns = campaigns || [];
 
-
-  // Get campaign data for a specific year
   const getCampaignForYear = (year: number): Campaign | null => {
     return safeCampaigns.find(campaign => String(campaign.year) === String(year)) || null;
   };
 
   const generateCampaignYears = () => {
     if (!initialYear) return [];
-
     const years = [];
     for (let year = currentCampaign; year >= initialYear; year--) {
       years.push(year);
@@ -189,36 +196,24 @@ const Campanas = () => {
         return `Enero ${year} - Enero ${year + 1}`;
     }
 
-    // Caso A: Ya tenemos el formato nuevo guardado (Strings)
-    // Ejemplo: start_date="Junio 2026", end_date="Junio 2027"
     if (campaign.start_date && !campaign.start_date.includes('-')) {
-        // Si existe end_date lo usamos, si no, lo "inventamos" visualmente
         const endText = campaign.end_date || `${campaign.start_date.split(' ')[0]} ${year + 1}`;
         return `${campaign.start_date} - ${endText}`;
     }
 
-    // Caso B: Formato antiguo (YYYY-MM-DD) o fallback
-    // Esto es solo por si tienes datos viejos sin migrar
     const start = new Date(campaign.start_date);
     const end = new Date(start);
     end.setFullYear(end.getFullYear() + 1);
-    // Nota: aquí podrías tener el problema de zona horaria si son datos viejos, 
-    // pero los datos nuevos entrarán en el Case A.
     return `${months[start.getUTCMonth()]} ${start.getFullYear()} - ${months[end.getUTCMonth()]} ${end.getFullYear()}`;
-};
+  };
 
   const handleMonthChange = async (year: number, monthIndex: number) => {
     const campaign = getCampaignForYear(year);
     if (!campaign) return;
     
     setUpdatingMonth(prev => ({ ...prev, [year]: true }));
-    
     try {
       const startMonthName = months[monthIndex];
-      
-      // CALCULO DEL MES DE FIN (El mes anterior al de inicio)
-      // Si el inicio es Enero (0), el fin es Diciembre (11).
-      // Si el inicio es Julio (6), el fin es Junio (5).
       const endMonthIndex = (monthIndex - 1 + 12) % 12; 
       const endMonthName = months[endMonthIndex];
 
@@ -229,7 +224,6 @@ const Campanas = () => {
         start_date: newStartDate,
         end_date: newEndDate,
       });
-      
       await loadCampaigns();
       setEditingMonth(prev => ({ ...prev, [year]: false }));
     } catch (error) {
@@ -246,40 +240,30 @@ const Campanas = () => {
 
   const handleSaveProduccion = async (data: any) => {
     try {
-      // Determine if this is an edit operation (has existing data)
       const isEdit = editingData !== null || editData !== null;
-
-      // Calculate total production
       const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
-
-      // Prepare productions data for the API
       const productionsData = data.produccionPorMonte
         .filter((p: any) => p.kgRecolectados > 0)
         .map((p: any) => ({
           monte_id: parseInt(p.monteId),
           quantity_kg: p.kgRecolectados,
-          is_estimated: data.metodo === 'total' ? 1 : 0, // Mark as estimated if using total method
+          is_estimated: data.metodo === 'total' ? 1 : 0,
         }));
 
-      // Save productions to database using the new API
       if (currentCampaignId && currentProjectId) {
         await createProductionsByCampaign(currentCampaignId, {
           project_id: currentProjectId,
           productions: productionsData,
-          input_type: data.metodo === 'detallado' ? 'detail' : 'total', // Map to API expected values
+          input_type: data.metodo === 'detallado' ? 'detail' : 'total',
         });
-
-        // Update campaign with summary data (only price and total production)
         await updateCampaign(currentCampaignId, {
           average_price: data.precioPromedio,
           total_production: totalKg,
-          // Remove old JSON fields - no longer needed
           montes_contribuyentes: null,
           montes_production: null,
         });
-
       }
-      // Reload production data from database to update local stores
+      
       if (currentCampaignId) {
         const { loadProductions } = useDataStore.getState();
         await loadProductions(currentCampaignId);
@@ -289,7 +273,6 @@ const Campanas = () => {
       setWizardOpen(false);
       setEditData(null);
       setEditOpen(false);
-
       toast({
         title: "Datos Guardados ...",
         description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
@@ -304,34 +287,29 @@ const Campanas = () => {
     }
   };
 
-  const loadProductions = useDataStore((state) => state.loadProductions);
-
-  // Función auxiliar para cargar datos antes de editar
   const handleOpenEdit = async (campaign: Campaign) => {
+    // 1. Activar loading para este botón específico
+    setLoadingAction(prev => ({ ...prev, [campaign.year]: 'produccion' }));
+
     try {
       if (campaign.id) {
-        // IMPORTANTE: Primero cargar en el store para asegurar sincronización
+        // Cargar en store primero
         await loadProductions(campaign.id);
         
-        // Ahora obtener los datos para el formulario
+        // Obtener datos para el formulario
         const productionsData = await getProductionsByCampaign(campaign.id) as ProductionRecord[];
-        
-        // Get campaign data for price
         const precioPromedio = campaign.average_price ? parseFloat(campaign.average_price) : 0;
   
-        // Determine input method from the productions data
         const firstRecord = productionsData[0] as ProductionRecord;
         const metodo = firstRecord?.input_type === 'detail' ? 'detallado' : 'total';
-  
-        // Prepare montes data
+
         const montesDisponibles = montes
           .filter((m) => m.añoPlantacion <= campaign.year)
           .map((m) => ({
             ...m,
             edad: Number(campaign.year) - Number(m.añoPlantacion),
           }));
-  
-        // Create production per monte from API data
+
         const produccionPorMonte = montesDisponibles.map(monte => {
           const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === monte.id.split('.')[0]);
   
@@ -343,7 +321,7 @@ const Campanas = () => {
               kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0,
           };
         });
-  
+
         const editDataToSet = {
           precioPromedio,
           metodo,
@@ -354,27 +332,20 @@ const Campanas = () => {
       }
     } catch (error) {
       console.error('Error loading production data for edit:', error);
-      // Fallback: show empty form
-        toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+      toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+    } finally {
+        // 2. Desactivar loading
+        setLoadingAction(prev => ({ ...prev, [campaign.year]: null }));
     }
   };
 
   const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
     if (!currentProjectId) {
-      toast({
-        title: "Error",
-        description: "No hay proyecto activo",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No hay proyecto activo", variant: "destructive" });
       return;
     }
-
     if (!currentCampaignId) {
-      toast({
-        title: "Error",
-        description: "No se pudo encontrar la campaña actual",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo encontrar la campaña actual", variant: "destructive" });
       return;
     }
 
@@ -387,10 +358,7 @@ const Campanas = () => {
             details: costData.details,
             total_amount: costData.total_amount,
           });
-          toast({
-            title: "Éxito",
-            description: "Costo actualizado",
-          });
+          toast({ title: "Éxito", description: "Costo actualizado" });
         } else {
           await addCost({
             project_id: currentProjectId,
@@ -399,10 +367,7 @@ const Campanas = () => {
             details: costData.details,
             total_amount: costData.total_amount,
           });
-          toast({
-            title: "Éxito",
-            description: "Costo registrado",
-          });
+          toast({ title: "Éxito", description: "Costo registrado" });
         }
       }
       else if (typeof formData === 'object' && formData.category) {
@@ -412,10 +377,7 @@ const Campanas = () => {
             details: formData.details,
             total_amount: formData.total_amount,
           });
-          toast({
-            title: "Éxito",
-            description: "Costo actualizado",
-          });
+          toast({ title: "Éxito", description: "Costo actualizado" });
         } else {
           await addCost({
             project_id: currentProjectId,
@@ -424,10 +386,7 @@ const Campanas = () => {
             details: formData.details,
             total_amount: formData.total_amount,
           });
-          toast({
-            title: "Éxito",
-            description: "Costo registrado",
-          });
+          toast({ title: "Éxito", description: "Costo registrado" });
         }
       }
       else if (editingCosto) {
@@ -437,10 +396,7 @@ const Campanas = () => {
           details: formData,
           total_amount: formData?.total || formData?.total_amount || 0,
         });
-        toast({
-          title: "Éxito",
-          description: "Costo actualizado",
-        });
+        toast({ title: "Éxito", description: "Costo actualizado" });
         setEditingCosto(null);
       }
       else {
@@ -452,28 +408,17 @@ const Campanas = () => {
           details: formData,
           total_amount: formData?.total || formData?.total_amount || 0,
         });
-        toast({
-          title: "Éxito",
-          description: "Costo registrado",
-        });
+        toast({ title: "Éxito", description: "Costo registrado" });
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error al guardar el costo",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Error al guardar el costo", variant: "destructive" });
       console.error("Error saving cost:", error);
     }
   };
 
   const handleSaveInversion = async (categoria: string, data: any) => {
     if (!currentProjectId) {
-      toast({
-        title: "Error",
-        description: "No hay proyecto activo",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No hay proyecto activo", variant: "destructive" });
       return;
     }
 
@@ -495,10 +440,7 @@ const Campanas = () => {
           amount: monto,
           data,
         });
-        toast({
-          title: "Éxito",
-          description: "Inversión actualizada correctamente",
-        });
+        toast({ title: "Éxito", description: "Inversión actualizada correctamente" });
         setEditingInversion(null);
       } else {
         const result = await createInvestment({
@@ -518,18 +460,11 @@ const Campanas = () => {
           date: new Date(),
           data,
         });
-        toast({
-          title: "Éxito",
-          description: "Inversión registrada correctamente",
-        });
+        toast({ title: "Éxito", description: "Inversión registrada correctamente" });
       }
     } catch (error) {
       console.error("Error saving investment:", error);
-      toast({
-        title: "Error",
-        description: "Error al guardar la inversión",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Error al guardar la inversión", variant: "destructive" });
     }
   };
 
@@ -565,7 +500,7 @@ const Campanas = () => {
         <div className="flex items-center gap-2">
           <Button
             onClick={handleNuevaCampana}
-            disabled={isCreating || isCampaignDisabled} // Deshabilita el botón mientras crea o si alcanza el límite
+            disabled={isCreating || isCampaignDisabled}
             className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
           >
             {isCreating ? (
@@ -594,10 +529,10 @@ const Campanas = () => {
           <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-medium font-semibold text-amber-900">
-              ¿Cómo funcionan los ciclos de Campaña? 
+              ¿Cómo funcionan los ciclos de Campaña?
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
-              Cada campaña representa un <strong>ciclo productivo completo de 12 meses</strong> (ej: de Julio a Junio del año siguiente). 
+              Cada campaña representa un <strong>ciclo productivo completo de 12 meses</strong> (ej: de Julio a Junio del año siguiente).
               Para que el sistema calcule correctamente la rentabilidad, asegúrate de que todos los registros de 
               <strong> producción, costos e inversiones</strong> correspondan estrictamente al período de fechas indicado en la tarjeta de la campaña.
             </p>
@@ -623,15 +558,11 @@ const Campanas = () => {
       ) : (
         <div className="space-y-4">
           {campaignYears.map((year) => {
-
             const campaign = getCampaignForYear(year);
             const isCurrentYear = year === currentCampaign;
-
             const totalProductionKg = campaign ? getTotalProductionByCampaign(campaign.id) : 0;  
-
             const averagePrice = campaign ? Number(campaign.average_price || 0) : 0;
             const totalRevenue = totalProductionKg * averagePrice;
-
 
             return (
               <Card
@@ -647,32 +578,44 @@ const Campanas = () => {
                       <div className="flex items-center gap-2 mt-1">
                         {editingMonth[year] ? (
                           <div className="flex items-center gap-2">
-                            <Select
-                              value={campaign?.start_date ? campaign.start_date.split(' ')[0] : months[0]}
-                              onValueChange={(value: string) => {
-                                const monthIndex = months.indexOf(value);
-                                handleMonthChange(year, monthIndex);
-                              }}
-                              disabled={updatingMonth[year]}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {months.map((month, index) => (
-                                  <SelectItem key={index} value={month}>{month}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingMonth(prev => ({ ...prev, [year]: false }))}
-                              className="p-1 h-6 w-6"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                            <p className="text-sm text-muted-foreground mb-0">Define el mes de inicio de la campaña</p>
+                             {updatingMonth[year] ? (
+                                <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-muted">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span className="text-sm text-muted-foreground">Actualizando...</span>
+                                </div>
+                            ) : (
+                                <Select
+                                    value={campaign?.start_date ? campaign.start_date.split(' ')[0] : months[0]}
+                                    onValueChange={(value: string) => {
+                                        const monthIndex = months.indexOf(value);
+                                        handleMonthChange(year, monthIndex);
+                                    }}
+                                    disabled={updatingMonth[year]}
+                                >
+                                    <SelectTrigger className="w-32">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {months.map((month, index) => (
+                                        <SelectItem key={index} value={month}>{month}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                            
+                            {!updatingMonth[year] && (
+                                <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingMonth(prev => ({ ...prev, [year]: false }))}
+                                className="p-1 h-6 w-6"
+                                >
+                                <X className="h-4 w-4" />
+                                </Button>
+                            )}
+                            {!updatingMonth[year] && (
+                                <p className="text-sm text-muted-foreground mb-0">Define el mes de inicio</p>
+                            )}
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground mb-0">
@@ -724,9 +667,15 @@ const Campanas = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-0">Producción</p>
-                        <p className="text-lg font-semibold text-foreground mb-0">
-                          {totalProductionKg.toLocaleString()} kg
-                        </p>
+                        <div className="min-h-[28px] flex items-center">
+                          {isLoadingData ? (
+                            <Skeleton className="h-6 w-24 bg-border/50" />
+                          ) : (
+                            <p className="text-lg font-semibold text-foreground mb-0">
+                                {totalProductionKg.toLocaleString()} kg
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -736,9 +685,15 @@ const Campanas = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-0">Ingresos</p>
-                        <p className="text-lg font-semibold text-accent mb-0">
-                          {formatCurrency(totalRevenue, true)}
-                        </p>
+                        <div className="min-h-[28px] flex items-center">
+                            {isLoadingData ? (
+                                <Skeleton className="h-6 w-24 bg-border/50" />
+                            ) : (
+                                <p className="text-lg font-semibold text-accent mb-0">
+                                    {formatCurrency(totalRevenue, true)}
+                                </p>
+                            )}
+                        </div>
                       </div>
                     </div>
 
@@ -748,22 +703,36 @@ const Campanas = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-0">Costos</p>
-                        <p className="text-lg font-semibold text-accent mb-0"> {campaign ? formatCurrency(getTotalCostsByCampaign(campaign.id), true) : '$0'}</p>
+                        <div className="min-h-[28px] flex items-center">
+                            {isLoadingData ? (
+                                <Skeleton className="h-6 w-24 bg-border/50" />
+                            ) : (
+                                <p className="text-lg font-semibold text-accent mb-0"> 
+                                    {campaign ? formatCurrency(getTotalCostsByCampaign(campaign.id), true) : '$0'}
+                                </p>
+                            )}
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <div className="p-3 rounded-lg bg-cream">
-                        <TrendingUp className="h-6 w-6 text-accent" />
+                         <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-0">Invertido</p>
-                        <p className="text-lg font-semibold text-accent mb-0">
-                          {(() => {
-                            const total = campaign ? getTotalInvestmentsByCampaign(campaign.id) : 0;
-                            return formatCurrency(total, true);
-                          })()}
-                        </p>
+                        <div className="min-h-[28px] flex items-center">
+                            {isLoadingData ? (
+                                <Skeleton className="h-6 w-24 bg-border/50" />
+                            ) : (
+                                <p className="text-lg font-semibold text-accent mb-0">
+                                {(() => {
+                                    const total = campaign ? getTotalInvestmentsByCampaign(campaign.id) : 0;
+                                    return formatCurrency(total, true);
+                                })()}
+                                </p>
+                            )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -771,19 +740,17 @@ const Campanas = () => {
                   <div className="mt-4 pt-4 border-t border-border flex gap-2">
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 gap-2"
+                      disabled={loadingAction[year] === 'produccion'}
                       onClick={() => {
                         if (isTrialMode()) {
                           setCurrentCampaign(year);
                           navigate('/produccion');
                         } else {
                           const hayDatos = campaign ? getTotalProductionByCampaign(campaign.id) > 0 : false;
-
                           if (hayDatos) {
-                            // SI HAY DATOS: Abrimos el formulario de edición
                             handleOpenEdit(campaign!);
                           } else {
-                            // SI NO HAY DATOS: Abrimos el formulario de registro
                             setCurrentCampaign(year);
                             setEditingData(null);
                             setWizardOpen(true);
@@ -791,7 +758,14 @@ const Campanas = () => {
                         }
                       }}
                     >
-                      {campaign && getTotalProductionByCampaign(campaign.id) > 0 ? 'Editar Producción' : 'Cargar Producción'}
+                      {loadingAction[year] === 'produccion' ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Cargando...
+                          </>
+                      ) : (
+                        campaign && getTotalProductionByCampaign(campaign.id) > 0 ? 'Editar Producción' : 'Cargar Producción'
+                      )}
                     </Button>
                     <Button
                       variant="outline"
