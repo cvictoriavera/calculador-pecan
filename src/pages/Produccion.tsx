@@ -11,16 +11,6 @@ import { formatCurrency } from "@/lib/calculations";
 import { useDataStore } from "@/stores/dataStore";
 import { createProductionsByCampaign, getProductionsByCampaign, deleteProductionsByCampaign } from "@/services/productionService";
 import { useToast } from "@/hooks/use-toast";
-
-interface ProductionRecord {
-  monte_id: number;
-  quantity_kg: number;
-  input_type: string;
-  is_estimated: number;
-  entry_group_id: string;
-  monte_name?: string;
-  area_hectareas?: number;
-}
 import {
   ComposedChart,
   Bar,
@@ -33,21 +23,44 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+interface ProductionRecord {
+  monte_id: number;
+  quantity_kg: number;
+  input_type: string;
+  is_estimated: number;
+  entry_group_id: string;
+  monte_name?: string;
+  area_hectareas?: number;
+}
+
 const Produccion = () => {
   const { currentCampaign, campaigns, currentCampaignId, currentProjectId, updateCampaign, montes } = useApp();
   const { toast } = useToast();
+  
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
 
+  // --- CORRECCIÓN 1: Importamos loadAllProductions ---
   // Get data from stores
-  const productionCampaigns = useDataStore((state) => state.productionCampaigns);
-
+  const { productionCampaigns, loadAllProductions } = useDataStore();
+  
   // Store actions
-  const addProductionCampaign = useDataStore((state) => state.addProductionCampaign);
-  const updateProductionCampaign = useDataStore((state) => state.updateProductionCampaign);
+
   const deleteProductionCampaign = useDataStore((state) => state.deleteProductionCampaign);
+
+  // --- CORRECCIÓN 2: Efecto de carga robusto ---
+  // Usamos loadAllProductions pasando las campañas explícitamente para asegurar el mapeo de años
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      loadAllProductions(campaigns);
+    }
+  }, [campaigns, loadAllProductions]);
+
+  // --- CORRECCIÓN 3: Eliminado el useEffect conflictivo ---
+  // Se eliminó el bloque que hacía sync manual entre campaigns y productionCampaigns
+  // porque sobrescribía los datos del store con datos vacíos del contexto.
 
   const handleSaveProduccion = async (data: any) => {
     try {
@@ -82,12 +95,12 @@ const Produccion = () => {
           montes_contribuyentes: null,
           montes_production: null,
         });
-
       }
-      // Reload production data from database to update local stores
-      if (currentCampaignId) {
-        const { loadProductions } = useDataStore.getState();
-        await loadProductions(currentCampaignId);
+
+      // Reload production data to update local stores
+      // Usamos loadAllProductions para mantener la consistencia del Store
+      if (campaigns.length > 0) {
+         await loadAllProductions(campaigns);
       }
 
       setEditingData(null);
@@ -109,8 +122,6 @@ const Produccion = () => {
     }
   };
 
-
-  // Prepare chart data
   const chartData = campaigns
     .map((year) => {
       const campana = productionCampaigns.find(pc => pc.year === year.year);
@@ -122,47 +133,14 @@ const Produccion = () => {
     })
     .sort((a, b) => parseInt(a.year) - parseInt(b.year));
 
-  // Current campaign stats
   const currentCampanaData = productionCampaigns.find(pc => Number(pc.year) === currentCampaign);
   const totalProduccion = currentCampanaData?.totalProduction || 0;
   const totalFacturacion = (currentCampanaData?.totalProduction || 0) * (currentCampanaData?.averagePrice || 0);
   const precioPromedio = currentCampanaData?.averagePrice || 0;
 
-
-  // Load production data from campaigns when campaigns change
-  useEffect(() => {
-    campaigns.forEach(camp => {
-      const existing = productionCampaigns.find(pc => pc.year === camp.year);
-      if (camp.average_price !== undefined && camp.total_production !== undefined) {
-        const newAveragePrice = parseFloat(camp.average_price);
-        const newTotalProduction = parseFloat(camp.total_production);
-        const newDate = new Date(camp.updated_at || camp.created_at);
-        if (existing) {
-          // Only update if values changed
-          if (existing.averagePrice !== newAveragePrice || existing.totalProduction !== newTotalProduction) {
-            updateProductionCampaign(existing.id, {
-              averagePrice: newAveragePrice,
-              totalProduction: newTotalProduction,
-              date: newDate,
-            });
-          }
-        } else {
-          addProductionCampaign({
-            id: `campaign-${camp.year}`,
-            year: camp.year,
-            averagePrice: newAveragePrice,
-            totalProduction: newTotalProduction,
-            date: newDate,
-          });
-        }
-      }
-    });
-  }, [campaigns, productionCampaigns, addProductionCampaign, updateProductionCampaign]);
-
-  // Check if has production for current campaign (from database)
-  const currentCamp = campaigns.find(c => Number(c.year) === currentCampaign);
-  const hasProduction = currentCamp && currentCamp.average_price !== undefined && currentCamp.total_production !== undefined &&
-                        (parseFloat(currentCamp.average_price) > 0 || parseFloat(currentCamp.total_production) > 0);
+  // --- CORRECCIÓN 4: Lógica de visibilidad segura ---
+  // Check if has production for current campaign (directamente desde el Store cargado)
+  const hasProduction = totalProduccion > 0 || precioPromedio > 0;
 
   return (
     <div className="space-y-6">
@@ -178,7 +156,6 @@ const Produccion = () => {
             <Button
               onClick={async () => {
                 try {
-                  
                   if (currentCampaignId) {
                     const productionsData = await getProductionsByCampaign(currentCampaignId) as ProductionRecord[];
 
@@ -187,7 +164,6 @@ const Produccion = () => {
                     const precioPromedio = campana?.average_price ? Number(campana.average_price) : 0;
 
                     // Determine input method from the productions data
-                    // Check the input_type of the first record (all records should have the same input_type)
                     const firstRecord = productionsData[0] as ProductionRecord;
                     const metodo = firstRecord?.input_type === 'detail' ? 'detallado' : 'total';
 
@@ -201,9 +177,7 @@ const Produccion = () => {
 
                     // Create production per monte from API data
                     const produccionPorMonte = montesDisponibles.map(monte => {
-
                       const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === monte.id.split('.')[0]);
-
                       return {
                           monteId: monte.id,
                           nombre: monte.nombre,
@@ -219,7 +193,6 @@ const Produccion = () => {
                       produccionPorMonte,
                     };
                     setEditData(editDataToSet);
-
                     setEditOpen(true);
                   }
                 } catch (error) {
@@ -231,7 +204,6 @@ const Produccion = () => {
                       ...m,
                       edad: Number(currentCampaign) - Number(m.añoPlantacion),
                     }));
-
                   const fallbackData = {
                     precioPromedio: 0,
                     metodo: 'detallado',
@@ -275,7 +247,7 @@ const Produccion = () => {
                       try {
                         // Delete productions from database using new API
                         if (currentCampaignId) {
-                          await deleteProductionsByCampaign(currentCampaignId);
+                           await deleteProductionsByCampaign(currentCampaignId);
                         }
 
                         // Update campaign to remove summary data
@@ -283,7 +255,6 @@ const Produccion = () => {
                           const updateData = {
                             average_price: 0,
                             total_production: 0,
-                            // JSON fields are already null from save operation
                           };
                           const result = await updateCampaign(currentCampaignId, updateData);
                           console.log('Campaign updated after deletion:', result);
@@ -291,6 +262,12 @@ const Produccion = () => {
 
                         // Delete from local Zustand stores
                         productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
+                        
+                        // Recargamos stores para asegurar consistencia
+                        if (campaigns.length > 0) {
+                             loadAllProductions(campaigns);
+                        }
+
                       } catch (error) {
                         console.error('Error deleting production:', error);
                         // TODO: Show error message to user
@@ -322,7 +299,8 @@ const Produccion = () => {
               Registrar una Producción
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
-              Al registrar tu <strong>cosecha anual</strong> puedes cargar los kilos por monte o los kilos totales.   
+              Al registrar tu <strong>cosecha anual</strong> puedes cargar los kilos por monte o los 
+              kilos totales.   
             </p>
           </div>
         </CardContent>
@@ -377,7 +355,8 @@ const Produccion = () => {
         </Card>
         </div>
       )}
-{/* Empty State */}
+
+      {/* Empty State */}
       {!hasProduction && (
         <Card className="border-border/50 shadow-md border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -386,8 +365,8 @@ const Produccion = () => {
               Sin registro de producción
             </h3>
             <p className="text-muted-foreground mb-6 text-center max-w-md">
-              Aún no has registrado la cosecha para la campaña {currentCampaign}. Usa el asistente
-              de cierre para cargar los datos de producción.
+              Aún no has registrado la cosecha para la campaña {currentCampaign}.
+              Usa el asistente de cierre para cargar los datos de producción.
             </p>
             <Button
               onClick={() => setWizardOpen(true)}
@@ -430,7 +409,7 @@ const Produccion = () => {
                 }}
                 formatter={(value: number, name: string) => {
                   if (name === "produccion") {
-                    return [`${value.toLocaleString()} Kg`, "Producción"];
+                     return [`${value.toLocaleString()} Kg`, "Producción"];
                   }
                   return [formatCurrency(value, true), "Facturación"];
                 }}
@@ -462,8 +441,6 @@ const Produccion = () => {
       {montes.length > 0 && campaigns.length > 0 && (
         <EvolucionProductiva campaigns={campaigns} montes={montes} />
       )}
-
-      
 
       {/* Wizard Modal */}
       <RegistrarProduccionForm

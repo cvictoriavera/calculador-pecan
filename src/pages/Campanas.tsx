@@ -17,6 +17,8 @@ import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
 import { createInvestment, updateInvestment as updateInvestmentApi } from "@/services/investmentService";
 import { createProductionsByCampaign, getProductionsByCampaign } from "@/services/productionService";
+import type { ProductionRecord } from '@/stores/dataStore';
+
 
 const categoriaLabels: Record<string, string> = {
   tierra: "Tierra",
@@ -78,6 +80,7 @@ const Campanas = () => {
   const [editingInversion, setEditingInversion] = useState<any>(null);
   const [editingMonth, setEditingMonth] = useState<{ [year: number]: boolean }>({});
   const [updatingMonth, setUpdatingMonth] = useState<{ [year: number]: boolean }>({});
+  
 
 
   useEffect(() => {
@@ -106,6 +109,7 @@ const Campanas = () => {
 
     // ... validación de existente (aunque debería ser redundante ahora) ...
     const existing = safeCampaigns.find(c => c.year === nextYear);
+    
     if (existing) {
       toast({
         title: "Error",
@@ -300,47 +304,57 @@ const Campanas = () => {
     }
   };
 
+  const loadProductions = useDataStore((state) => state.loadProductions);
+
   // Función auxiliar para cargar datos antes de editar
   const handleOpenEdit = async (campaign: Campaign) => {
-    setCurrentCampaign(campaign.year); // Sincronizamos el año seleccionado
-    
     try {
-        // 1. Pedir datos a la API
-        const productionsData: any[] = await getProductionsByCampaign(campaign.id) as any[];
+      if (campaign.id) {
+        // IMPORTANTE: Primero cargar en el store para asegurar sincronización
+        await loadProductions(campaign.id);
         
-        // 2. Determinar método (mirando el primer registro)
-        const firstRecord = productionsData[0];
+        // Ahora obtener los datos para el formulario
+        const productionsData = await getProductionsByCampaign(campaign.id) as ProductionRecord[];
+        
+        // Get campaign data for price
+        const precioPromedio = campaign.average_price ? parseFloat(campaign.average_price) : 0;
+  
+        // Determine input method from the productions data
+        const firstRecord = productionsData[0] as ProductionRecord;
         const metodo = firstRecord?.input_type === 'detail' ? 'detallado' : 'total';
-        const precioPromedio = Number(campaign.average_price || 0);
-
-        const produccionPorMonte = montes
-            .filter(m => m.añoPlantacion <= campaign.year)
-            .map(monte => {
-                // CORRECCIÓN AQUÍ: Usar 'monte' en lugar de 'm'
-                const edad = campaign.year - monte.añoPlantacion; 
-                
-                // Búsqueda segura de IDs (String vs Number)
-                const record = productionsData.find(p => String(p.monte_id) === String(monte.id));
-                
-                return {
-                    monteId: monte.id, 
-                    nombre: monte.nombre,
-                    hectareas: monte.hectareas,
-                    edad: edad,
-                    kgRecolectados: record ? Number(record.quantity_kg) : 0
-                };
-            });
-
-        // 4. Abrir el modal con los datos listos
-        setEditData({
-            precioPromedio,
-            metodo,
-            produccionPorMonte
+  
+        // Prepare montes data
+        const montesDisponibles = montes
+          .filter((m) => m.añoPlantacion <= campaign.year)
+          .map((m) => ({
+            ...m,
+            edad: Number(campaign.year) - Number(m.añoPlantacion),
+          }));
+  
+        // Create production per monte from API data
+        const produccionPorMonte = montesDisponibles.map(monte => {
+          const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === monte.id.split('.')[0]);
+  
+          return {
+              monteId: monte.id,
+              nombre: monte.nombre,
+              hectareas: monte.hectareas,
+              edad: monte.edad,
+              kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0,
+          };
         });
+  
+        const editDataToSet = {
+          precioPromedio,
+          metodo,
+          produccionPorMonte,
+        };
+        setEditData(editDataToSet);
         setEditOpen(true);
-
+      }
     } catch (error) {
-        console.error("Error cargando datos para edición:", error);
+      console.error('Error loading production data for edit:', error);
+      // Fallback: show empty form
         toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
     }
   };

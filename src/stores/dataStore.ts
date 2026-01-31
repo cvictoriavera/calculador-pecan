@@ -106,6 +106,7 @@ export interface ProductionRecord {
    entry_group_id: string;
    quantity_kg: number;
    is_estimated: boolean;
+   input_type?: string;  
    date: string;
  }
 
