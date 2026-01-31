@@ -23,7 +23,8 @@ import {
 import {
   Check,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2
 } from "lucide-react";
 
 interface MonteProduccion {
@@ -38,6 +39,7 @@ interface EditarProduccionProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: RegistrarProduccionFormData) => void;
+  isSaving?: boolean;
   editingData: {
     precioPromedio: number;
     metodo: "detallado" | "total";
@@ -45,7 +47,7 @@ interface EditarProduccionProps {
   };
 }
 
-export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }: EditarProduccionProps) {
+export function EditarProduccionForm({ open, onOpenChange, onSave, editingData, isSaving = false }: EditarProduccionProps) {
   const { currentCampaign, montes } = useApp();
   const [showJovenes, setShowJovenes] = useState(false);
 
@@ -437,9 +439,22 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData }
 
           {/* Botón de Guardar */}
           <div className="flex justify-end">
-            <Button type="submit" className="bg-accent hover:bg-accent/90">
-              <Check className="h-4 w-4 mr-2" />
-              Guardar Cambios
+            <Button 
+              type="submit" 
+              className="bg-accent hover:bg-accent/90"
+              disabled={isSaving} // <--- Deshabilitar
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Guardar Cambios
+                </>
+              )}
             </Button>
           </div>
         </form>

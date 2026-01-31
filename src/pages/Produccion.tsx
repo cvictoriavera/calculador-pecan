@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2, Info } from "lucide-react";
+import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2, Info, Loader2 } from "lucide-react"; // Agregado Loader2
 import { useApp } from "@/contexts/AppContext";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
 import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/calculations";
 import { useDataStore } from "@/stores/dataStore";
 import { createProductionsByCampaign, getProductionsByCampaign, deleteProductionsByCampaign } from "@/services/productionService";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton"; // Asumiendo que tienes este componente de Shadcn
 import {
   ComposedChart,
   Bar,
@@ -41,64 +42,63 @@ const Produccion = () => {
   const [editingData, setEditingData] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
-
-  // --- CORRECCIÓN 1: Importamos loadAllProductions ---
-  // Get data from stores
-  const { productionCampaigns, loadAllProductions } = useDataStore();
   
-  // Store actions
+  // --- NUEVOS ESTADOS PARA LOADING ---
+  const [isSaving, setIsSaving] = useState(false); // Para guardar/editar/eliminar
+  const [isLoadingData, setIsLoadingData] = useState(true); // Para carga inicial
 
+  const { productionCampaigns, loadAllProductions } = useDataStore();
   const deleteProductionCampaign = useDataStore((state) => state.deleteProductionCampaign);
 
-  // --- CORRECCIÓN 2: Efecto de carga robusto ---
-  // Usamos loadAllProductions pasando las campañas explícitamente para asegurar el mapeo de años
   useEffect(() => {
-    if (campaigns && campaigns.length > 0) {
-      loadAllProductions(campaigns);
-    }
+    const fetchData = async () => {
+      if (campaigns && campaigns.length > 0) {
+        setIsLoadingData(true);
+        try {
+          await loadAllProductions(campaigns);
+        } catch (error) {
+          console.error("Error loading productions:", error);
+        } finally {
+          setIsLoadingData(false);
+        }
+      } else {
+         setIsLoadingData(false);
+      }
+    };
+    fetchData();
   }, [campaigns, loadAllProductions]);
 
-  // --- CORRECCIÓN 3: Eliminado el useEffect conflictivo ---
-  // Se eliminó el bloque que hacía sync manual entre campaigns y productionCampaigns
-  // porque sobrescribía los datos del store con datos vacíos del contexto.
+  
 
   const handleSaveProduccion = async (data: any) => {
+    setIsSaving(true); // Activar spinner
     try {
-      // Determine if this is an edit operation (has existing data)
       const isEdit = editingData !== null || editData !== null;
-
-      // Calculate total production
       const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
 
-      // Prepare productions data for the API
       const productionsData = data.produccionPorMonte
         .filter((p: any) => p.kgRecolectados > 0)
         .map((p: any) => ({
           monte_id: parseInt(p.monteId),
           quantity_kg: p.kgRecolectados,
-          is_estimated: data.metodo === 'total' ? 1 : 0, // Mark as estimated if using total method
+          is_estimated: data.metodo === 'total' ? 1 : 0,
         }));
 
-      // Save productions to database using the new API
       if (currentCampaignId && currentProjectId) {
         await createProductionsByCampaign(currentCampaignId, {
           project_id: currentProjectId,
           productions: productionsData,
-          input_type: data.metodo === 'detallado' ? 'detail' : 'total', // Map to API expected values
+          input_type: data.metodo === 'detallado' ? 'detail' : 'total',
         });
 
-        // Update campaign with summary data (only price and total production)
         await updateCampaign(currentCampaignId, {
           average_price: data.precioPromedio,
           total_production: totalKg,
-          // Remove old JSON fields - no longer needed
           montes_contribuyentes: null,
           montes_production: null,
         });
       }
 
-      // Reload production data to update local stores
-      // Usamos loadAllProductions para mantener la consistencia del Store
       if (campaigns.length > 0) {
          await loadAllProductions(campaigns);
       }
@@ -107,9 +107,9 @@ const Produccion = () => {
       setWizardOpen(false);
       setEditData(null);
       setEditOpen(false);
-
+      
       toast({
-        title: "Datos Guardados ...",
+        title: "Datos Guardados",
         description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
       });
     } catch (error) {
@@ -119,6 +119,8 @@ const Produccion = () => {
         description: "No se pudieron guardar los cambios",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false); // Desactivar spinner
     }
   };
 
@@ -138,9 +140,25 @@ const Produccion = () => {
   const totalFacturacion = (currentCampanaData?.totalProduction || 0) * (currentCampanaData?.averagePrice || 0);
   const precioPromedio = currentCampanaData?.averagePrice || 0;
 
-  // --- CORRECCIÓN 4: Lógica de visibilidad segura ---
-  // Check if has production for current campaign (directamente desde el Store cargado)
   const hasProduction = totalProduccion > 0 || precioPromedio > 0;
+
+  // Renderizado del Skeleton para las Cards KPI
+  const renderKpiSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[1, 2, 3].map((i) => (
+        <Card key={i} className="border-border/50 shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <Skeleton className="h-4 w-[100px]" />
+            <Skeleton className="h-5 w-5 rounded-full" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-8 w-[120px] mb-2" />
+            <Skeleton className="h-3 w-[80px]" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -151,10 +169,16 @@ const Produccion = () => {
             Registro y análisis de cosecha - Campaña {currentCampaign}
           </p>
         </div>
-        {hasProduction ? (
+        
+        {/* Lógica de botones superior: Si está cargando datos iniciales, deshabilitamos o mostramos skeleton en botón */}
+        {isLoadingData ? (
+           <Skeleton className="h-10 w-[180px]" />
+        ) : hasProduction ? (
           <div className="flex gap-2">
             <Button
+              disabled={isSaving} // Deshabilitamos mientras carga
               onClick={async () => {
+                setIsSaving(true); // 1. Activamos spinner
                 try {
                   if (currentCampaignId) {
                     const productionsData = await getProductionsByCampaign(currentCampaignId) as ProductionRecord[];
@@ -177,7 +201,9 @@ const Produccion = () => {
 
                     // Create production per monte from API data
                     const produccionPorMonte = montesDisponibles.map(monte => {
-                      const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === monte.id.split('.')[0]);
+                      // Fix: ensure we match IDs correctly (string/number conversion if needed)
+                      const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === String(monte.id).split('.')[0]);
+                      
                       return {
                           monteId: monte.id,
                           nombre: monte.nombre,
@@ -192,18 +218,22 @@ const Produccion = () => {
                       metodo,
                       produccionPorMonte,
                     };
+
                     setEditData(editDataToSet);
                     setEditOpen(true);
                   }
                 } catch (error) {
                   console.error('Error loading production data for edit:', error);
-                  // Fallback: show empty form
+                  
+                  // Fallback: show empty form if load fails
+                  // Esto evita que la app se rompa si falla la API
                   const montesDisponibles = montes
                     .filter((m) => m.añoPlantacion <= currentCampaign)
                     .map((m) => ({
                       ...m,
                       edad: Number(currentCampaign) - Number(m.añoPlantacion),
                     }));
+                    
                   const fallbackData = {
                     precioPromedio: 0,
                     metodo: 'detallado',
@@ -217,18 +247,26 @@ const Produccion = () => {
                   };
                   setEditData(fallbackData);
                   setEditOpen(true);
+                  
+                } finally {
+                  setIsSaving(false); // 2. Desactivamos spinner al terminar
                 }
               }}
               variant="outline"
               className="gap-2"
             >
-              <Edit className="h-5 w-5" />
+              {isSaving ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Edit className="h-5 w-5" />
+              )}
               Editar Producción
             </Button>
+            
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="gap-2">
-                  <Trash2 className="h-5 w-5" />
+                <Button variant="destructive" className="gap-2" disabled={isSaving}>
+                  {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
                   Eliminar Producción
                 </Button>
               </AlertDialogTrigger>
@@ -241,40 +279,41 @@ const Produccion = () => {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={async () => {
+                    disabled={isSaving}
+                    onClick={async (e) => {
+                      e.preventDefault(); // Prevenir cierre automático
+                      setIsSaving(true);
                       try {
-                        // Delete productions from database using new API
                         if (currentCampaignId) {
-                           await deleteProductionsByCampaign(currentCampaignId);
+                          await deleteProductionsByCampaign(currentCampaignId);
                         }
-
-                        // Update campaign to remove summary data
                         if (currentCampaignId) {
-                          const updateData = {
-                            average_price: 0,
-                            total_production: 0,
-                          };
-                          const result = await updateCampaign(currentCampaignId, updateData);
-                          console.log('Campaign updated after deletion:', result);
+                          const updateData = { average_price: 0, total_production: 0 };
+                          await updateCampaign(currentCampaignId, updateData);
                         }
-
-                        // Delete from local Zustand stores
                         productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
-                        
-                        // Recargamos stores para asegurar consistencia
                         if (campaigns.length > 0) {
-                             loadAllProductions(campaigns);
+                             await loadAllProductions(campaigns);
                         }
-
+                        // Cerrar modal manualmente si es necesario o dejar que se desmonte
                       } catch (error) {
                         console.error('Error deleting production:', error);
-                        // TODO: Show error message to user
+                      } finally {
+                        setIsSaving(false);
+                        // Aquí podrías necesitar un estado para cerrar el diálogo manualmente si usas controlled dialog
+                        // O forzar un re-render que cierre el dialog.
+                        // Como usas Radix UI default, podrías necesitar un ref para cerrar o cambiar a estado controlado (open={deleteOpen})
                       }
                     }}
                   >
-                    Eliminar
+                    {isSaving ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Eliminando...
+                        </>
+                    ) : "Eliminar"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -284,6 +323,7 @@ const Produccion = () => {
           <Button
             onClick={() => setWizardOpen(true)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+            disabled={isLoadingData}
           >
             <Plus className="h-5 w-5" />
             Registrar Cosecha
@@ -295,69 +335,71 @@ const Produccion = () => {
         <CardContent className="flex items-start gap-4 p-4">
           <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
-            <p className="font-medium font-semibold text-amber-900">
+            <p className="font-semibold text-amber-900">
               Registrar una Producción
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
-              Al registrar tu <strong>cosecha anual</strong> puedes cargar los kilos por monte o los 
-              kilos totales.   
+              Al registrar tu <strong>cosecha anual</strong> puedes cargar los kilos por monte o los kilos totales.
             </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* KPI Cards - Only show when has production */}
-      {hasProduction && (
+      {/* KPI Cards con Skeleton */}
+      {isLoadingData ? (
+        renderKpiSkeleton()
+      ) : hasProduction ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="border-border/50 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Producción Total
-            </CardTitle>
-            <Package className="h-5 w-5 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {totalProduccion.toLocaleString()} Kg
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Campaña {currentCampaign}</p>
-          </CardContent>
-        </Card>
+          {/* Card 1: Producción Total */}
+          <Card className="border-border/50 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Producción Total
+              </CardTitle>
+              <Package className="h-5 w-5 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                {totalProduccion.toLocaleString()} Kg
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Campaña {currentCampaign}</p>
+            </CardContent>
+          </Card>
 
-        <Card className="border-border/50 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Precio de Venta
-            </CardTitle>
-            <TrendingUp className="h-5 w-5 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {formatCurrency(precioPromedio, true)}/Kg
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">USD por kilogramo</p>
-          </CardContent>
-        </Card>
+          {/* Card 2: Precio Promedio */}
+          <Card className="border-border/50 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Precio de Venta
+              </CardTitle>
+              <TrendingUp className="h-5 w-5 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                {formatCurrency(precioPromedio, true)}/Kg
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">USD por kilogramo</p>
+            </CardContent>
+          </Card>
 
-        <Card className="border-border/50 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Facturación Real
-            </CardTitle>
-            <DollarSign className="h-5 w-5 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-accent">
-              {formatCurrency(totalFacturacion, true)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Ingresos brutos</p>
-          </CardContent>
-        </Card>
+          {/* Card 3: Facturación */}
+          <Card className="border-border/50 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Facturación Real
+              </CardTitle>
+              <DollarSign className="h-5 w-5 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-accent">
+                {formatCurrency(totalFacturacion, true)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Ingresos brutos</p>
+            </CardContent>
+          </Card>
         </div>
-      )}
-
-      {/* Empty State */}
-      {!hasProduction && (
+      ) : (
+        /* Empty State */
         <Card className="border-border/50 shadow-md border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-16 w-16 text-muted-foreground mb-4" />
@@ -379,13 +421,18 @@ const Produccion = () => {
         </Card>
       )}
       
-      {/* Combo Chart - Production & Revenue Evolution */}
+      {/* Combo Chart */}
       {campaigns.length > 0 && (
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="text-foreground">Evolución de Producción y Facturación</CardTitle>
         </CardHeader>
         <CardContent>
+          {isLoadingData ? (
+             <div className="flex items-center justify-center h-[350px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+             </div>
+          ) : (
           <ResponsiveContainer width="100%" height={350}>
             <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -436,13 +483,19 @@ const Produccion = () => {
               />
             </ComposedChart>
           </ResponsiveContainer>
+          )}
         </CardContent>
         </Card>
       )}
 
       {/* Production Evolution Matrix */}
+      {/* Pasamos isLoadingData al componente hijo para que muestre skeleton en la tabla */}
       {montes.length > 0 && campaigns.length > 0 && (
-        <EvolucionProductiva campaigns={campaigns} montes={montes} />
+        <EvolucionProductiva 
+            campaigns={campaigns} 
+            montes={montes} 
+            isLoading={isLoadingData} // <--- Necesitarás agregar esta prop en el componente hijo
+        />
       )}
 
       {/* Wizard Modal */}
@@ -451,6 +504,7 @@ const Produccion = () => {
         onOpenChange={setWizardOpen}
         onSave={handleSaveProduccion}
         editingData={editingData}
+        isSaving={isSaving} // <--- Necesitarás agregar esta prop
       />
 
       {/* Edit Modal */}
@@ -459,6 +513,7 @@ const Produccion = () => {
         onOpenChange={setEditOpen}
         onSave={handleSaveProduccion}
         editingData={editData}
+        isSaving={isSaving} // <--- Necesitarás agregar esta prop
       />
     </div>
   );

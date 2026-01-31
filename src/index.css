@@ -108,6 +108,10 @@ All colors MUST be HSL.
     padding: 0 !important;
   }
 
+  p {
+    @apply mb-0 !important;
+  }
+
   #wpadminbar {
     display: none !important;
   }

@@ -27,7 +27,8 @@ import {
   Package,
   Check,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2
 } from "lucide-react";
 
 interface MonteProduccion {
@@ -42,6 +43,7 @@ interface RegistrarProduccionProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: RegistrarProduccionFormData) => void;
+  isSaving?: boolean;
   editingData?: {
     precioPromedio: number;
     metodo: "detallado" | "total";
@@ -49,7 +51,7 @@ interface RegistrarProduccionProps {
   };
 }
 
-export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingData }: RegistrarProduccionProps) {
+export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingData, isSaving = false }: RegistrarProduccionProps) {
   const { montes, currentCampaign } = useApp();
   const [step, setStep] = useState(1);
   const [showJovenes, setShowJovenes] = useState(false);
@@ -545,9 +547,22 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Anterior
               </Button>
-              <Button type="submit" className="bg-accent hover:bg-accent/90">
-                <Check className="h-4 w-4 mr-2" />
-                Confirmar y Guardar
+              <Button 
+                type="submit" 
+                className="bg-accent hover:bg-accent/90"
+                disabled={isSaving} // <--- Deshabilitar al guardar
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Confirmar y Guardar
+                  </>
+                )}
               </Button>
             </div>
           </div>
