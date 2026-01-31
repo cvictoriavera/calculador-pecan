@@ -409,9 +409,12 @@ const Produccion = () => {
                 }}
                 formatter={(value: number, name: string) => {
                   if (name === "produccion") {
-                     return [`${value.toLocaleString()} Kg`, "Producción"];
+                    return [value.toLocaleString() + " Kg", "Producción"];
                   }
-                  return [formatCurrency(value, true), "Facturación"];
+                  if (name === "facturacion") {
+                    return [formatCurrency(value, true), "Facturación"];
+                  }
+                  return [value, name];
                 }}
               />
               <Legend />
