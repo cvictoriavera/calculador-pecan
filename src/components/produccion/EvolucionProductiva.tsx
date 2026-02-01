@@ -27,11 +27,10 @@ interface EvolucionProductivaProps {
 
 export function EvolucionProductiva({ campaigns, montes, isLoading = false }: EvolucionProductivaProps) {
   
-  
   const { currentProjectId } = useApp();
 
+  // CAMBIO IMPORTANTE: Solo leemos del store, no recargamos
   const productions = useDataStore((state) => state.productions);
-  const loadAllProductions = useDataStore((state) => state.loadAllProductions);
 
   const [expandedMontes, setExpandedMontes] = useState<string[]>([]);
   const [yieldCurveOpen, setYieldCurveOpen] = useState(false);
@@ -79,13 +78,8 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
     fetchYieldModel();
   }, [currentProjectId]);
 
-  useEffect(() => {
-    if (currentProjectId && campaigns.length > 0) {
-        // Carga inicial de todos los datos históricos
-        loadAllProductions(campaigns);
-    }
-  }, [currentProjectId, campaigns, loadAllProductions]);
-
+  // REMOVIDO: useEffect que recargaba productions automáticamente
+  // Ahora confiamos en que el componente padre (Produccion.tsx) maneja las recargas
 
   // Calculate dynamic year range based on montes
   const yearRangeLimits = useMemo(() => {
@@ -124,13 +118,11 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
     );
   };
 
-  // Compute produccionData from campaigns
+  // Compute produccionData from campaigns - OPTIMIZADO con useMemo
   const produccionData = useMemo(() => {
-    
     const data: ProduccionRecord[] = [];
     
     productions.forEach(prod => {
-
       const campaign = campaigns.find(c => String(c.id) === String(prod.campaign_id));
 
       if (!campaign) return;
@@ -155,20 +147,20 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
     });
 
     return data;
-  }, [productions, campaigns]);
-
-  // Campaigns are used for getting production data and pricing
+  }, [productions, campaigns]); // Solo recalcula cuando cambian productions o campaigns
 
   // Get current year for visual differentiation
   const currentYear = new Date().getFullYear();
 
-  // Get production for a specific monte and year
-  const getProduccion = (monteId: string, year: number): number | null => {
-    const record = produccionData.find(
-      (p) => p.monteId === monteId.split('.')[0] && p.campanaYear === year
-    );
-    return record ? record.kgRecolectados : null;
-  };
+  // Get production for a specific monte and year - OPTIMIZADO con useCallback implícito via useMemo
+  const getProduccion = useMemo(() => {
+    return (monteId: string, year: number): number | null => {
+      const record = produccionData.find(
+        (p) => p.monteId === monteId.split('.')[0] && p.campanaYear === year
+      );
+      return record ? record.kgRecolectados : null;
+    };
+  }, [produccionData]);
 
   // Check if monte existed in a given year
   const monteExistedInYear = (añoPlantacion: number, year: number): boolean => {

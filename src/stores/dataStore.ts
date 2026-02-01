@@ -1,4 +1,4 @@
-// Data Store - Datos principales de la aplicación
+// Data Store - Datos principales de la aplicación (OPTIMIZADO)
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getCostsByCampaign, getCostsBatch, createCost, createCostBatch, updateCost as updateCostApi, deleteCost as deleteCostApi } from '../services/costService';
@@ -176,6 +176,9 @@ interface DataState {
   updateProductionCampaign: (id: string, updates: Partial<ProductionCampaign>) => void;
   deleteProductionCampaign: (id: string) => void;
 
+  // NUEVAS ACCIONES OPTIMIZADAS
+  setProductions: (productions: ProductionRecord[]) => void;
+  setProductionCampaigns: (productionCampaigns: ProductionCampaign[]) => void;
 
   // Backup/Restore
   createBackup: () => DataBackup;
@@ -596,7 +599,18 @@ export const useDataStore = create<DataState>()(
   updateProductionCampaign: (id: string, updates: Partial<ProductionCampaign>) => {
     const currentProductionCampaign = get().productionCampaigns.find((pc: ProductionCampaign) => pc.id === id);
     if (!currentProductionCampaign) {
-      throw new Error(`Production campaign with ID ${id} not found`);
+      // Si no existe, crear uno nuevo
+      const newCampaign: ProductionCampaign = {
+        id,
+        year: updates.year || new Date().getFullYear(),
+        averagePrice: updates.averagePrice || 0,
+        totalProduction: updates.totalProduction || 0,
+        date: updates.date || new Date(),
+      };
+      set((state) => ({
+        productionCampaigns: [...state.productionCampaigns, newCampaign]
+      }));
+      return;
     }
 
     // Validación: Año válido si se cambia
@@ -617,15 +631,20 @@ export const useDataStore = create<DataState>()(
     }));
   },
   deleteProductionCampaign: (id: string) => {
-    const productionCampaign = get().productionCampaigns.find((pc: ProductionCampaign) => pc.id === id);
-    if (!productionCampaign) {
-      throw new Error(`Production campaign with ID ${id} not found`);
-    }
-
     set((state) => ({
       productionCampaigns: state.productionCampaigns.filter((pc: ProductionCampaign) => pc.id !== id),
     }));
   },
+
+  // NUEVAS ACCIONES OPTIMIZADAS
+  setProductions: (productions: ProductionRecord[]) => {
+    set({ productions });
+  },
+
+  setProductionCampaigns: (productionCampaigns: ProductionCampaign[]) => {
+    set({ productionCampaigns });
+  },
+
   loadProductions: async (campaignId: number) => {
     try {
       // 2. USAR EL SERVICIO (El mensajero)
@@ -699,41 +718,56 @@ export const useDataStore = create<DataState>()(
       throw error;
     }
   },
-  loadAllProductions: async (campaigns: { id: number }[]) => {
+  loadAllProductions: async (campaigns: { id: number; year?: number; average_price?: string; total_production?: string; updated_at?: string; created_at?: string }[]) => {
     try {
+      console.log('Loading productions for campaigns:', campaigns.map(c => c.id));
+
+      // Usar llamadas individuales por ahora para asegurar funcionamiento
       const allProductions: ProductionRecord[] = [];
       const updatedProductionCampaigns: ProductionCampaign[] = [];
 
       for (const campaign of campaigns) {
-        const records = await getProductionsByCampaign(campaign.id);
+        console.log(`Loading productions for campaign ${campaign.id}`);
+        try {
+          const records = await getProductionsByCampaign(campaign.id);
+          console.log(`Got ${records?.length || 0} records for campaign ${campaign.id}`);
 
-        if (Array.isArray(records)) {
-          const cleanRecords = records.map((r: any) => ({
-            ...r,
-            id: Number(r.id),
-            campaign_id: Number(campaign.id),
-            monte_id: Number(r.monte_id),
-            quantity_kg: Number(r.quantity_kg)
-          }));
-          allProductions.push(...cleanRecords);
+          if (Array.isArray(records)) {
+            const cleanRecords = records.map((r: any) => ({
+              ...r,
+              id: Number(r.id || `${r.entry_group_id}_${r.monte_id}`),
+              campaign_id: Number(campaign.id),
+              monte_id: Number(r.monte_id),
+              quantity_kg: Number(r.quantity_kg)
+            }));
+            allProductions.push(...cleanRecords);
+          }
+        } catch (error) {
+          console.error(`Error loading productions for campaign ${campaign.id}:`, error);
         }
 
-        // Poblar productionCampaigns desde campaigns (igual que en Produccion.tsx)
+        // Poblar productionCampaigns desde campaigns
         const campaignData = campaigns.find(c => c.id === campaign.id);
-        if (campaignData && (campaignData as any).average_price !== undefined && (campaignData as any).total_production !== undefined) {
-          const averagePrice = parseFloat((campaignData as any).average_price);
-          const totalProduction = parseFloat((campaignData as any).total_production);
-          const date = new Date((campaignData as any).updated_at || (campaignData as any).created_at);
+        if (campaignData && campaignData.average_price !== undefined && campaignData.total_production !== undefined) {
+          const averagePrice = parseFloat(campaignData.average_price);
+          const totalProduction = parseFloat(campaignData.total_production);
+          const date = new Date(campaignData.updated_at || campaignData.created_at || Date.now());
 
           updatedProductionCampaigns.push({
-            id: `campaign-${(campaignData as any).year}`,
-            year: (campaignData as any).year,
+            id: `campaign-${campaignData.year}`,
+            year: campaignData.year || 0,
             averagePrice,
             totalProduction,
             date,
           });
+          console.log(`Added production campaign for year ${campaignData.year}`);
+        } else {
+          console.log(`Campaign ${campaign.id} missing price/production data`);
         }
       }
+
+      console.log(`Total productions loaded: ${allProductions.length}`);
+      console.log(`Total production campaigns: ${updatedProductionCampaigns.length}`);
 
       set({
         productions: allProductions,
@@ -742,6 +776,7 @@ export const useDataStore = create<DataState>()(
 
     } catch (error) {
       console.error('Error loading all productions:', error);
+      throw error;
     }
   },
 

@@ -91,6 +91,30 @@ class CCP_Productions_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// Batch route for multiple campaigns
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/by-campaigns/batch',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'get_items_by_campaigns_batch' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+					'args'                => array(
+						'campaign_ids' => array(
+							'validate_callback' => function( $param, $request, $key ) {
+								return is_array( $param ) && ! empty( $param );
+							},
+							'required' => true,
+							'sanitize_callback' => function( $param, $request, $key ) {
+								return array_map( 'intval', $param );
+							},
+						),
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -225,6 +249,37 @@ class CCP_Productions_Controller extends WP_REST_Controller {
 		}
 
 		$response = rest_ensure_response( array( 'success' => true ) );
+		return $response;
+	}
+
+	/**
+		* Retrieve productions for multiple campaigns in batch.
+		*
+		* @param WP_REST_Request $request Full data about the request.
+		* @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+		*/
+	public function get_items_by_campaigns_batch( $request ) {
+		$user_id      = get_current_user_id();
+
+		// Get JSON data
+		$json_data = $request->get_json_params();
+		$campaign_ids = isset( $json_data['campaign_ids'] ) ? $json_data['campaign_ids'] : $request['campaign_ids'];
+
+		// campaign_ids is already sanitized by the args validation
+		$sanitized_campaign_ids = $campaign_ids;
+
+		$batch_productions = array();
+
+		foreach ( $sanitized_campaign_ids as $campaign_id ) {
+			$productions = $this->productions_db->get_summary_by_campaign( $campaign_id, $user_id );
+			if ( ! is_null( $productions ) ) {
+				$batch_productions[ $campaign_id ] = $productions;
+			} else {
+				$batch_productions[ $campaign_id ] = array();
+			}
+		}
+
+		$response = rest_ensure_response( $batch_productions );
 		return $response;
 	}
 }

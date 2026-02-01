@@ -15,3 +15,5 @@ export declare function createProductionsByCampaign(campaignId: number, producti
 }): Promise<any>;
 
 export declare function deleteProductionsByCampaign(campaignId: number): Promise<any>;
+
+export declare function getProductionsBatch(campaignIds: number[]): Promise<Record<number, any[]>>;

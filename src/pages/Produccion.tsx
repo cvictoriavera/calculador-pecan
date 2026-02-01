@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -42,37 +42,45 @@ const Produccion = () => {
   const [editingData, setEditingData] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // --- ESTADOS DE CARGA ---
   const [isSaving, setIsSaving] = useState(false);
-  const { productionCampaigns, loadAllProductions } = useDataStore();
+  const { 
+    productionCampaigns, 
+    loadAllProductions, 
+    updateProductionCampaign,
+    setProductionCampaigns,
+    setProductions,
+    productions 
+  } = useDataStore();
   
-  // Si ya tenemos datos en el store, NO iniciamos cargando (evita parpadeos al navegar)
   const [isLoadingData, setIsLoadingData] = useState(productionCampaigns.length === 0);
 
-  const deleteProductionCampaign = useDataStore((state) => state.deleteProductionCampaign);
+  const isInitialized = useRef(false);
 
-  // --- EFECTO DE CARGA OPTIMIZADO ---
   useEffect(() => {
     const fetchData = async () => {
-      if (campaigns && campaigns.length > 0) {
-        // Solo mostramos loading si NO tenemos datos previos
-        if (productionCampaigns.length === 0) {
-           setIsLoadingData(true);
-        }
-        try {
-          await loadAllProductions(campaigns);
-        } catch (error) {
-          console.error("Error loading productions:", error);
-        } finally {
+      // Solo cargamos si hay campañas, no tenemos datos de producción, y NO hemos inicializado antes
+      if (campaigns && campaigns.length > 0 && productionCampaigns.length === 0 && !isInitialized.current) {
+         setIsLoadingData(true);
+         try {
+           await loadAllProductions(campaigns);
+         } catch (error) {
+           console.error("Error loading productions:", error);
+         } finally {
+           setIsLoadingData(false);
+           isInitialized.current = true; // Marcar como cargado
+         }
+      } else if (productionCampaigns.length > 0) {
+          // Si ya hay datos, marcamos como cargado para evitar recargas al borrar
+          isInitialized.current = true;
           setIsLoadingData(false);
-        }
-      } else {
-         setIsLoadingData(false);
       }
     };
     fetchData();
-  }, [campaigns, loadAllProductions]);
+    // Quitamos 'campaigns' y 'loadAllProductions' de las dependencias para evitar disparos al editar campañas
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productionCampaigns.length]);
 
   const handleSaveProduccion = async (data: any) => {
     setIsSaving(true);
@@ -89,39 +97,84 @@ const Produccion = () => {
         }));
 
       if (currentCampaignId && currentProjectId) {
-        await createProductionsByCampaign(currentCampaignId, {
+        // 1. OPTIMISTIC UPDATE (UI instantánea)
+        const campaignId = `campaign-${currentCampaign}`;
+        
+        updateProductionCampaign(campaignId, {
+          averagePrice: data.precioPromedio,
+          totalProduction: totalKg,
+          date: new Date(),
+        });
+
+        // 2. Actualizar productions localmente
+        const newProductions = productionsData.map((p: any, index: number) => ({
+          id: Date.now() + index, // ID temporal, está bien para visualización
+          project_id: currentProjectId,
+          campaign_id: currentCampaignId,
+          monte_id: p.monte_id,
+          entry_group_id: `temp-${Date.now()}`,
+          quantity_kg: p.quantity_kg,
+          is_estimated: p.is_estimated,
+          input_type: data.metodo === 'detallado' ? 'detail' : 'total',
+          date: new Date().toISOString(),
+        }));
+
+        const otherProductions = productions.filter((p: any) => 
+          String(p.campaign_id) !== String(currentCampaignId)
+        );
+        
+        setProductions([...otherProductions, ...newProductions]);
+
+        // 3. UI Updates inmediatos (Antes del await)
+        setEditingData(null);
+        setWizardOpen(false);
+        setEditData(null);
+        setEditOpen(false);
+
+        toast({
+            title: "Datos Guardados",
+            description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
+        });
+
+        // 4. GUARDAR EN EL SERVIDOR (Background)
+        // No bloqueamos la UI esperando esto, ya cerramos los modales
+        const savePromise = createProductionsByCampaign(currentCampaignId, {
           project_id: currentProjectId,
           productions: productionsData,
           input_type: data.metodo === 'detallado' ? 'detail' : 'total',
         });
 
-        await updateCampaign(currentCampaignId, {
+        const updatePromise = updateCampaign(currentCampaignId, {
           average_price: data.precioPromedio,
           total_production: totalKg,
           montes_contribuyentes: null,
           montes_production: null,
         });
+
+        await Promise.all([savePromise, updatePromise]);
+
+        // 5. REMOVIDO EL SYNC AGRESIVO 
+        // Eliminamos el bloque "getProductionsByCampaign" que causaba el parpadeo.
+        // Confiamos en los datos optimistas. Los IDs reales se cargarán la próxima vez que el usuario entre a la página.
       }
 
-      // Recargar datos para asegurar consistencia
-      if (campaigns.length > 0) {
-         await loadAllProductions(campaigns);
-      }
-
-      setEditingData(null);
-      setWizardOpen(false);
-      setEditData(null);
-      setEditOpen(false);
-
-      toast({
-        title: "Datos Guardados",
-        description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
-      });
     } catch (error) {
       console.error('Error saving production:', error);
+      // ROLLBACK simplificado
+      if (currentCampaignId) {
+          // Solo si falla, intentamos recuperar la verdad del servidor
+          try {
+             const serverProductions = await getProductionsByCampaign(currentCampaignId);
+             const otherCampaignProductions = productions.filter((p: any) => 
+                String(p.campaign_id) !== String(currentCampaignId)
+             );
+             setProductions([...otherCampaignProductions, ...serverProductions]);
+          } catch (e) { console.error(e); }
+      }
+      
       toast({
         title: "Error",
-        description: "No se pudieron guardar los cambios",
+        description: "Hubo un problema al guardar en el servidor",
         variant: "destructive",
       });
     } finally {
@@ -129,7 +182,7 @@ const Produccion = () => {
     }
   };
 
-  const chartData = campaigns
+  const chartData = useMemo(() => campaigns
     .map((year) => {
       const campana = productionCampaigns.find(pc => pc.year === year.year);
       return {
@@ -138,14 +191,14 @@ const Produccion = () => {
         facturacion: (campana?.totalProduction || 0) * (campana?.averagePrice || 0),
       };
     })
-    .sort((a, b) => parseInt(a.year) - parseInt(b.year));
+    .sort((a, b) => parseInt(a.year) - parseInt(b.year)), [campaigns, productionCampaigns]);
 
-  const currentCampanaData = productionCampaigns.find(pc => Number(pc.year) === currentCampaign);
+  const currentCampanaData = useMemo(() => productionCampaigns.find(pc => Number(pc.year) === currentCampaign), [productionCampaigns, currentCampaign]);
   const totalProduccion = currentCampanaData?.totalProduction || 0;
   const totalFacturacion = (currentCampanaData?.totalProduction || 0) * (currentCampanaData?.averagePrice || 0);
   const precioPromedio = currentCampanaData?.averagePrice || 0;
 
-  const hasProduction = totalProduccion > 0 || precioPromedio > 0;
+  const hasProduction = useMemo(() => totalProduccion > 0 || precioPromedio > 0, [totalProduccion, precioPromedio]);
 
   const renderKpiSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -163,6 +216,77 @@ const Produccion = () => {
       ))}
     </div>
   );
+
+  const handleDelete = async () => {
+    if (!currentCampaignId) return;
+
+    setIsSaving(true);
+    try {
+      // 1. OPTIMISTIC UPDATE: Limpiar filas (Tabla Evolución)
+      const otherProductions = productions.filter((p: any) => 
+        String(p.campaign_id) !== String(currentCampaignId)
+      );
+      setProductions(otherProductions);
+
+      // 2. CRÍTICO: Actualizar el resumen (Cards y Gráfico)
+      // Buscamos la campaña actual y forzamos sus valores a 0.
+      // Esto dispara la actualización de 'hasProduction' a false instantáneamente.
+      const updatedProductionCampaigns = productionCampaigns.map(pc => {
+        // Aseguramos comparar números con números
+        if (Number(pc.year) === Number(currentCampaign)) {
+            return { 
+              ...pc, 
+              totalProduction: 0, 
+              averagePrice: 0,
+              date: new Date() // Forzar cambio de referencia
+            };
+        }
+        return pc;
+      });
+      setProductionCampaigns(updatedProductionCampaigns);
+
+      // 3. UI Feedback (Inmediato)
+      setDeleteDialogOpen(false);
+      toast({
+        title: "Producción Eliminada",
+        description: "Los datos se eliminaron correctamente",
+      });
+
+      // 4. ELIMINAR EN SERVIDOR (Background)
+      const deletePromise = deleteProductionsByCampaign(currentCampaignId);
+      
+      // También actualizamos la campaña general para consistencia en el backend
+      const updatePromise = updateCampaign(currentCampaignId, { 
+        average_price: 0, 
+        total_production: 0 
+      });
+
+      await Promise.all([deletePromise, updatePromise]);
+
+    } catch (error) {
+      console.error('Error deleting production:', error);
+      
+      // ROLLBACK: Solo si falla el servidor intentamos recuperar datos
+      try {
+        const serverProductions = await getProductionsByCampaign(currentCampaignId);
+        // Aquí podrías volver a cargar los productionCampaigns si fuera crítico
+        const otherCampaignProductions = productions.filter((p: any) => 
+            String(p.campaign_id) !== String(currentCampaignId)
+        );
+        setProductions([...otherCampaignProductions, ...serverProductions]);
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
+
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la producción del servidor",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -255,7 +379,7 @@ const Produccion = () => {
               Editar Producción
             </Button>
 
-            <AlertDialog>
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="gap-2" disabled={isSaving}>
                   {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
@@ -274,34 +398,9 @@ const Produccion = () => {
                   <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     disabled={isSaving}
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       e.preventDefault();
-                      setIsSaving(true);
-                      try {
-                        if (currentCampaignId) {
-                          await deleteProductionsByCampaign(currentCampaignId);
-                        }
-                        if (currentCampaignId) {
-                          const updateData = { average_price: 0, total_production: 0 };
-                          await updateCampaign(currentCampaignId, updateData);
-                        }
-                        productionCampaigns.filter((pc) => pc.year === currentCampaign).forEach((pc) => deleteProductionCampaign(pc.id));
-                        if (campaigns.length > 0) {
-                             await loadAllProductions(campaigns);
-                        }
-                        // Forzar el cierre del modal se maneja automáticamente al desmontar o podrías necesitar un estado controlled si el preventDefault bloquea el cierre nativo.
-                        // En este caso, Radix UI suele requerir que cierres manualmente si haces preventDefault, 
-                        // pero como simplificación asumiremos que la recarga de datos es suficiente o el usuario puede cerrar.
-                        // Para mejor UX: document.getElementById('close-dialog')?.click() o similar si tuvieras referencia.
-                        // Pero para no complicar, dejaremos que termine y el usuario cierre o (mejor aún) si necesitas cerrar programáticamente, usa un estado para el Open del Dialog.
-                      } catch (error) {
-                        console.error('Error deleting production:', error);
-                      } finally {
-                        setIsSaving(false);
-                        // Hack simple para cerrar el dialog si se previno el default:
-                        // window.location.reload(); // NO recomendado.
-                        // Lo ideal es usar controlled component para el AlertDialog si quieres cerrarlo programáticamente.
-                      }
+                      handleDelete();
                     }}
                   >
                     {isSaving ? (

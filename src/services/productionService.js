@@ -81,3 +81,28 @@ export const deleteProductionsByCampaign = (campaignId) => {
     method: 'DELETE',
   });
 };
+
+/**
+ * Fetches productions for multiple campaigns in batch.
+ *
+ * @param {Array<number>} campaignIds - Array of campaign IDs.
+ * @returns {Promise<object>} A promise that resolves to an object with campaign IDs as keys and production arrays as values.
+ */
+export const getProductionsBatch = (campaignIds) => {
+  if (!Array.isArray(campaignIds) || campaignIds.length === 0) {
+    return Promise.reject(new Error('Campaign IDs array is required and cannot be empty.'));
+  }
+  if (isTrialMode()) {
+    // For trial mode, return fake batch result
+    const fakeResult = {};
+    campaignIds.forEach(id => {
+      fakeResult[id] = [];
+    });
+    return Promise.resolve(fakeResult);
+  }
+
+  return apiRequest(`${BASE_ENDPOINT}/by-campaigns/batch`, {
+    method: 'POST',
+    body: JSON.stringify({ campaign_ids: campaignIds }),
+  });
+};

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -47,7 +47,7 @@ interface EditarProduccionProps {
   };
 }
 
-export function EditarProduccionForm({ open, onOpenChange, onSave, editingData, isSaving = false }: EditarProduccionProps) {
+export const EditarProduccionForm = React.memo<EditarProduccionProps>(function EditarProduccionForm({ open, onOpenChange, onSave, editingData, isSaving = false }) {
   const { currentCampaign, montes } = useApp();
   const [showJovenes, setShowJovenes] = useState(false);
 
@@ -461,4 +461,4 @@ export function EditarProduccionForm({ open, onOpenChange, onSave, editingData, 
       </SheetContent>
     </Sheet>
   );
-}
+});
