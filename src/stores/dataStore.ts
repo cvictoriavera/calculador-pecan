@@ -397,8 +397,12 @@ export const useDataStore = create<DataState>()(
 
       // Reload costs for this campaign, keeping others
       const updatedCosts = await getCostsByCampaign(costData.project_id, costData.campaign_id);
+      
       set((state) => {
-        const otherCosts = state.costs.filter(c => c.campaign_id !== costData.campaign_id);
+        const targetCampaignId = Number(costData.campaign_id);
+
+        const otherCosts = state.costs.filter(c => Number(c.campaign_id) !== targetCampaignId);
+        
         return { costs: [...otherCosts, ...updatedCosts] };
       });
     } catch (error) {
@@ -431,15 +435,18 @@ export const useDataStore = create<DataState>()(
         total_amount: updates.total_amount,
       });
 
-      // Reload costs for this campaign, keeping others
+      // Recargamos los costos para esta campaña, manteniendo los de otras
       const currentCost = get().costs.find(c => c.id === id);
+      
       if (currentCost) {
-        // Invalidar cache de costos para este proyecto
+        // Invocamos la invalidación de cache
         dataCache.invalidate(`costs_${currentCost.project_id}`);
-
+        
         const updatedCosts = await getCostsByCampaign(currentCost.project_id, currentCost.campaign_id);
+        
         set((state) => {
-          const otherCosts = state.costs.filter(c => c.campaign_id !== currentCost.campaign_id);
+          // CORRECCIÓN AQUÍ: Usamos Number() para asegurar la comparación correcta
+          const otherCosts = state.costs.filter(c => Number(c.campaign_id) !== Number(currentCost.campaign_id));
           return { costs: [...otherCosts, ...updatedCosts] };
         });
       }
@@ -453,15 +460,18 @@ export const useDataStore = create<DataState>()(
     try {
       await deleteCostApi(id);
 
-      // Reload costs for this campaign, keeping others
+      // Recargamos los costos para esta campaña, manteniendo los de otras
       const currentCost = get().costs.find(c => c.id === id);
+      
       if (currentCost) {
-        // Invalidar cache de costos para este proyecto
+        // Invocamos la invalidación de cache
         dataCache.invalidate(`costs_${currentCost.project_id}`);
-
+        
         const updatedCosts = await getCostsByCampaign(currentCost.project_id, currentCost.campaign_id);
+        
         set((state) => {
-          const otherCosts = state.costs.filter(c => c.campaign_id !== currentCost.campaign_id);
+          // CORRECCIÓN AQUÍ: Usamos Number() para asegurar la comparación correcta
+          const otherCosts = state.costs.filter(c => Number(c.campaign_id) !== Number(currentCost.campaign_id));
           return { costs: [...otherCosts, ...updatedCosts] };
         });
       }
