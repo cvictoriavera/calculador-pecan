@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// ScrollArea eliminado en la tabla de evolución, pero mantenido por si se usa en otros lados, 
+// aunque aquí usamos div nativo para el sticky.
 import { Plus, DollarSign, Pencil, Trash2, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
@@ -22,7 +23,6 @@ import { useApp } from "@/contexts/AppContext";
 import { createInvestment, updateInvestment as updateInvestmentApi, deleteInvestment as deleteInvestmentApi } from "@/services/investmentService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
 
 const categoriaLabels: Record<string, string> = {
   tierra: "Tierra",
@@ -110,9 +110,6 @@ const Inversiones = () => {
       .reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0);
   }, [investments, currentCampaignId]);
 
-
-
-
   // Prepare data for stacked bar chart - investments by year and category
   const chartData = useMemo(() => {
     // Get unique years from campaigns
@@ -140,8 +137,6 @@ const Inversiones = () => {
     });
   }, [campaigns, investments]);
   
-
-
   const handleSaveInversion = async (categoria: string, data: any) => {
     if (!currentProjectId) {
       toast.error("No hay proyecto activo");
@@ -152,13 +147,10 @@ const Inversiones = () => {
     const descripcion = data.descripcion || data.items?.map((i: any) => i.tipo).join(", ") || categoriaLabel;
     
     // --- Convertir monto a Number explícitamente ---
-    // Esto evita que se guarde como string ("1000") y rompa las sumas
     const monto = Number(data.total || data.precio || 0);
 
     // Find the current campaign
-    // Aseguramos comparar números con números
     const currentCamp = campaigns.find(c => Number(c.year) === Number(currentCampaign));
-
     if (!currentCamp) {
       toast.error("No se pudo encontrar la campaña actual");
       return;
@@ -173,15 +165,13 @@ const Inversiones = () => {
           total_value: monto,
           details: data,
         });
-        
         // Update local state (Store)
         updateInvestment(editingInversion.id, {
           category: categoria,
           description: descripcion,
-          amount: monto, // Enviamos el número limpio
+          amount: monto,
           data,
         });
-        
         toast.success("Inversión actualizada correctamente");
         setEditingInversion(null);
       } else {
@@ -201,7 +191,7 @@ const Inversiones = () => {
           campaign_id: currentCamp.id,
           category: categoria,
           description: descripcion,
-          amount: monto, // Enviamos el número limpio
+          amount: monto,
           date: new Date(),
           data,
         });
@@ -266,7 +256,7 @@ const Inversiones = () => {
               Al registrar tus inversiones recuerda: 
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
-              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros. 
+              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros.
               <br/>
             </p>
           </div>
@@ -291,7 +281,7 @@ const Inversiones = () => {
         </CardContent>
       </Card>
 
-      {/* Evolution Chart */}
+      {/* --- GRÁFICO (RESTAURADO PARA EVITAR ERRORES DE BUILD) --- */}
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="text-foreground">Evolución de Inversiones por Categoría</CardTitle>
@@ -324,37 +314,35 @@ const Inversiones = () => {
         </CardContent>
       </Card>
 
-      {/* Year Range Selector and Investment Evolution Table */}
+      {/* --- TABLA EVOLUCIÓN DE INVERSIONES (CORREGIDA CON SCROLL Y STICKY) --- */}
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="text-foreground">Tabla de Evolución de Inversiones</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="max-w-full">
-            <table className="w-full border-collapse">
+        <CardContent className="grid grid-cols-1">
+          <div className="relative w-full max-w-full overflow-x-auto border-none pb-1">
+            <table className="w-full min-w-max border-collapse text-sm">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="sticky left-0 z-20 bg-card text-left p-2 sm:p-3 text-sm font-semibold text-muted-foreground border-r border-border">
+                <tr className="border-b border-border bg-muted">
+                  <th className="sticky left-0 z-[5] bg-muted p-3 text-left font-semibold text-muted-foreground shadow-[1px_0_0_0_hsl(var(--border))]">
                     Categoría
                   </th>
                   {displayedYears.map((year, index) => {
                     const isHistorical = year < currentYear;
                     const isCurrentYear = year === currentYear;
                     const nextYear = displayedYears[index + 1];
-
                     return (
                       <th
                         key={year}
                         className={cn(
-                          "text-center p-2 sm:p-3 text-sm font-semibold relative",
+                          "text-center p-3 font-semibold relative min-w-[100px]",
                           isHistorical && "bg-slate-50/50",
                           isCurrentYear && "border-r-2 border-yellow-500"
                         )}
                       >
                         <div className="flex items-center justify-center gap-1">
-                          <span>{year}</span>
+                          <span className="text-muted-foreground">{year}</span>
                         </div>
-                        {/* Visual divider between current year and next year */}
                         {isCurrentYear && nextYear && (
                           <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
                         )}
@@ -365,13 +353,14 @@ const Inversiones = () => {
               </thead>
               <tbody>
                 {Object.entries(categoriaLabels).map(([categoryKey, categoryName]) => (
-                  <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30">
-                    <td className="sticky left-0 z-10 bg-card p-2 sm:p-3 border-r border-border">
+                  <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                    <td className="sticky left-0 z-[5] bg-card p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
                       <Badge
                         style={{
                           backgroundColor: categoriaColors[categoryKey] || "#cccccc",
                           color: "white",
                         }}
+                        className="whitespace-nowrap"
                       >
                         {categoryName}
                       </Badge>
@@ -384,8 +373,8 @@ const Inversiones = () => {
                         <td
                           key={year}
                           className={cn(
-                            "text-center p-2 sm:p-3 text-sm ",
-                            amount === 0 ? "text-gray-300" : "font-semibold text-foreground",  // Gris super claro para 0, normal para valores
+                            "text-center p-3",
+                            amount === 0 ? "text-muted-foreground/30" : "font-semibold text-foreground",
                             isHistorical && "bg-slate-50/20"
                           )}
                         >
@@ -397,13 +386,15 @@ const Inversiones = () => {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-border bg-primary/5">
-                  <td className="sticky left-0 z-20 bg-primary/5 p-3 border-r border-border">
-                    <div className="font-semibold text-foreground">Total</div>
+                <tr className="border-t-2 border-border bg-primary/5 font-medium">
+                  <td className="sticky left-0 z-[5] bg-background p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
+                    <div className="font-semibold text-foreground">Total U$D</div>
                   </td>
                   {displayedYears.map((year) => {
-                    const total = Object.keys(categoriaLabels).reduce((sum, category) =>
-                      sum + getInvestmentForCategoryAndYear(category, year), 0);
+                    const total = Object.keys(categoriaLabels).reduce(
+                      (sum, category) => sum + getInvestmentForCategoryAndYear(category, year),
+                      0
+                    );
                     const isHistorical = year < currentYear;
 
                     return (
@@ -421,17 +412,11 @@ const Inversiones = () => {
                 </tr>
               </tfoot>
             </table>
-          </ScrollArea>
-
-          {campaigns.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay campañas disponibles para mostrar la evolución de inversiones.
-            </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Investments Table */}
+      {/* Investments Table (List) */}
       {inversionesFiltered.length > 0 ? (
         <Card className="border-border/50 shadow-md">
           <CardHeader>
@@ -451,48 +436,47 @@ const Inversiones = () => {
                 </thead>
                 <tbody>
                   {inversionesFiltered.map((inversion) => {
-                    // Find the campaign for this investment to get the year
                     const investmentCampaign = campaigns.find(c => Number(c.id) === Number(inversion.campaign_id));
                     const investmentYear = investmentCampaign ? investmentCampaign.year : currentCampaign;
 
                     return (
                       <tr key={inversion.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
                         <td className="p-3 text-sm font-medium text-foreground">{investmentYear}</td>
-                      <td className="p-3 text-sm">
-                        <Badge
-                          style={{
-                            backgroundColor: categoriaColors[inversion.category] || "#cccccc",
-                            color: "white",
-                          }}
-                        >
-                          {categoriaLabels[inversion.category] || inversion.category}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-sm text-foreground">{inversion.description}</td>
-                      <td className="p-3 text-sm text-right font-semibold text-foreground">
-                        {formatCurrency(inversion.amount, true)}
-                      </td>
-                      <td className="p-3 text-sm text-center">
-                        <div className="flex justify-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditInversion(inversion)}
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        <td className="p-3 text-sm">
+                          <Badge
+                            style={{
+                              backgroundColor: categoriaColors[inversion.category] || "#cccccc",
+                              color: "white",
+                            }}
                           >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteInversion(inversion)}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+                            {categoriaLabels[inversion.category] || inversion.category}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-sm text-foreground">{inversion.description}</td>
+                        <td className="p-3 text-sm text-right font-semibold text-foreground">
+                          {formatCurrency(inversion.amount, true)}
+                        </td>
+                        <td className="p-3 text-sm text-center">
+                          <div className="flex justify-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditInversion(inversion)}
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteInversion(inversion)}
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
@@ -522,7 +506,8 @@ const Inversiones = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar esta inversión?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el registro de {categoriaLabels[inversionToDelete?.category] || inversionToDelete?.category}.
+              Esta acción no se puede deshacer.
+              Se eliminará permanentemente el registro de {categoriaLabels[inversionToDelete?.category] || inversionToDelete?.category}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, TrendingUp, Pencil, Trash2, Info } from "lucide-react";
 import {
   AlertDialog,
@@ -21,8 +20,6 @@ import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCalculationsStore } from "@/stores/calculationsStore";
-
-
 
 const categoriaLabels: Record<string, string> = {
   insumos: "Insumos",
@@ -75,8 +72,6 @@ const Costos = () => {
   const { costs, addCost, updateCost, deleteCost } = useDataStore();
   const { getCostByCategory, getTotalCostsByCampaign } = useCalculationsStore();
 
-  
-
   // Selección segura de la campaña
   const currentCampaignObj = useMemo(() => {
     return campaigns.find((c) => Number(c.year) === Number(currentCampaign));
@@ -113,7 +108,7 @@ const Costos = () => {
         const costsByCategory = getCostByCategory(campaign.id);
 
         const yearData: any = { year };
-        
+       
         Object.keys(categoriaLabels).forEach((category) => {
           yearData[category] = costsByCategory[category] || 0;
         });
@@ -176,7 +171,6 @@ const Costos = () => {
   };
 
   const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
-    console.log('handleUpdateCosto called with:', categoriaOrData, formData);
     if (!currentProjectId) {
       toast.error("No hay proyecto activo");
       return;
@@ -294,7 +288,8 @@ const Costos = () => {
               Al registrar tus costos recuerda: 
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
-              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros. 
+              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses 
+              que duro la campaña en cada uno de los rubros.
               <br/>
               <span className="italic mt-1 block">Nota: Si compraste maquinaria, instalaste riego o realizaste mejoras permanentes, se registran en la sección de <strong>Inversiones</strong>.</span>
             </p>
@@ -370,28 +365,28 @@ const Costos = () => {
         </CardContent>
       </Card>
 
+      {/* --- TABLA EVOLUCIÓN --- */}
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="text-foreground">Evolución de Costos</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="max-w-full">
-            <table className="w-full border-collapse">
+        <CardContent className="grid grid-cols-1">
+          <div className="relative w-full max-w-full overflow-x-auto border-none pb-1">
+            <table className="w-full min-w-max border-collapse text-sm">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="sticky left-0 z-20 bg-card text-left p-2 sm:p-3 text-sm font-semibold text-muted-foreground border-r border-border">
+                <tr className="border-b border-border bg-muted">
+                  <th className="sticky left-0 z-[5] bg-muted p-3 text-left font-semibold text-muted-foreground shadow-[1px_0_0_0_hsl(var(--border))]">
                     Categoría
                   </th>
                   {displayedYears.map((year, index) => {
                     const isHistorical = year < currentYear;
                     const isCurrentYear = year === currentYear;
                     const nextYear = displayedYears[index + 1];
-
                     return (
                       <th
                         key={year}
                         className={cn(
-                          "text-center p-2 sm:p-3 text-sm font-semibold relative",
+                          "text-center p-3 font-semibold relative min-w-[100px]",
                           isHistorical && "bg-slate-50/50",
                           isCurrentYear && "border-r-2 border-yellow-500"
                         )}
@@ -409,13 +404,14 @@ const Costos = () => {
               </thead>
               <tbody>
                 {Object.entries(categoriaLabels).map(([categoryKey, categoryName]) => (
-                  <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30">
-                    <td className="sticky left-0 z-10 bg-card p-2 sm:p-3 border-r border-border">
+                  <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                    <td className="sticky left-0 z-[5] bg-card p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
                       <Badge
                         style={{
                           backgroundColor: categoriaColors[categoryKey] || "#cccccc",
                           color: "white",
                         }}
+                        className="whitespace-nowrap"
                       >
                         {categoryName}
                       </Badge>
@@ -428,8 +424,8 @@ const Costos = () => {
                         <td
                           key={year}
                           className={cn(
-                            "text-center p-2 sm:p-3 text-sm ",
-                            amount === 0 ? "text-gray-300" : "font-semibold text-foreground",  // Gris super claro para 0, normal para valores
+                            "text-center p-3",
+                            amount === 0 ? "text-muted-foreground/30" : "font-semibold text-foreground",
                             isHistorical && "bg-slate-50/20"
                           )}
                         >
@@ -441,13 +437,15 @@ const Costos = () => {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-border bg-primary/5">
-                  <td className="sticky left-0 z-20 bg-primary/5 p-3 border-r border-border">
+                <tr className="border-t-2 border-border bg-primary/5 font-medium">
+                  <td className="sticky left-0 z-[5] bg-background p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
                     <div className="font-semibold text-foreground">Total U$D</div>
                   </td>
                   {displayedYears.map((year) => {
-                    const total = Object.keys(categoriaLabels).reduce((sum, category) =>
-                      sum + getCostForCategoryAndYear(category, year), 0);
+                    const total = Object.keys(categoriaLabels).reduce(
+                      (sum, category) => sum + getCostForCategoryAndYear(category, year),
+                      0
+                    );
                     const isHistorical = year < currentYear;
 
                     return (
@@ -465,7 +463,7 @@ const Costos = () => {
                 </tr>
               </tfoot>
             </table>
-          </ScrollArea>
+          </div>
         </CardContent>
       </Card>
 
@@ -569,5 +567,4 @@ const Costos = () => {
   );
 };
 
-// ESTE EXPORT ES CRÍTICO PARA EL ERROR DE APP.TSX
 export default Costos;

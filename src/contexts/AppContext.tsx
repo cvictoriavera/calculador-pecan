@@ -108,7 +108,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Log when projects change
   useEffect(() => {
-    console.log('AppContext: Projects state updated', projects);
   }, [projects]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
@@ -189,11 +188,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Load projects function
   const loadProjects = async () => {
-    console.log('AppContext: Loading projects');
     setProjectsLoading(true);
     try {
       const fetchedProjects = await getProjects();
-      console.log('AppContext: Refetched projects', fetchedProjects);
       setProjects(fetchedProjects || []);
     } catch (error) {
       console.error('Error loading projects:', error);
@@ -273,10 +270,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
    useEffect(() => {
      const checkExistingProjects = async () => {
        setProjectsLoading(true);
-       console.log('AppContext: Loading projects on mount');
        try {
          const fetchedProjects = await getProjects();
-         console.log('AppContext: Fetched projects', fetchedProjects);
          if (fetchedProjects && fetchedProjects.length > 0) {
            setProjects(fetchedProjects);
           // Load the first project
@@ -384,7 +379,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const existingCampaigns = await getCampaignsByProject(projectId);
           const existing = existingCampaigns.find(c => c.year === y);
           if (existing) {
-            console.log(`Found existing campaign for year ${y}:`, existing);
             createdCampaigns.push(existing);
           } else {
             console.error(`No existing campaign found for year ${y}`);
@@ -469,7 +463,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           plantas_por_hectarea: updatedData.densidad,
           fecha_plantacion: `${updatedData.añoPlantacion}-01-01`,
         };
-        console.log('Sending update data for monte:', id, updateData);
 
         const updatedMonte = await updateMonteAPI(parseInt(id), updateData);
 
@@ -505,7 +498,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteMonteContext = async (id: string) => {
     try {
       if (!isTrialMode) {
-        console.log('Deleting monte:', id);
         await deleteMonte(parseInt(id));
       }
 
@@ -532,28 +524,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
-    console.log('Changing to project:', projectId);
-
-    // Set flag to prevent automatic loading
     setIsChangingProject(true);
 
-    // Clear existing data before switching
     setMontes([]);
     setMontesLoading(true);
-    // Clear data stores
+
     useDataStore.getState().clearAllData();
 
     setCurrentProjectId(projectId);
     setProjectName(project.project_name);
 
-    // Reset campaign to current year or find appropriate
     const currentYear = new Date().getFullYear();
     setCurrentCampaign(currentYear);
 
-    // Prioridad 1: Datos críticos para navegación (campañas y montes en paralelo)
     try {
-      console.log('Loading critical data for project:', projectId);
-
       const [campaignsData, montesData] = await Promise.all([
         getCampaignsByProject(projectId),
         getMontesByProject(projectId)
@@ -561,7 +545,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // Procesar campañas
       const campaignsArray = Array.isArray(campaignsData) ? campaignsData : [];
-      console.log('Loaded campaigns:', campaignsArray);
       setCampaigns(campaignsArray);
 
       // Set current campaign ID
@@ -583,14 +566,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           variedad: monte.variedad,
         }));
         setMontes(transformedMontes);
-        console.log('Montes loaded:', transformedMontes.length);
       } else {
         setMontes([]);
       }
 
       // Prioridad 2: Datos para dashboard principal (costos e inversiones en paralelo)
       if (campaignsArray.length > 0) {
-        console.log('Loading dashboard data for campaigns:', campaignsArray.length);
         const campaignsForStore = campaignsArray.map(c => ({
           ...c,
           projectId: c.project_id,
