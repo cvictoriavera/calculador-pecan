@@ -295,6 +295,12 @@ const Config = () => {
         description: "Los datos se han importado correctamente. Recargando...",
       });
       
+      // PEQUEÑA ESPERA Y RECARGA FORZADA
+      // Esto borra toda la caché de memoria y obliga a traer los datos frescos
+      setTimeout(() => {
+          window.location.reload();
+      }, 1500);
+      
       // Recargar datos del proyecto
       await loadProjects();
       await loadCampaigns();

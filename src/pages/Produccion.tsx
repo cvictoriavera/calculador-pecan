@@ -182,23 +182,56 @@ const Produccion = () => {
     }
   };
 
-  const chartData = useMemo(() => campaigns
-    .map((year) => {
-      const campana = productionCampaigns.find(pc => pc.year === year.year);
+  
+// Preparamos los datos para el gráfico calculando los totales
+  // Preparamos los datos para el gráfico calculando nosotros mismos
+  const chartData = useMemo(() => {
+    const sortedCampaigns = [...campaigns].sort((a, b) => a.year - b.year);
+
+    return sortedCampaigns.map(campaign => {
+      // CORRECCIÓN: Convertimos ambos IDs a String para asegurar que coincidan
+      const campaignProductions = productions.filter(p => 
+          String(p.campaign_id) === String(campaign.id)
+      );
+      
+      const totalKg = campaignProductions.reduce((sum, p) => sum + Number(p.quantity_kg), 0);
+      const facturacion = totalKg * (Number(campaign.average_price) || 0);
+
       return {
-        year: year.year.toString(),
-        produccion: campana?.totalProduction || 0,
-        facturacion: (campana?.totalProduction || 0) * (campana?.averagePrice || 0),
+        name: campaign.year.toString(),
+        produccion: totalKg,
+        precio: campaign.average_price,
+        facturacion: facturacion
       };
-    })
-    .sort((a, b) => parseInt(a.year) - parseInt(b.year)), [campaigns, productionCampaigns]);
+    });
+  }, [campaigns, productions]);
 
-  const currentCampanaData = useMemo(() => productionCampaigns.find(pc => Number(pc.year) === currentCampaign), [productionCampaigns, currentCampaign]);
-  const totalProduccion = currentCampanaData?.totalProduction || 0;
-  const totalFacturacion = (currentCampanaData?.totalProduction || 0) * (currentCampanaData?.averagePrice || 0);
-  const precioPromedio = currentCampanaData?.averagePrice || 0;
+  
+  
+  const activeCampaignData = useMemo(() => 
+    campaigns.find(c => String(c.id) === String(currentCampaignId)), 
+    [campaigns, currentCampaignId]
+  );
 
-  const hasProduction = useMemo(() => totalProduccion > 0 || precioPromedio > 0, [totalProduccion, precioPromedio]);
+  // 2. Calcular Producción Total sumando 'productions' en vivo (Fuente única de verdad)
+  const totalProduccion = useMemo(() => {
+    if (!currentCampaignId) return 0;
+    return productions
+      .filter(p => String(p.campaign_id) === String(currentCampaignId)) // Filtro robusto (String vs String)
+      .reduce((sum, p) => sum + Number(p.quantity_kg || 0), 0);
+  }, [productions, currentCampaignId]);
+
+  // 3. Obtener Precio Promedio desde la configuración de la campaña
+  const precioPromedio = Number(activeCampaignData?.average_price || 0);
+
+  // 4. Calcular Facturación en vivo
+  const totalFacturacion = totalProduccion * precioPromedio;
+
+  // 5. Determinar si hay producción (para mostrar/ocultar estados vacíos)
+  const hasProduction = useMemo(() => 
+    totalProduccion > 0 || precioPromedio > 0 || productions.some(p => String(p.campaign_id) === String(currentCampaignId)), 
+    [totalProduccion, precioPromedio, productions, currentCampaignId]
+  );
 
   const renderKpiSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

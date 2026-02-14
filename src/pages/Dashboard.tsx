@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, DollarSign, Sprout, BarChart3, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
@@ -13,12 +13,24 @@ const Dashboard = () => {
   
   // 2. IMPORTANTE: Nos suscribimos a los datos crudos para que el componente
   // se actualice cuando terminen de cargarse desde el servidor.
-  const { costs, investments } = useDataStore(); 
+  const { 
+    costs, 
+    investments, 
+    productions,
+    loadAllProductions,  // <--- Necesario para traer la producción // <--- Recomendado para asegurar inversiones
+  } = useDataStore();
 
   // 3. Traemos las funciones de cálculo
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
 
-  // 4. Calculamos los datos. Agregamos 'costs' e 'investments' a las dependencias.
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      console.log("Dashboard: Cargando datos frescos...");
+      loadAllProductions(campaigns);
+    }
+  }, [campaigns, loadAllProductions]);
+
+  /// 4. Calculamos los datos. Agregamos 'costs', 'investments' y 'productions' a las dependencias.
   const dashboardData = useMemo(() => {
     if (!campaigns || campaigns.length === 0) return [];
 
@@ -26,11 +38,14 @@ const Dashboard = () => {
     let acumulado = 0;
 
     return sortedCampaigns.map((camp) => {
-      const production = parseFloat(camp.total_production || "0");
-      const price = parseFloat(camp.average_price || "0");
-      const ingresos = production * price;
+      // CAMBIO: Calcular producción real sumando el array 'productions'
+      const production = productions
+        .filter(p => String(p.campaign_id) === String(camp.id))
+        .reduce((sum, p) => sum + Number(p.quantity_kg || 0), 0);
 
-      // Ahora sí, estas funciones tendrán datos frescos
+      const price = parseFloat(camp.average_price || "0");
+      const ingresos = production * price; // Esto arregla Ingresos y Payback automáticamente
+
       const costosCamp = getTotalCostsByCampaign(camp.id);
       const inversionesCamp = getTotalInvestmentsByCampaign(camp.id);
 
@@ -48,8 +63,7 @@ const Dashboard = () => {
         id: camp.id
       };
     });
-  // AGREGAMOS costs E investments AQUÍ ABAJO PARA RECALCULAR CUANDO LLEGUEN
-  }, [campaigns, getTotalCostsByCampaign, getTotalInvestmentsByCampaign, costs, investments]);
+  }, [campaigns, getTotalCostsByCampaign, getTotalInvestmentsByCampaign, costs, investments, productions]);
 
   // 3. Calculamos KPIs Generales (Totales o del año actual)
   const kpis = useMemo(() => {
