@@ -581,90 +581,118 @@ const Config = () => {
         </CardContent>
       </Card>
 
-      {/* CARD 4: IMPORT/EXPORT DE PROYECTO */}
+      {/* CARD 4: IMPORT/EXPORT DE PROYECTO (DISEÑO MEJORADO) */}
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Database className="h-5 w-5 text-accent" />
-            <CardTitle className="text-foreground">Import/Export de Proyecto</CardTitle>
+            <CardTitle className="text-foreground">Administración de Datos</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Exportar Proyecto</Label>
-            <p className="text-sm text-muted-foreground">
-              Descarga todos los datos del proyecto actual en formato JSON.
-              Útil para crear respaldos o transferir datos.
-            </p>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* COLUMNA 1: EXPORTAR */}
+          <div className="space-y-4 p-5 border border-border/40 rounded-xl bg-secondary/5 flex flex-col justify-between">
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 font-semibold text-foreground">
+                    <div className="p-2 bg-primary/10 rounded-full">
+                        <Download className="h-4 w-4 text-primary" />
+                    </div>
+                    Exportar Copia
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Genera un archivo JSON con todos los datos actuales. Ideal para realizar copias de seguridad antes de hacer cambios importantes.
+                </p>
+            </div>
+            
             <Button
               onClick={handleExportProject}
               disabled={!currentProjectId || isExporting}
-              className="w-full"
+              variant="outline"
+              className="w-full border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
             >
               {isExporting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Exportando...
+                  Generando...
                 </>
               ) : (
                 <>
                   <Download className="mr-2 h-4 w-4" />
-                  Exportar Proyecto
+                  Descargar Respaldo
                 </>
               )}
             </Button>
           </div>
 
-          <div className="space-y-2">
-            <Label>Importar Proyecto</Label>
-            <p className="text-sm text-muted-foreground">
-              Importa datos desde un archivo JSON exportado previamente.
-              <strong className="text-destructive"> Esto reemplazará todos los datos actuales del proyecto.</strong>
-            </p>
-            <Input
-              type="file"
-              accept=".json"
-              onChange={handleFileSelect}
-              disabled={!currentProjectId || isImporting}
-              ref={fileInputRef}
-            />
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  disabled={!currentProjectId || !selectedFile || isImporting}
-                  className="w-full"
-                >
-                  {isImporting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Importando...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Importar Proyecto
-                    </>
-                  )}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción reemplazará TODOS los datos actuales del proyecto con los datos del archivo JSON.
-                    Esta operación no se puede deshacer. Se recomienda exportar el proyecto actual antes de importar.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleImportProject}>
-                    Sí, importar datos
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          {/* COLUMNA 2: IMPORTAR */}
+          <div className="space-y-4 p-5 border border-border/40 rounded-xl bg-secondary/5 flex flex-col justify-between">
+             <div className="space-y-2">
+                <div className="flex items-center gap-2 font-semibold text-foreground">
+                    <div className="p-2 bg-amber-500/10 rounded-full">
+                        <Upload className="h-4 w-4 text-amber-600" />
+                    </div>
+                    Restaurar Datos
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Recupera un proyecto desde un archivo. 
+                  <span className="block mt-1 text-amber-600/90 font-medium text-xs bg-amber-50 p-1 px-2 rounded w-fit">
+                    ⚠️ Atención: Sobrescribirá los datos actuales
+                  </span>
+                </p>
+            </div>
+
+            <div className="space-y-3">
+                {/* Input de archivo estilizado */}
+                <Input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileSelect}
+                  disabled={!currentProjectId || isImporting}
+                  ref={fileInputRef}
+                  className="cursor-pointer text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 text-muted-foreground"
+                />
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      disabled={!currentProjectId || !selectedFile || isImporting}
+                      className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white border-0"
+                    >
+                      {isImporting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Restaurando...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Iniciar Importación
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Confirmar restauración?</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2">
+                        <p>Esta acción reemplazará <strong>TODOS</strong> los datos del proyecto actual con el contenido del archivo seleccionado.</p>
+                        <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm font-medium">
+                            Esta operación es irreversible.
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleImportProject} className="bg-destructive hover:bg-destructive/90">
+                        Sí, sobrescribir datos
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </div>
           </div>
+
         </CardContent>
       </Card>
 
