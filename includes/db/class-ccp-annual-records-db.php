@@ -46,6 +46,32 @@ class CCP_Annual_Records_DB {
 	}
 
 	/**
+	 * Get all annual records for a specific project.
+	 * Required for Export Controller.
+	 */
+	public function get_all_by_project( $project_id, $user_id ) {
+		if ( ! is_numeric( $project_id ) || ! is_numeric( $user_id ) ) {
+			return null;
+		}
+
+		$project_owner = $this->wpdb->get_var(
+			$this->wpdb->prepare( "SELECT user_id FROM {$this->table_projects} WHERE id = %d", $project_id )
+		);
+
+		if ( absint( $project_owner ) !== absint( $user_id ) ) {
+			return null;
+		}
+
+        // CORRECCIÓN: Cambiado 'created_at' por 'id' porque created_at no existe en esta tabla
+		$query = $this->wpdb->prepare(
+			"SELECT * FROM {$this->table_annual_records} WHERE project_id = %d ORDER BY id DESC",
+			absint( $project_id )
+		);
+
+		return $this->wpdb->get_results( $query );
+	}
+
+	/**
 	 * Get all records for a specific campaign.
 	 *
 	 * @param int $project_id  The ID of the project.
@@ -319,5 +345,26 @@ class CCP_Annual_Records_DB {
 		$query .= " GROUP BY type";
 
 		return $this->wpdb->get_results( $this->wpdb->prepare( $query, $params ) );
+	}
+
+	/**
+		* Delete all annual records for a specific project.
+		* Used during project import to clear existing data.
+		*
+		* @param int $project_id The ID of the project.
+		* @return bool True on success, false on failure.
+		*/
+	public function delete_by_project( $project_id ) {
+		if ( ! is_numeric( $project_id ) ) {
+			return false;
+		}
+
+		$result = $this->wpdb->delete(
+			$this->table_annual_records,
+			array( 'project_id' => absint( $project_id ) ),
+			array( '%d' )
+		);
+
+		return $result !== false;
 	}
 }

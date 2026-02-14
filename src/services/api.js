@@ -42,20 +42,35 @@ export const apiRequest = async (endpoint, options = {}) => {
     try {
         const response = await fetch(url, config);
 
+        console.log('API Request:', url, config.method || 'GET');
+        console.log('Response status:', response.status, response.statusText);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({
-                message: 'An unknown error occurred.',
-            }));
-            
-            console.error('❌ API Error:', errorData); // Log de error
+            let errorText;
+            try {
+                errorText = await response.text();
+                console.error('❌ API Error Response Text:', errorText);
+                const errorData = JSON.parse(errorText);
+                console.error('❌ API Error Parsed:', errorData);
+            } catch (parseError) {
+                console.error('❌ API Error: Response is not JSON, raw text:', errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - Response is HTML instead of JSON`);
+            }
+
             throw new Error(errorData.message || 'Network response was not ok');
         }
 
         const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
         if (contentType && contentType.indexOf('application/json') !== -1) {
-            return response.json();
+            const jsonData = await response.json();
+            console.log('API Response JSON:', jsonData);
+            return jsonData;
         }
-        return null;
+        const textData = await response.text();
+        console.log('API Response Text:', textData);
+        return textData;
 
     } catch (error) {
         console.error('☠️ Fetch Crash:', error);

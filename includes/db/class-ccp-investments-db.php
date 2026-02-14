@@ -276,4 +276,40 @@ class CCP_Investments_DB {
 
 		return false !== $result;
 	}
+
+	/**
+		* Delete all investments for a specific project.
+		* Used during project import to clear existing data.
+		*
+		* @param int $project_id The ID of the project.
+		* @return bool True on success, false on failure.
+		*/
+	public function delete_by_project( $project_id ) {
+		if ( ! is_numeric( $project_id ) ) {
+			return false;
+		}
+
+		// Get campaign IDs for this project
+		$campaign_ids = $this->wpdb->get_col(
+			$this->wpdb->prepare(
+				"SELECT id FROM {$this->table_campaigns} WHERE project_id = %d",
+				absint( $project_id )
+			)
+		);
+
+		if ( empty( $campaign_ids ) ) {
+			return true; // No campaigns, nothing to delete
+		}
+
+		// Delete investments for these campaigns
+		$placeholders = implode( ',', array_fill( 0, count( $campaign_ids ), '%d' ) );
+		$result = $this->wpdb->query(
+			$this->wpdb->prepare(
+				"DELETE FROM {$this->table_investments} WHERE campaign_id IN ($placeholders)",
+				...$campaign_ids
+			)
+		);
+
+		return $result !== false;
+	}
 }

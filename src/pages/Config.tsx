@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, Save, Database, Trash2, Loader2, History } from "lucide-react"; 
+import { Settings, Save, Database, Trash2, Loader2, History, Download, Upload } from "lucide-react";
 import { getCurrentUser } from "@/services/userService";
 import { apiRequest } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useApp } from "@/contexts/AppContext";
-import { updateProject } from "@/services/projectService";
+import { updateProject, exportProject, importProject } from "@/services/projectService";
 import { createCampaign } from "@/services/campaignService";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -51,6 +51,12 @@ const Config = () => {
   const navigate = useNavigate(); // <--- Inicializamos el hook
   
   const [isUpdatingHistory, setIsUpdatingHistory] = useState(false);
+
+  // Estados para import/export
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [geoData, setGeoData] = useState<{
     provinces: string[];
@@ -217,6 +223,98 @@ const Config = () => {
             variant: "destructive",
         });
       } finally { setIsMigrating(false); }
+  };
+
+  // Función para exportar proyecto
+  const handleExportProject = async () => {
+    if (!currentProjectId) return;
+    
+    setIsExporting(true);
+    try {
+      const exportData = await exportProject(currentProjectId);
+      
+      // Crear blob y descargar
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `project_${currentProjectId}_export_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Proyecto exportado",
+        description: "El archivo JSON se ha descargado correctamente.",
+      });
+    } catch (error) {
+      console.error("Error exporting project:", error);
+      toast({
+        title: "Error al exportar",
+        description: "No se pudo exportar el proyecto. Intenta nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Función para seleccionar archivo
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  // Función para importar proyecto
+  const handleImportProject = async () => {
+    if (!currentProjectId || !selectedFile) return;
+    
+    setIsImporting(true);
+    try {
+      // Leer archivo
+      const fileContent = await selectedFile.text();
+      
+      // Validar JSON
+      let jsonData;
+      try {
+        jsonData = JSON.parse(fileContent);
+      } catch (e) {
+        throw new Error('El archivo no contiene JSON válido.');
+      }
+      
+      // Importar
+      await importProject(currentProjectId, jsonData);
+      
+      toast({
+        title: "Proyecto importado",
+        description: "Los datos se han importado correctamente. Recargando...",
+      });
+      
+      // Recargar datos del proyecto
+      await loadProjects();
+      await loadCampaigns();
+      
+      // Limpiar input
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+    } catch (error) {
+      console.error("Error importing project:", error);
+      toast({
+        title: "Error al importar",
+        description: error instanceof Error ? error.message : "No se pudo importar el proyecto.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleDeleteProject = async () => {
@@ -477,7 +575,94 @@ const Config = () => {
         </CardContent>
       </Card>
 
-      {/* CARD 4: ELIMINAR PROYECTO */}
+      {/* CARD 4: IMPORT/EXPORT DE PROYECTO */}
+      <Card className="border-border/50 shadow-md">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-accent" />
+            <CardTitle className="text-foreground">Import/Export de Proyecto</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Exportar Proyecto</Label>
+            <p className="text-sm text-muted-foreground">
+              Descarga todos los datos del proyecto actual en formato JSON.
+              Útil para crear respaldos o transferir datos.
+            </p>
+            <Button
+              onClick={handleExportProject}
+              disabled={!currentProjectId || isExporting}
+              className="w-full"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar Proyecto
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Importar Proyecto</Label>
+            <p className="text-sm text-muted-foreground">
+              Importa datos desde un archivo JSON exportado previamente.
+              <strong className="text-destructive"> Esto reemplazará todos los datos actuales del proyecto.</strong>
+            </p>
+            <Input
+              type="file"
+              accept=".json"
+              onChange={handleFileSelect}
+              disabled={!currentProjectId || isImporting}
+              ref={fileInputRef}
+            />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  disabled={!currentProjectId || !selectedFile || isImporting}
+                  className="w-full"
+                >
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Importando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Importar Proyecto
+                    </>
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción reemplazará TODOS los datos actuales del proyecto con los datos del archivo JSON.
+                    Esta operación no se puede deshacer. Se recomienda exportar el proyecto actual antes de importar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleImportProject}>
+                    Sí, importar datos
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* CARD 5: ELIMINAR PROYECTO */}
       <Card className="border-destructive/50 shadow-md">
         <CardHeader>
           <div className="flex items-center gap-2">

@@ -65,6 +65,36 @@ class CCP_Productions_DB {
 	}
 
 	/**
+	 * Get all productions for a specific project.
+	 * Required for Export Controller.
+	 *
+	 * @param int $project_id The ID of the project.
+	 * @param int $user_id    The ID of the user.
+	 * @return array|null An array of production objects.
+	 */
+	public function get_all_by_project( $project_id, $user_id ) {
+		if ( ! is_numeric( $project_id ) || ! is_numeric( $user_id ) ) {
+			return null;
+		}
+
+		// Verify project ownership
+		$project_owner = $this->wpdb->get_var(
+			$this->wpdb->prepare( "SELECT user_id FROM {$this->table_projects} WHERE id = %d", $project_id )
+		);
+
+		if ( absint( $project_owner ) !== absint( $user_id ) ) {
+			return null;
+		}
+
+		$query = $this->wpdb->prepare(
+			"SELECT * FROM {$this->table_productions} WHERE project_id = %d ORDER BY created_at DESC",
+			absint( $project_id )
+		);
+
+		return $this->wpdb->get_results( $query );
+	}
+
+	/**
 	 * Get all productions for a specific campaign, verifying user ownership.
 	 *
 	 * @param int $campaign_id The ID of the campaign.
@@ -267,5 +297,26 @@ class CCP_Productions_DB {
 		);
 
 		return $this->wpdb->get_results( $query );
+	}
+
+	/**
+		* Delete all productions for a specific project.
+		* Used during project import to clear existing data.
+		*
+		* @param int $project_id The ID of the project.
+		* @return bool True on success, false on failure.
+		*/
+	public function delete_by_project( $project_id ) {
+		if ( ! is_numeric( $project_id ) ) {
+			return false;
+		}
+
+		$result = $this->wpdb->delete(
+			$this->table_productions,
+			array( 'project_id' => absint( $project_id ) ),
+			array( '%d' )
+		);
+
+		return $result !== false;
 	}
 }

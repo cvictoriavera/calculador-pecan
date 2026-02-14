@@ -263,4 +263,25 @@ class CCP_Yield_Models_DB {
 
 		return false !== $result;
 	}
+
+	/**
+		* Delete all yield models for a specific project.
+		* Used during project import to clear existing data.
+		*
+		* @param int $project_id The ID of the project.
+		* @return bool True on success, false on failure.
+		*/
+	public function delete_by_project( $project_id ) {
+		if ( ! is_numeric( $project_id ) ) {
+			return false;
+		}
+
+		$result = $this->wpdb->delete(
+			$this->table_yield_models,
+			array( 'project_id' => absint( $project_id ) ),
+			array( '%d' )
+		);
+
+		return $result !== false;
+	}
 }

@@ -138,3 +138,105 @@ export const deleteProject = (projectId) => {
 		method: 'DELETE',
 	});
 };
+
+/**
+	* Exports a project as JSON.
+	*
+	* @param {number} projectId - The ID of the project to export.
+	* @returns {Promise<object>} A promise that resolves to the export data.
+	*/
+export const exportProject = async (projectId) => {
+	if (!projectId) {
+		return Promise.reject(new Error('Project ID is required.'));
+	}
+	
+	if (isTrialMode()) {
+		// En modo trial, exportar desde localStorage
+		const projects = JSON.parse(localStorage.getItem(TRIAL_PROJECTS_KEY) || '[]');
+		const project = projects.find(p => p.id == projectId);
+		if (!project) {
+			return Promise.reject(new Error('Project not found.'));
+		}
+		
+		// Construir estructura de export similar al backend
+		const exportData = {
+			version: '1.0',
+			exported_at: new Date().toISOString(),
+			project: {
+				project_name: project.project_name,
+				description: project.description || '',
+				pais: project.pais || 'Argentina',
+				provincia: project.provincia || '',
+				departamento: project.departamento || '',
+				municipio: project.municipio || '',
+				initial_year: project.initial_year || new Date().getFullYear(),
+				allow_benchmarking: project.allow_benchmarking !== false,
+			},
+			montes: [],
+			campaigns: [],
+			costs: [],
+			investments: [],
+			productions: [],
+			yield_models: [],
+			annual_records: [],
+		};
+		
+		return Promise.resolve(exportData);
+	}
+	
+	return apiRequest(`${BASE_ENDPOINT}/${projectId}/export`);
+};
+
+/**
+	* Imports project data from JSON.
+	*
+	* @param {number} projectId - The ID of the project to import into.
+	* @param {object|string} jsonData - The JSON data to import (object or string).
+	* @returns {Promise<object>} A promise that resolves to the import result.
+	*/
+export const importProject = async (projectId, jsonData) => {
+	if (!projectId) {
+		return Promise.reject(new Error('Project ID is required.'));
+	}
+	
+	// Convertir a string si es objeto
+	const dataString = typeof jsonData === 'string' ? jsonData : JSON.stringify(jsonData);
+	
+	if (isTrialMode()) {
+		// En modo trial, importar a localStorage
+		try {
+			const importData = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+			
+			// Validar estructura
+			if (!importData.project || !importData.version) {
+				return Promise.reject(new Error('Invalid import data structure.'));
+			}
+			
+			// Actualizar proyecto en localStorage
+			const projects = JSON.parse(localStorage.getItem(TRIAL_PROJECTS_KEY) || '[]');
+			const index = projects.findIndex(p => p.id == projectId);
+			
+			if (index === -1) {
+				return Promise.reject(new Error('Project not found.'));
+			}
+			
+			// Actualizar datos del proyecto
+			projects[index] = {
+				...projects[index],
+				...importData.project,
+				updated_at: new Date().toISOString(),
+			};
+			
+			localStorage.setItem(TRIAL_PROJECTS_KEY, JSON.stringify(projects));
+			
+			return Promise.resolve({ success: true, message: 'Project imported successfully.' });
+		} catch (error) {
+			return Promise.reject(new Error('Error importing project: ' + error.message));
+		}
+	}
+	
+	return apiRequest(`${BASE_ENDPOINT}/${projectId}/import`, {
+		method: 'POST',
+		body: JSON.stringify({ data: dataString }),
+	});
+};
