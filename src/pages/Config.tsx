@@ -85,11 +85,9 @@ const Config = () => {
   }, []);
 
   useEffect(() => {
-    console.log('Config: useEffect for projects triggered', { projectsLength: projects.length, currentProjectId });
     if (projects.length > 0 && currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
       if (currentProject) {
-        console.log('Config: Setting project data from context', currentProject);
         setProjectName(currentProject.project_name);
         // Cargar descripción si existe
         if (currentProject.description) setDescripcion(currentProject.description);
@@ -367,14 +365,12 @@ const Config = () => {
       }
 
       setIsUpdatingProject(true);
-      console.log('Config: Updating project data', { currentProjectId, projectName, descripcion });
       try {
          // CORRECCIÓN AQUÍ: description (clave API) : descripcion (variable estado)
          await updateProject(currentProjectId, {
              project_name: projectName.trim(),
              description: descripcion.trim()
          });
-         console.log('Config: Project updated successfully, reloading projects');
          await loadProjects();
          toast({ title: "Éxito", description: "Los datos del proyecto han sido actualizados." });
       } catch(error) {
@@ -397,10 +393,8 @@ const Config = () => {
          return;
        }
        setIsUpdatingProject(true);
-       console.log('Config: Updating location data', { currentProjectId, pais, provincia, departamento, municipio });
        try {
           await updateProject(currentProjectId, { pais, provincia, departamento, municipio });
-          console.log('Config: Location updated successfully, reloading projects');
           await loadProjects();
           toast({ title: "Éxito", description: "Los datos de ubicación han sido actualizados." });
        } catch(error) {

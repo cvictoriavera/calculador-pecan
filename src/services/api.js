@@ -42,9 +42,7 @@ export const apiRequest = async (endpoint, options = {}) => {
     try {
         const response = await fetch(url, config);
 
-        console.log('API Request:', url, config.method || 'GET');
-        console.log('Response status:', response.status, response.statusText);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
 
         if (!response.ok) {
             let errorText;
@@ -62,14 +60,11 @@ export const apiRequest = async (endpoint, options = {}) => {
         }
 
         const contentType = response.headers.get('content-type');
-        console.log('Content-Type:', contentType);
         if (contentType && contentType.indexOf('application/json') !== -1) {
             const jsonData = await response.json();
-            console.log('API Response JSON:', jsonData);
             return jsonData;
         }
         const textData = await response.text();
-        console.log('API Response Text:', textData);
         return textData;
 
     } catch (error) {

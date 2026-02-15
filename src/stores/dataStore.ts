@@ -316,7 +316,6 @@ export const useDataStore = create<DataState>()(
       // Verificar cache primero
       const cachedCosts = dataCache.get(cacheKey);
       if (cachedCosts) {
-        console.log('Loading costs from cache for project:', projectId);
         set({ costs: cachedCosts });
         return;
       }
@@ -348,7 +347,6 @@ export const useDataStore = create<DataState>()(
       // Verificar cache primero
       const cachedInvestments = dataCache.get(cacheKey);
       if (cachedInvestments) {
-        console.log('Loading investments from cache for project:', projectId);
         set({ investments: cachedInvestments });
         return;
       }
@@ -730,17 +728,14 @@ export const useDataStore = create<DataState>()(
   },
   loadAllProductions: async (campaigns: { id: number; year?: number; average_price?: string; total_production?: string; updated_at?: string; created_at?: string }[]) => {
     try {
-      console.log('Loading productions for campaigns:', campaigns.map(c => c.id));
 
       // Usar llamadas individuales por ahora para asegurar funcionamiento
       const allProductions: ProductionRecord[] = [];
       const updatedProductionCampaigns: ProductionCampaign[] = [];
 
       for (const campaign of campaigns) {
-        console.log(`Loading productions for campaign ${campaign.id}`);
         try {
           const records = await getProductionsByCampaign(campaign.id);
-          console.log(`Got ${records?.length || 0} records for campaign ${campaign.id}`);
 
           if (Array.isArray(records)) {
             const cleanRecords = records.map((r: any) => ({
@@ -770,14 +765,9 @@ export const useDataStore = create<DataState>()(
             totalProduction,
             date,
           });
-          console.log(`Added production campaign for year ${campaignData.year}`);
-        } else {
-          console.log(`Campaign ${campaign.id} missing price/production data`);
-        }
+        } 
       }
 
-      console.log(`Total productions loaded: ${allProductions.length}`);
-      console.log(`Total production campaigns: ${updatedProductionCampaigns.length}`);
 
       set({
         productions: allProductions,

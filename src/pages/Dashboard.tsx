@@ -25,7 +25,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (campaigns && campaigns.length > 0) {
-      console.log("Dashboard: Cargando datos frescos...");
       loadAllProductions(campaigns);
     }
   }, [campaigns, loadAllProductions]);
