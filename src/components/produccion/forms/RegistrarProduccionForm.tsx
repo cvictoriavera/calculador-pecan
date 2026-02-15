@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // <--- CORREGIDO AQUÍ
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -30,6 +30,7 @@ import {
   ChevronUp,
   Loader2
 } from "lucide-react";
+import { getYieldModelsByProject } from "@/services/yieldModelService";
 
 interface MonteProduccion {
   monteId: string;
@@ -52,11 +53,48 @@ interface RegistrarProduccionProps {
 }
 
 export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingData, isSaving = false }: RegistrarProduccionProps) {
-  const { montes, currentCampaign } = useApp();
+  const { montes, currentCampaign, currentProjectId } = useApp();
   const [step, setStep] = useState(1);
   const [showJovenes, setShowJovenes] = useState(false);
+  
+  // ESTADO PARA LA CURVA REAL
+  const [yieldCurve, setYieldCurve] = useState<Array<{year: number, kg: number}>>([]);
 
- 
+  // EFECTO: CARGAR CURVA DESDE BD
+  useEffect(() => {
+    const loadCurve = async () => {
+        if (!currentProjectId) return;
+        try {
+            const models = await getYieldModelsByProject(currentProjectId);
+            const activeModel = models.find((m: any) => m.is_active == 1) || models[0];
+            
+            if (activeModel && activeModel.yield_data) {
+                const parsedData = typeof activeModel.yield_data === 'string' 
+                    ? JSON.parse(activeModel.yield_data) 
+                    : activeModel.yield_data;
+                setYieldCurve(parsedData);
+            }
+        } catch (error) {
+            console.error("Error cargando curva de rendimiento para distribución:", error);
+        }
+    };
+    if (open) loadCurve();
+  }, [currentProjectId, open]);
+
+  // HELPER: Obtener rendimiento estimado por edad según curva real
+  const getEstimatedYieldPerTree = (edad: number) => {
+    if (!yieldCurve || yieldCurve.length === 0) return 0;
+    
+    // Buscar coincidencia exacta
+    const match = yieldCurve.find(y => y.year === edad);
+    if (match) return match.kg;
+
+    // Si es mayor al último año registrado, usar el último (meseta)
+    const lastPoint = yieldCurve[yieldCurve.length - 1];
+    if (edad > lastPoint.year) return lastPoint.kg;
+
+    return 0;
+  };
 
   const {
     control,
@@ -105,14 +143,12 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
   const montesProductivos = montesDisponibles.filter((m) => m.edad >= 7);
   const montesJovenes = montesDisponibles.filter((m) => m.edad < 7);
 
-
   // Calculate totals from watched values
   const totalKg = watchedProduccionPorMonte?.reduce((acc, p) => acc + (p?.kgRecolectados || 0), 0) || 0;
   const facturacionEstimada = totalKg * (watchedValues?.precioPromedio || 0);
 
   const canProceedStep1 = (watchedValues?.precioPromedio || 0) > 0 && watchedValues?.metodo;
   const canProceedStep2 = totalKg > 0;
-
 
   const onFormSubmit = (data: RegistrarProduccionFormData) => {
     onSave(data);
@@ -379,22 +415,51 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
                         placeholder="Ingrese el peso total"
                         value={field.value || ""}
                         onChange={(e) => {
-                          field.onChange(parseFloat(e.target.value) || 0);
-                          // Distribute weight proportionally
-                          const totalWeight = parseFloat(e.target.value) || 0;
+                          const pesoTotalInput = parseFloat(e.target.value) || 0;
+                          field.onChange(pesoTotalInput);
+
+                          // LÓGICA DE DISTRIBUCIÓN CIENTÍFICA
                           const watchedMontesSeleccionados = watch("montesSeleccionados") || [];
                           const selectedMontes = montesDisponibles.filter(m => watchedMontesSeleccionados.includes(m.id));
-                          const totalHectareas = selectedMontes.reduce((acc, m) => acc + m.hectareas, 0);
+                          
+                          // A) Calcular Potencial Teórico de cada monte
+                          const montesConPotencial = selectedMontes.map(monte => {
+                             // Obtener rendimiento teórico de la curva (Kg/planta)
+                             const yieldPerTree = getEstimatedYieldPerTree(monte.edad);
+                             
+                             // Usar plantas_por_hectarea si existe, o densidad, o default
+                             // @ts-ignore
+                             const densidad = monte.plantas_por_hectarea || monte.densidad || 0;
+                             
+                             // Potencial = Has * Plantas/Ha * Kg/Planta
+                             const potencial = monte.hectareas * densidad * yieldPerTree;
+                             
+                             return { ...monte, potencial };
+                          });
 
-                          if (totalHectareas > 0) {
+                          const totalPotencial = montesConPotencial.reduce((acc, m) => acc + m.potencial, 0);
+
+                          // B) Distribuir proporcionalmente
+                          if (selectedMontes.length > 0) {
                             const newProduccionPorMonte = watchedProduccionPorMonte?.map(p => {
                               if (watchedMontesSeleccionados.includes(p.monteId)) {
-                                const monte = selectedMontes.find(m => m.id === p.monteId);
-                                const proportion = monte ? monte.hectareas / totalHectareas : 0;
-                                return { ...p, kgRecolectados: Math.round(totalWeight * proportion) };
+                                const datosMonte = montesConPotencial.find(m => m.id === p.monteId);
+                                
+                                let proportion = 0;
+                                if (totalPotencial > 0) {
+                                    // Método Robusto: Por potencial productivo
+                                    proportion = (datosMonte?.potencial || 0) / totalPotencial;
+                                } else {
+                                    // Fallback: Por área
+                                    const totalHas = selectedMontes.reduce((acc, m) => acc + m.hectareas, 0);
+                                    proportion = datosMonte ? datosMonte.hectareas / totalHas : 0;
+                                }
+
+                                return { ...p, kgRecolectados: Math.round(pesoTotalInput * proportion) };
                               }
                               return { ...p, kgRecolectados: 0 };
                             }) || [];
+                            
                             setValue("produccionPorMonte", newProduccionPorMonte);
                           }
                         }}
@@ -402,6 +467,9 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
                       />
                     )}
                   />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    * La distribución automática considera hectáreas, densidad de plantación y la curva de rendimiento configurada.
+                  </p>
                 </div>
 
                 <div>
@@ -422,10 +490,42 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
                               checked={field.value?.includes(monte.id) || false}
                               onCheckedChange={(checked) => {
                                 const current = field.value || [];
+                                let newSelection = [];
                                 if (checked) {
-                                  field.onChange([...current, monte.id]);
+                                  newSelection = [...current, monte.id];
                                 } else {
-                                  field.onChange(current.filter(id => id !== monte.id));
+                                  newSelection = current.filter(id => id !== monte.id);
+                                }
+                                field.onChange(newSelection);
+
+                                // RECALCULAR AL CAMBIAR SELECCIÓN
+                                const pesoTotal = watch("pesoTotal") || 0;
+                                if (pesoTotal > 0) {
+                                    const selected = montesDisponibles.filter(m => newSelection.includes(m.id));
+                                    
+                                    const montesConPotencial = selected.map(m => {
+                                        const yieldPerTree = getEstimatedYieldPerTree(m.edad);
+                                        // @ts-ignore
+                                        const densidad = m.plantas_por_hectarea || m.densidad || 0;
+                                        return { ...m, potencial: m.hectareas * densidad * yieldPerTree };
+                                    });
+                                    const totalPotencial = montesConPotencial.reduce((acc, mk) => acc + mk.potencial, 0);
+
+                                    const newProduccion = watchedProduccionPorMonte?.map(p => {
+                                        if (newSelection.includes(p.monteId)) {
+                                            const datos = montesConPotencial.find(m => m.id === p.monteId);
+                                            let proportion = 0;
+                                            if (totalPotencial > 0) {
+                                                proportion = (datos?.potencial || 0) / totalPotencial;
+                                            } else {
+                                                const totalHas = selected.reduce((acc, mh) => acc + mh.hectareas, 0);
+                                                proportion = datos ? datos.hectareas / totalHas : 0;
+                                            }
+                                            return { ...p, kgRecolectados: Math.round(pesoTotal * proportion) };
+                                        }
+                                        return { ...p, kgRecolectados: 0 };
+                                    }) || [];
+                                    setValue("produccionPorMonte", newProduccion);
                                 }
                               }}
                             />
@@ -453,7 +553,7 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
                               Kg
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Proporcional
+                              Estimado
                             </p>
                           </div>
                         )}
@@ -550,7 +650,7 @@ export function RegistrarProduccionForm({ open, onOpenChange, onSave, editingDat
               <Button 
                 type="submit" 
                 className="bg-accent hover:bg-accent/90"
-                disabled={isSaving} // <--- Deshabilitar al guardar
+                disabled={isSaving}
               >
                 {isSaving ? (
                   <>

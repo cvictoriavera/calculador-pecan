@@ -13,10 +13,12 @@ import { Slider } from "@/components/ui/slider";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { useDataStore } from "@/stores/dataStore";
 
+// 1. ACTUALIZAR INTERFAZ PARA INCLUIR TIPO DE CARGA
 interface ProduccionRecord {
   campanaYear: number;
   monteId: string;
   kgRecolectados: number;
+  inputType: 'detail' | 'total'; // 'detail' = Manual, 'total' = Distribuido
 }
 
 interface EvolucionProductivaProps {
@@ -28,17 +30,13 @@ interface EvolucionProductivaProps {
 export function EvolucionProductiva({ campaigns, montes, isLoading = false }: EvolucionProductivaProps) {
   
   const { currentProjectId } = useApp();
-
-  // CAMBIO IMPORTANTE: Solo leemos del store, no recargamos
   const productions = useDataStore((state) => state.productions);
-
   const [expandedMontes, setExpandedMontes] = useState<string[]>([]);
   const [yieldCurveOpen, setYieldCurveOpen] = useState(false);
 
   const [yieldData, setYieldData] = useState<Array<{year: number, kg: number}>>([]);
   const [editingYieldData, setEditingYieldData] = useState<YieldCurveFormData | undefined>(undefined);
   const [projectedPrice, setProjectedPrice] = useState(3.50);
-
   const [yearRange, setYearRange] = useState<[number, number]>(() => {
     const currentYear = new Date().getFullYear();
     return [Math.max(2015, currentYear - 5), Math.min(2055, currentYear + 2)];
@@ -50,14 +48,15 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
 
       try {
         const models = await getYieldModelsByProject(currentProjectId);
-
         const generalModel = models.find((model: any) => model.variety === 'general' && model.is_active == 1);
 
         if (generalModel) {
-          const parsedData = JSON.parse(generalModel.yield_data);
+          const parsedData = typeof generalModel.yield_data === 'string' 
+            ? JSON.parse(generalModel.yield_data) 
+            : generalModel.yield_data;
+            
           setYieldData(parsedData);
 
-          // Prepare editing data for the form
           const formData: YieldCurveFormData = {
             rows: parsedData.map((item: {year: number, kg: number}) => ({
               age: item.year,
@@ -78,19 +77,10 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
     fetchYieldModel();
   }, [currentProjectId]);
 
-  // REMOVIDO: useEffect que recargaba productions automáticamente
-  // Ahora confiamos en que el componente padre (Produccion.tsx) maneja las recargas
-
-  // Calculate dynamic year range based on montes
   const yearRangeLimits = useMemo(() => {
     if (montes.length === 0) return { min: 2020, max: 2030 };
-
     const currentYear = new Date().getFullYear();
-
-    // Find the oldest planting year
     const oldestPlantingYear = Math.min(...montes.map((monte: any) => monte.añoPlantacion));
-
-    // Calculate max projection year (oldest monte + max curve years or current + 30)
     const maxProjectionFromMontes = oldestPlantingYear + (yieldData.length > 0 ? yieldData[yieldData.length - 1].year : 30);
     const maxProjectionFromCurrent = currentYear + 30;
     const maxYear = Math.max(maxProjectionFromMontes, maxProjectionFromCurrent);
@@ -101,7 +91,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
     };
   }, [montes, yieldData]);
 
-  // Calculate displayed years based on selected range
   const displayedYears = useMemo(() => {
     const years = [];
     for (let year = yearRange[0]; year <= yearRange[1]; year++) {
@@ -118,18 +107,19 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
     );
   };
 
-  // Compute produccionData from campaigns - OPTIMIZADO con useMemo
+  // 2. ACTUALIZAR LÓGICA DE DATOS PARA CAPTURAR input_type
   const produccionData = useMemo(() => {
     const data: ProduccionRecord[] = [];
     
     productions.forEach(prod => {
       const campaign = campaigns.find(c => String(c.id) === String(prod.campaign_id));
-
       if (!campaign) return;
 
-      const monteIdStr = String(prod.monte_id).split('.')[0]; // Use integer part
+      const monteIdStr = String(prod.monte_id).split('.')[0];
       const yearNum = Number(campaign.year);
       const quantity = Number(prod.quantity_kg);
+      // Capturamos el tipo de carga ('detail' por defecto si no existe)
+      const type = (prod.input_type === 'total') ? 'total' : 'detail';
 
       const existingEntry = data.find(
         d => d.monteId === monteIdStr && d.campanaYear === yearNum
@@ -137,94 +127,78 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
 
       if (existingEntry) {
         existingEntry.kgRecolectados += quantity;
+        // Si hay mezcla de tipos (raro), priorizamos 'detail' o mantenemos el último.
+        // Aquí asumimos consistencia por campaña/monte.
       } else {
         data.push({
           campanaYear: yearNum,
           monteId: monteIdStr,
           kgRecolectados: quantity,
+          inputType: type
         });
       }
     });
 
     return data;
-  }, [productions, campaigns]); // Solo recalcula cuando cambian productions o campaigns
+  }, [productions, campaigns]);
 
-  // Get current year for visual differentiation
   const currentYear = new Date().getFullYear();
 
-  // Get production for a specific monte and year - OPTIMIZADO con useCallback implícito via useMemo
-  const getProduccion = useMemo(() => {
-    return (monteId: string, year: number): number | null => {
-      const record = produccionData.find(
+  // 3. ACTUALIZAR HELPER PARA DEVOLVER EL OBJETO COMPLETO
+  const getProduccionRecord = useMemo(() => {
+    return (monteId: string, year: number): ProduccionRecord | null => {
+      return produccionData.find(
         (p) => p.monteId === monteId.split('.')[0] && p.campanaYear === year
-      );
-      return record ? record.kgRecolectados : null;
+      ) || null;
     };
   }, [produccionData]);
 
-  // Check if monte existed in a given year
+  // Wrapper para compatibilidad con código viejo que espera solo número
+  const getProduccion = (monteId: string, year: number): number | null => {
+      const record = getProduccionRecord(monteId, year);
+      return record ? record.kgRecolectados : null;
+  };
+
   const monteExistedInYear = (añoPlantacion: number, year: number): boolean => {
     return year >= añoPlantacion;
   };
 
-  // Calculate age for a monte in a given year
   const calcularEdad = (añoPlantacion: number, year: number): number => {
     return year - añoPlantacion;
   };
 
-  /**
-   * Get yield for a specific age from the yield curve
-   * Returns kg per tree for the given age, or 0 if not found
-   */
   const getYieldForAge = (age: number): number => {
     if (yieldData.length === 0) return 0;
-
-    // Find exact match
     const exactMatch = yieldData.find(item => item.year === age);
     if (exactMatch) return exactMatch.kg;
-
-    // For ages beyond the curve, use the last available value
     if (age > yieldData[yieldData.length - 1].year) {
       return yieldData[yieldData.length - 1].kg;
     }
-
-    // For age 0 or negative, return 0
     if (age <= 0) return 0;
-
     return 0;
   };
 
-  /**
-   * Calculate estimated production for a monte in a given year
-   * Formula: (kg/tree from yield curve) * (trees per hectare) * (hectares)
-   */
   const calculateEstimatedProduction = (monte: any, year: number): number => {
     const age = calcularEdad(monte.añoPlantacion, year);
     const kgPerTree = getYieldForAge(age);
-    const totalTrees = monte.densidad * monte.hectareas;
+    // @ts-ignore
+    const densidad = monte.plantas_por_hectarea || monte.densidad || 0;
+    const totalTrees = densidad * monte.hectareas;
     return Math.round(kgPerTree * totalTrees);
   };
 
-  /**
-   * Calculate deviation percentage between real and estimated production
-   * Formula: ((real - estimated) / estimated) * 100
-   * Returns null if estimated is 0 (division by zero)
-   */
   const calculateDeviation = (real: number, estimated: number): number | null => {
     if (estimated === 0) return null;
     return ((real - estimated) / estimated) * 100;
   };
 
-  // Get deviation color based on rules
   const getDeviationColor = (deviation: number | null): string => {
     if (deviation === null) return 'text-muted-foreground';
-
-    if (deviation >= -10) return 'text-green-600'; // >= 90% of estimated
-    if (deviation >= -30) return 'text-yellow-600'; // 70-89% of estimated
-    return 'text-red-600'; // < 70% of estimated
+    if (deviation >= -10) return 'text-green-600';
+    if (deviation >= -30) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
-  // Get deviation icon
   const getDeviationIcon = (deviation: number | null) => {
     if (deviation === null) return <Minus className="h-3 w-3" />;
     if (deviation >= -10) return <TrendingUp className="h-3 w-3" />;
@@ -233,29 +207,21 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
   };
 
   const handleSaveYieldCurve = async (data: YieldCurveFormData) => {
-    if (!currentProjectId) {
-      console.error('No current project ID');
-      return;
-    }
+    if (!currentProjectId) return;
 
     try {
-      // Transform form data to database format
       const yieldData = data.rows.map(row => ({
         year: row.age,
         kg: row.yield_kg
       }));
-
-      // Check if a yield model already exists for this project
       const existingModels = await getYieldModelsByProject(currentProjectId);
       const generalModel = existingModels.find((model: any) => model.variety === 'general');
 
       if (generalModel) {
-        // Update existing model
         await updateYieldModel(generalModel.id, {
           yield_data: JSON.stringify(yieldData)
         });
       } else {
-        // Create new model
         await createYieldModel({
           project_id: currentProjectId,
           variety: 'general',
@@ -265,17 +231,14 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
         });
       }
 
-      // Update yieldData immediately from form data
       const updatedYieldData = data.rows.map(row => ({
         year: row.age,
         kg: row.yield_kg
       }));
       setYieldData(updatedYieldData);
-
       setYieldCurveOpen(false);
     } catch (error) {
       console.error('Error saving yield curve:', error);
-      // TODO: Show error message to user
     }
   };
 
@@ -325,7 +288,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
           </div>
         ) : (
           <>
-            {/* Year Range Selector */}
             <div className="mb-6 p-4 bg-secondary/20 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -366,7 +328,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                       const isFuture = year > currentYear;
                       const isCurrentYear = year === currentYear;
                       const nextYear = displayedYears[index + 1];
-
                       return (
                         <th
                           key={year}
@@ -381,7 +342,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                             <span>{year}</span>
                             {isFuture && <BarChart3 className="h-3 w-3 text-blue-500" />}
                           </div>
-                          {/* Visual divider between current year and next year */}
                           {isCurrentYear && nextYear && (
                             <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
                           )}
@@ -396,7 +356,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
 
                     return (
                       <>
-                        {/* Monte Row - Main */}
                         <tr
                           key={monte.id}
                           className="border-b border-border/50 hover:bg-secondary/30 cursor-pointer"
@@ -417,7 +376,11 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                           </td>
                           {displayedYears.map((year) => {
                             const existed = monteExistedInYear(monte.añoPlantacion, year);
-                            const produccion = getProduccion(monte.id, year);
+                            // 4. USAR EL NUEVO GETTER QUE TRAE EL TIPO
+                            const produccionRecord = getProduccionRecord(monte.id, year);
+                            const produccion = produccionRecord ? produccionRecord.kgRecolectados : null;
+                            const isCalculated = produccionRecord?.inputType === 'total';
+                            
                             const estimated = existed ? calculateEstimatedProduction(monte, year) : 0;
                             const deviation = produccion !== null && estimated > 0 ? calculateDeviation(produccion, estimated) : null;
                             const isFuture = year > currentYear;
@@ -436,36 +399,49 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <div className="relative flex flex-col items-center justify-center p-2 min-h-[60px] cursor-help">
-                                          {/* Age indicator in corner */}
                                           <div className="absolute top-2 right-2 text-xs text-white font-medium bg-green-500 rounded-full px-1">
                                             {calcularEdad(monte.añoPlantacion, year)}°
                                           </div>
 
                                           {produccion !== null ? (
                                             <>
-                                              {/* Main data: Real production (large) */}
-                                              <div className="text-lg font-bold text-foreground p">
+                                              {/* 1. NÚMERO PRINCIPAL */}
+                                              <div className={cn(
+                                                  "text-lg font-bold leading-tight",
+                                                  // Violeta para Distribuido, Negro para Manual
+                                                  isCalculated ? "text-violet-600" : "text-foreground"
+                                              )}>
                                                 {produccion.toLocaleString()} kg
                                               </div>
 
-                                              {/* Secondary data: Deviation badge */}
+                                              {/* 2. ETIQUETA DE TIPO (Igual que el Est.) */}
+                                              <div className={cn(
+                                                  "text-[10px] font-medium tracking-wide mt-0.5",
+                                                  isCalculated ? "text-violet-500" : "text-muted-foreground/60"
+                                              )}>
+                                                  {isCalculated ? "(Calculado)" : "(Real)"}
+                                              </div>
+
+                                              {/* 3. DESVIACIÓN (Badge opcional) */}
                                               {deviation !== null && yieldData.length > 0 && (
                                                 <div className={cn(
-                                                  "px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 mt-1",
+                                                  "px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 mt-1",
                                                   getDeviationColor(deviation)
                                                 )}>
                                                   {getDeviationIcon(deviation)}
-                                                  {deviation > 0 ? '+' : ''}{deviation.toFixed(1)}%
+                                                  {deviation > 0 ? '+' : ''}{deviation.toFixed(0)}%
                                                 </div>
                                               )}
                                             </>
                                           ) : (
                                             <>
-                                              {/* Future/estimated data */}
+                                              {/* ESTADO ESTIMADO (Sin cambios) */}
                                               <div className="text-sm text-blue-600 font-medium">
                                                 {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : '0'}
                                               </div>
-                                              <div className="text-xs text-muted-foreground">(Est.)</div>
+                                              <div className="text-[10px] text-muted-foreground font-medium  tracking-wide mt-0.5">
+                                                (Est.)
+                                              </div>
                                             </>
                                           )}
                                         </div>
@@ -477,6 +453,7 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                                           </div>
                                           {produccion !== null ? (
                                             <>
+                                              {/* TOOLTIP SIMPLIFICADO */}
                                               <div>Real: {produccion.toLocaleString()} kg</div>
                                               <div>Estimado: {yieldData.length > 0 ? `${estimated.toLocaleString()} kg` : '0'}</div>
                                               {deviation !== null && yieldData.length > 0 && (
@@ -498,10 +475,8 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                           })}
                         </tr>
 
-                        {/* Expanded Sub-rows */}
                         {isExpanded && (
                           <>
-                            {/* Kg/Ha Efficiency Comparison Row */}
                             <tr className="bg-secondary/20 border-b border-border/30">
                               <td className="sticky left-0 z-10 bg-secondary/20 pl-10 p-3 text-sm text-muted-foreground border-r border-border">
                                 Rendimiento (Kg/Ha)
@@ -551,9 +526,7 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                               })}
                             </tr>
 
-                            {/* Financial Row (Optional) */}
                             {(() => {
-                              // Check if we have pricing data for any campaign
                               const hasPricing = campaigns.some(c => c.average_price && parseFloat(c.average_price) > 0);
                               return hasPricing ? (
                                 <tr className="bg-secondary/20 border-b border-border/50">
@@ -567,7 +540,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                                     const isFuture = year > currentYear;
                                     const campaign = campaigns.find(c => Number(c.year) === year);
                                     const precioPromedio = campaign?.average_price ? parseFloat(campaign.average_price) : (isFuture ? projectedPrice : 0);
-
                                     const realFacturacion = produccion !== null && precioPromedio > 0
                                       ? produccion * precioPromedio
                                       : null;
@@ -614,7 +586,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                     );
                   })}
                 </tbody>
-                {/* Totals Footer - Two Row Design */}
                 <tfoot>
                   {/* Fila 1: Total Producción (Kg) */}
                   <tr className="border-t-2 border-border bg-primary/5">
@@ -622,7 +593,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                       <div className="font-semibold text-foreground">∑ Kg</div>
                     </td>
                     {displayedYears.map((year) => {
-                      // CORRECCIÓN: Definimos la variable aquí mismo
                       const isFuture = year > currentYear;
 
                       const totalRealStrict = montes.reduce((sum, monte) => {
@@ -635,7 +605,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                         return sum + (existed ? calculateEstimatedProduction(monte, year) : 0);
                       }, 0);
 
-                      // Lógica de visualización
                       const displayValue = totalRealStrict > 0 ? totalRealStrict : totalEstimated;
                       const isProjection = totalRealStrict === 0;
 
@@ -694,7 +663,6 @@ export function EvolucionProductiva({ campaigns, montes, isLoading = false }: Ev
                           <div className="font-semibold text-foreground">∑ U$D</div>
                         </td>
                         {displayedYears.map((year) => {
-                          // CORRECCIÓN: Definimos la variable aquí también
                           const isFuture = year > currentYear;
                           
                           const campaign = campaigns.find(c => Number(c.year) === year);
