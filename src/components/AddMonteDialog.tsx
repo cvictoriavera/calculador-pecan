@@ -31,6 +31,7 @@ export function AddMonteDialog({ disabled = false }: AddMonteDialogProps = {}) {
   const [hectareas, setHectareas] = useState("");
   const [densidad, setDensidad] = useState("");
   const [añoPlantacion, setAñoPlantacion] = useState("");
+  const [errors, setErrors] = useState<{ hectareas?: string, densidad?: string, añoPlantacion?: string }>({});
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
@@ -69,10 +70,19 @@ export function AddMonteDialog({ disabled = false }: AddMonteDialogProps = {}) {
   };
 
   const handleSubmit = async () => {
-    if (!hectareas || !densidad || !añoPlantacion) {
+    let newErrors: { hectareas?: string, densidad?: string, añoPlantacion?: string } = {};
+    if (!hectareas) newErrors.hectareas = "Debes definir un área para el nuevo monte.";
+    if (!densidad) newErrors.densidad = "Debes definir la cantidad de arboles por hectareas para el nuevo monte.";
+    if (!añoPlantacion) newErrors.añoPlantacion = "Debes especificar el año en que se planto el monte.";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      // No we do not return yet, we can optionally also toast.
       toast.error("Por favor completa todos los campos requeridos");
       return;
     }
+
+    setErrors({});
 
     try {
       const monteNombre = nombre || generateNextMonteName();
@@ -90,6 +100,7 @@ export function AddMonteDialog({ disabled = false }: AddMonteDialogProps = {}) {
       setHectareas("");
       setDensidad("");
       setAñoPlantacion("");
+      setErrors({});
     } catch (error) {
       console.error('Error adding monte:', error);
       toast.error("Error al agregar el monte");
@@ -129,9 +140,11 @@ export function AddMonteDialog({ disabled = false }: AddMonteDialogProps = {}) {
               step="0.1"
               placeholder="50"
               value={hectareas}
-              onChange={(e) => setHectareas(e.target.value)}
+              onChange={(e) => { setHectareas(e.target.value); setErrors(prev => ({ ...prev, hectareas: undefined })); }}
               required
+              className={errors.hectareas ? "border-destructive focus-visible:ring-destructive" : ""}
             />
+            {errors.hectareas && <p className="text-sm text-destructive">{errors.hectareas}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="densidad">Densidad (Plantas/Ha) *</Label>
@@ -140,14 +153,19 @@ export function AddMonteDialog({ disabled = false }: AddMonteDialogProps = {}) {
               type="number"
               placeholder="100"
               value={densidad}
-              onChange={(e) => setDensidad(e.target.value)}
+              onChange={(e) => { setDensidad(e.target.value); setErrors(prev => ({ ...prev, densidad: undefined })); }}
               required
+              className={errors.densidad ? "border-destructive focus-visible:ring-destructive" : ""}
             />
+            {errors.densidad && <p className="text-sm text-destructive">{errors.densidad}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="añoPlantacion">Año de Plantación *</Label>
-            <Select value={añoPlantacion} onValueChange={setAñoPlantacion}>
-              <SelectTrigger>
+            <Select
+              value={añoPlantacion}
+              onValueChange={(val) => { setAñoPlantacion(val); setErrors(prev => ({ ...prev, añoPlantacion: undefined })); }}
+            >
+              <SelectTrigger className={errors.añoPlantacion ? "border-destructive focus:ring-destructive" : ""}>
                 <SelectValue placeholder="Seleccionar año" />
               </SelectTrigger>
               <SelectContent>
@@ -158,6 +176,7 @@ export function AddMonteDialog({ disabled = false }: AddMonteDialogProps = {}) {
                 ))}
               </SelectContent>
             </Select>
+            {errors.añoPlantacion && <p className="text-sm text-destructive">{errors.añoPlantacion}</p>}
           </div>
         </div>
         <div className="flex justify-end gap-3">
