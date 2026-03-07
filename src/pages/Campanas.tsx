@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,31 +90,31 @@ const Campanas = () => {
   
   // Estado de carga inteligente (Stale-while-revalidate)
   const [isLoadingData, setIsLoadingData] = useState(productionCampaigns.length === 0);
+  const isInitialized = useRef(false);
 
   // Efecto de carga optimizado
   useEffect(() => {
     const fetchData = async () => {
-      if (campaigns && campaigns.length > 0) {
-        
-        // Solo mostramos el indicador de carga si NO tenemos datos previos.
-        // Si ya hay datos, el usuario los ve mientras actualizamos en "silencio".
-        if (productionCampaigns.length === 0) {
-           setIsLoadingData(true);
-        }
-
+      // Solo cargamos si hay campañas, no tenemos datos de producción, y NO hemos inicializado antes
+      if (campaigns && campaigns.length > 0 && productionCampaigns.length === 0 && !isInitialized.current) {
+        setIsLoadingData(true);
         try {
           await loadAllProductions(campaigns);
         } catch (error) {
           console.error("Error loading productions:", error);
         } finally {
           setIsLoadingData(false);
+          isInitialized.current = true;
         }
-      } else {
-         setIsLoadingData(false);
+      } else if (productionCampaigns.length > 0) {
+        // Si ya hay datos, marcamos como cargado para evitar recargas al cambiar de página
+        isInitialized.current = true;
+        setIsLoadingData(false);
       }
     };
     fetchData();
-  }, [campaigns, loadAllProductions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaigns.length, productionCampaigns.length]);
 
   const handleNuevaCampana = async () => {
    if (isTrialMode() && manualCampaigns >= maxCampaigns) {
@@ -238,10 +238,17 @@ const Campanas = () => {
     }
   };
 
+  const { 
+    updateProductionCampaign,
+    setProductions,
+    productions 
+  } = useDataStore();
+
   const handleSaveProduccion = async (data: any) => {
     try {
       const isEdit = editingData !== null || editData !== null;
       const totalKg = data.produccionPorMonte.reduce((acc: number, p: any) => acc + p.kgRecolectados, 0);
+
       const productionsData = data.produccionPorMonte
         .filter((p: any) => p.kgRecolectados > 0)
         .map((p: any) => ({
@@ -251,22 +258,46 @@ const Campanas = () => {
         }));
 
       if (currentCampaignId && currentProjectId) {
-        await createProductionsByCampaign(currentCampaignId, {
+        // 1. OPTIMISTIC UPDATE
+        const campaignId = `campaign-${currentCampaign}`;
+        
+        updateProductionCampaign(campaignId, {
+          averagePrice: data.precioPromedio,
+          totalProduction: totalKg,
+          date: new Date(),
+        });
+
+        const newProductions = productionsData.map((p: any, index: number) => ({
+          id: Date.now() + index,
+          project_id: currentProjectId,
+          campaign_id: currentCampaignId,
+          monte_id: p.monte_id,
+          entry_group_id: `temp-${Date.now()}`,
+          quantity_kg: p.quantity_kg,
+          is_estimated: p.is_estimated,
+          input_type: data.metodo === 'detallado' ? 'detail' : 'total',
+          date: new Date().toISOString(),
+        }));
+
+        const otherProductions = productions.filter((p: any) => 
+          String(p.campaign_id) !== String(currentCampaignId)
+        );
+        
+        setProductions([...otherProductions, ...newProductions]);
+
+        // 2. BACKGROUND SAVE
+        createProductionsByCampaign(currentCampaignId, {
           project_id: currentProjectId,
           productions: productionsData,
           input_type: data.metodo === 'detallado' ? 'detail' : 'total',
-        });
-        await updateCampaign(currentCampaignId, {
+        }).catch(err => console.error(err));
+
+        updateCampaign(currentCampaignId, {
           average_price: data.precioPromedio,
           total_production: totalKg,
           montes_contribuyentes: null,
           montes_production: null,
-        });
-      }
-      
-      if (currentCampaignId) {
-        const { loadProductions } = useDataStore.getState();
-        await loadProductions(currentCampaignId);
+        }).catch(err => console.error(err));
       }
 
       setEditingData(null);
@@ -274,7 +305,7 @@ const Campanas = () => {
       setEditData(null);
       setEditOpen(false);
       toast({
-        title: "Datos Guardados ...",
+        title: "Datos Guardados",
         description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
       });
     } catch (error) {
