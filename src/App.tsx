@@ -18,90 +18,40 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoutes() {
+const FallbackLoader = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Cargando...</p>
+    </div>
+  </div>
+);
+
+function AppRouter() {
   const { isOnboardingComplete, isLoading } = useApp();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <FallbackLoader />;
 
   if (!isOnboardingComplete) {
-    return <Navigate to="/onboarding" replace />;
+    return (
+      <Routes>
+        <Route path="/onboarding" element={<Layout><Onboarding /></Layout>} />
+        <Route path="*" element={<Navigate to="/onboarding" replace />} />
+      </Routes>
+    );
   }
 
   return (
     <Routes>
-          <Route
-            path="/"
-            element={
-              <Layout>
-                <Dashboard />
-              </Layout>
-            }
-          />
-          <Route
-            path="/montes"
-            element={
-              <Layout>
-                <Montes />
-              </Layout>
-            }
-          />
-          <Route
-            path="/campanas"
-            element={
-              <Layout>
-                <Campanas />
-              </Layout>
-            }
-          />
-          <Route
-            path="/produccion"
-            element={
-              <Layout>
-                <Produccion />
-              </Layout>
-            }
-          />
-          <Route
-            path="/inversiones"
-            element={
-              <Layout>
-                <Inversiones />
-              </Layout>
-            }
-          />
-          <Route
-            path="/costos"
-            element={
-              <Layout>
-                <Costos />
-              </Layout>
-            }
-          />
-          <Route
-            path="/config"
-            element={
-              <Layout>
-                <Config />
-              </Layout>
-            }
-          />
-          <Route
-            path="/projects"
-            element={
-              <Layout>
-                <Projects />
-              </Layout>
-            }
-          />
+      <Route path="/" element={<Layout><Dashboard /></Layout>} />
+      <Route path="/montes" element={<Layout><Montes /></Layout>} />
+      <Route path="/campanas" element={<Layout><Campanas /></Layout>} />
+      <Route path="/produccion" element={<Layout><Produccion /></Layout>} />
+      <Route path="/inversiones" element={<Layout><Inversiones /></Layout>} />
+      <Route path="/costos" element={<Layout><Costos /></Layout>} />
+      <Route path="/config" element={<Layout><Config /></Layout>} />
+      <Route path="/projects" element={<Layout><Projects /></Layout>} />
+      <Route path="/onboarding" element={<Layout><Onboarding /></Layout>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -114,10 +64,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <HashRouter>
-          <Routes>
-            <Route path="/onboarding" element={<Layout><Onboarding /></Layout>} />
-            <Route path="/*" element={<ProtectedRoutes />} />
-          </Routes>
+          <AppRouter />
         </HashRouter>
       </TooltipProvider>
     </AppProvider>

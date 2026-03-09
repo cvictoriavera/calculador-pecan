@@ -69,7 +69,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const Costos = () => {
   const { currentProjectId, campaigns, currentCampaign, costsLoading, montes } = useApp();
-  const { costs, addCost, updateCost, deleteCost } = useDataStore();
+  const costs = useDataStore(state => state.costs);
+  const addCost = useDataStore(state => state.addCost);
+  const updateCost = useDataStore(state => state.updateCost);
+  const deleteCost = useDataStore(state => state.deleteCost);
   const { getCostByCategory, getTotalCostsByCampaign } = useCalculationsStore();
 
   // Selección segura de la campaña
@@ -104,11 +107,11 @@ const Costos = () => {
       .sort((a, b) => Number(a.year) - Number(b.year))
       .map((campaign) => {
         const year = Number(campaign.year);
-        
+
         const costsByCategory = getCostByCategory(campaign.id);
 
         const yearData: any = { year };
-       
+
         Object.keys(categoriaLabels).forEach((category) => {
           yearData[category] = costsByCategory[category] || 0;
         });
@@ -203,7 +206,7 @@ const Costos = () => {
         }
       }
       else if (typeof formData === 'object' && formData.category) {
-         if (formData.existingId) {
+        if (formData.existingId) {
           await updateCost(formData.existingId, {
             category: formData.category,
             details: formData.details,
@@ -285,12 +288,12 @@ const Costos = () => {
           <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-medium font-semibold text-amber-900">
-              Al registrar tus costos recuerda: 
+              Al registrar tus costos recuerda:
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
-              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses 
+              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses
               que duro la campaña en cada uno de los rubros.
-              <br/>
+              <br />
               <span className="italic mt-1 block">Nota: Si compraste maquinaria, instalaste riego o realizaste mejoras permanentes, se registran en la sección de <strong>Inversiones</strong>.</span>
             </p>
           </div>

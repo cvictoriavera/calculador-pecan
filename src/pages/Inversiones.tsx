@@ -33,11 +33,11 @@ const categoriaLabels: Record<string, string> = {
 };
 
 const categoriaColors: Record<string, string> = {
-  tierra: "#60225f", 
-  mejoras: "#d3203e", 
-  implantacion: "#16af92", 
-  riego: "#70cddc", 
-  maquinaria: "#193f70", 
+  tierra: "#60225f",
+  mejoras: "#d3203e",
+  implantacion: "#16af92",
+  riego: "#70cddc",
+  maquinaria: "#193f70",
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -65,8 +65,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const Inversiones = () => {
-  const { currentProjectId, campaigns, currentCampaign, currentCampaignId  } = useApp();
-  const { investments, addInvestment, updateInvestment, deleteInvestment } = useDataStore();
+  const { currentProjectId, campaigns, currentCampaign, currentCampaignId } = useApp();
+  const investments = useDataStore(state => state.investments);
+  const addInvestment = useDataStore(state => state.addInvestment);
+  const updateInvestment = useDataStore(state => state.updateInvestment);
+  const deleteInvestment = useDataStore(state => state.deleteInvestment);
 
   // Calculate displayed years - only campaign years
   const displayedYears = useMemo(() => {
@@ -104,7 +107,7 @@ const Inversiones = () => {
   // Total de inversiones FILTRADO POR CAMPAÑA ACTUAL
   const totalInversiones = useMemo(() => {
     if (!currentCampaignId) return 0;
-    
+
     return investments
       .filter(inv => Number(inv.campaign_id) === Number(currentCampaignId))
       .reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0);
@@ -136,7 +139,7 @@ const Inversiones = () => {
       return yearData;
     });
   }, [campaigns, investments]);
-  
+
   const handleSaveInversion = async (categoria: string, data: any) => {
     if (!currentProjectId) {
       toast.error("No hay proyecto activo");
@@ -145,7 +148,7 @@ const Inversiones = () => {
 
     const categoriaLabel = categoriaLabels[categoria];
     const descripcion = data.descripcion || data.items?.map((i: any) => i.tipo).join(", ") || categoriaLabel;
-    
+
     // --- Convertir monto a Number explícitamente ---
     const monto = Number(data.total || data.precio || 0);
 
@@ -195,7 +198,7 @@ const Inversiones = () => {
           date: new Date(),
           data,
         });
-        
+
         toast.success("Inversión registrada correctamente");
       }
     } catch (error) {
@@ -253,11 +256,11 @@ const Inversiones = () => {
           <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-medium font-semibold text-amber-900">
-              Al registrar tus inversiones recuerda: 
+              Al registrar tus inversiones recuerda:
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
               Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros.
-              <br/>
+              <br />
             </p>
           </div>
         </CardContent>

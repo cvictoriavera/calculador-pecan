@@ -32,22 +32,26 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        
+
         // --- AQUÍ ESTÁ LA MAGIA ---
         manualChunks(id) {
-            // Si el código proviene de node_modules, mételo en un chunk llamado "vendor"
-            if (id.includes('node_modules')) {
-                return 'vendor';
-            }
-            // Separa el archivo de datos geográficos en su propio chunk
-            if (id.includes('geo-argentina.json')) {
-                return 'geo-argentina';
-            }
+          if (id.includes('recharts') || id.includes('d3-')) {
+            return 'charts';
+          }
+          if (id.includes('@radix-ui') || id.includes('lucide-react')) {
+            return 'ui';
+          }
+          if (id.includes('geo-argentina.json')) {
+            return 'geo-argentina';
+          }
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
         }
         // --------------------------
       }
     }
   },
-  
+
   base: './', // Para rutas relativas en WordPress
 })

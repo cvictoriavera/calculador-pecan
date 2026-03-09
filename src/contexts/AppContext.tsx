@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
 import { createCampaign, getCampaignsByProject, updateCampaign } from "@/services/campaignService";
 import { getProjects, deleteProject } from "@/services/projectService";
@@ -54,17 +54,17 @@ interface Project {
 }
 
 interface AppContextType {
-   user: User | null;
-   isTrialMode: boolean;
-   projectName: string;
-   setProjectName: (name: string) => void;
-   currentProjectId: number | null;
-   setCurrentProjectId: (id: number) => void;
-   initialYear: number | null;
-   setInitialYear: (year: number) => void;
-   projects: Project[];
-   projectsLoading: boolean;
-   loadProjects: () => Promise<void>;
+  user: User | null;
+  isTrialMode: boolean;
+  projectName: string;
+  setProjectName: (name: string) => void;
+  currentProjectId: number | null;
+  setCurrentProjectId: (id: number) => void;
+  initialYear: number | null;
+  setInitialYear: (year: number) => void;
+  projects: Project[];
+  projectsLoading: boolean;
+  loadProjects: () => Promise<void>;
   campaigns: Campaign[];
   campaignsLoading: boolean;
   currentCampaign: number;
@@ -106,9 +106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
 
-  // Log when projects change
-  useEffect(() => {
-  }, [projects]);
+  // Log when projects change removed
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [currentCampaign, setCurrentCampaign] = useState(() => {
@@ -142,9 +140,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetchUser();
   }, []);
 
-  const { loadAllCosts, loadAllInvestments } = useDataStore();
+  const loadAllCosts = useDataStore(state => state.loadAllCosts);
+  const loadAllInvestments = useDataStore(state => state.loadAllInvestments);
 
-  // Sincronizar Contexto con Zustand
+  // Sincronizar Contexto con Zustand (simplificado para evitar cascadas)
   useEffect(() => {
     if (currentProjectId && campaigns.length > 0 && !isChangingProject) {
 
@@ -155,34 +154,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
         name: c.campaign_name    // Mapeamos campaign_name -> name
       }));
 
-      // Cargar Costos
-      setCostsLoading(true);
-      loadAllCosts(currentProjectId, campaignsForStore as any).finally(() => setCostsLoading(false));
-
-      // Cargar Inversiones
-      loadAllInvestments(currentProjectId, campaignsForStore as any);
+      // Cargar Costos e Inversiones una sola vez cuando las campañas iniciales se cargan
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setCostsLoading(true);
+        loadAllCosts(currentProjectId, campaignsForStore as any).finally(() => setCostsLoading(false));
+        loadAllInvestments(currentProjectId, campaignsForStore as any);
+      }
     }
-  }, [currentProjectId, campaigns, loadAllCosts, loadAllInvestments, isChangingProject]);
+    // NOTA: Intencionalmente quitamos `campaigns` y `isChangingProject` para evitar re-fetches masivos
+    // cuando solo cambia de proyecto o se agregan campañas individualmente.
+    // changeProject() ya maneja la carga manual.
+  }, [currentProjectId, loadAllCosts, loadAllInvestments]);
 
+  // Consolidated localStorage synchronization
   useEffect(() => {
-    localStorage.setItem("projectName", projectName);
+    if (projectName) localStorage.setItem("projectName", projectName);
   }, [projectName]);
 
   useEffect(() => {
-    if (currentProjectId) {
-      localStorage.setItem("currentProjectId", currentProjectId.toString());
-    }
+    if (currentProjectId) localStorage.setItem("currentProjectId", currentProjectId.toString());
   }, [currentProjectId]);
 
   useEffect(() => {
-    if (initialYear) {
-      localStorage.setItem("initialYear", initialYear.toString());
-    }
+    if (initialYear) localStorage.setItem("initialYear", initialYear.toString());
   }, [initialYear]);
 
-
   useEffect(() => {
-    localStorage.setItem("currentCampaign", currentCampaign.toString());
+    if (currentCampaign) localStorage.setItem("currentCampaign", currentCampaign.toString());
   }, [currentCampaign]);
 
 
@@ -201,19 +199,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   // Load campaigns function
-   const loadCampaigns = async () => {
-     if (!currentProjectId) {
-       setCampaigns([]);
-       return;
-     }
+  const loadCampaigns = async () => {
+    if (!currentProjectId) {
+      setCampaigns([]);
+      return;
+    }
 
-     setCampaignsLoading(true);
-     try {
+    setCampaignsLoading(true);
+    try {
 
-       const data = await getCampaignsByProject(currentProjectId);
+      const data = await getCampaignsByProject(currentProjectId);
 
-       const campaignsData = Array.isArray(data) ? data : [];
-       setCampaigns(campaignsData);
+      const campaignsData = Array.isArray(data) ? data : [];
+      setCampaigns(campaignsData);
 
       // Set current campaign ID
       updateCurrentCampaignId(campaignsData);
@@ -267,13 +265,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [currentCampaign, campaigns]);
 
   // Check for existing projects on mount
-   useEffect(() => {
-     const checkExistingProjects = async () => {
-       setProjectsLoading(true);
-       try {
-         const fetchedProjects = await getProjects();
-         if (fetchedProjects && fetchedProjects.length > 0) {
-           setProjects(fetchedProjects);
+  useEffect(() => {
+    const checkExistingProjects = async () => {
+      setProjectsLoading(true);
+      try {
+        const fetchedProjects = await getProjects();
+        if (fetchedProjects && fetchedProjects.length > 0) {
+          setProjects(fetchedProjects);
           // Load the first project
           const project = fetchedProjects[0];
           setCurrentProjectId(project.id);
@@ -364,7 +362,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         campaign_name: `Campaña ${y}`,
         year: y,
         start_date: `Julio ${y}`,
-        end_date: `Junio ${y+1}`,
+        end_date: `Junio ${y + 1}`,
         status: y === currentYear ? 'open' : 'closed',
         is_current: y === currentYear ? 1 : 0,
       };
@@ -611,78 +609,84 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // AppContext.tsx
 
-const deleteProjectContext = async (projectId: number) => {
-  try {
-    await deleteProject(projectId);
+  const deleteProjectContext = async (projectId: number) => {
+    try {
+      await deleteProject(projectId);
 
-    // 1. Actualizar lista local
-    const remainingProjects = projects.filter(p => p.id !== projectId);
-    setProjects(remainingProjects);
+      // 1. Actualizar lista local
+      const remainingProjects = projects.filter(p => p.id !== projectId);
+      setProjects(remainingProjects);
 
-    // 2. Si borramos el proyecto que estábamos usando
-    if (currentProjectId === projectId) {
-      
-      // Limpiamos la selección actual (dejamos al usuario "en el limbo" dentro de la app)
-      setCurrentProjectId(null);
-      setProjectName("");
-      
-      // Limpiamos persistencia y datos de Zustand
-      localStorage.removeItem("currentProjectId");
-      localStorage.removeItem("projectName");
-      localStorage.removeItem("initialYear"); 
-      localStorage.removeItem("currentCampaign");
-      
-      useDataStore.getState().clearAllData();
-      
-      // NOTA: No hacemos navigate aquí porque el Context no suele tener el hook de navegación.
-      // La redirección la haremos desde el componente que tiene el botón de borrar.
+      // 2. Si borramos el proyecto que estábamos usando
+      if (currentProjectId === projectId) {
+
+        // Limpiamos la selección actual (dejamos al usuario "en el limbo" dentro de la app)
+        setCurrentProjectId(null);
+        setProjectName("");
+
+        // Limpiamos persistencia y datos de Zustand
+        localStorage.removeItem("currentProjectId");
+        localStorage.removeItem("projectName");
+        localStorage.removeItem("initialYear");
+        localStorage.removeItem("currentCampaign");
+
+        useDataStore.getState().clearAllData();
+
+        // NOTA: No hacemos navigate aquí porque el Context no suele tener el hook de navegación.
+        // La redirección la haremos desde el componente que tiene el botón de borrar.
+      }
+
+      // Si no quedaran proyectos (remainingProjects.length === 0), 
+      // la variable isOnboardingComplete pasará a false automáticamente 
+      // y el App.tsx redirigirá a Onboarding. Eso es correcto.
+
+    } catch (error) {
+      console.error('Error al eliminar:', error);
+      throw error;
     }
-    
-    // Si no quedaran proyectos (remainingProjects.length === 0), 
-    // la variable isOnboardingComplete pasará a false automáticamente 
-    // y el App.tsx redirigirá a Onboarding. Eso es correcto.
-
-  } catch (error) {
-    console.error('Error al eliminar:', error);
-    throw error;
-  }
-};
+  };
 
 
+
+  const contextValue = useMemo(() => ({
+    user,
+    isTrialMode,
+    projectName,
+    setProjectName,
+    currentProjectId,
+    setCurrentProjectId,
+    initialYear,
+    setInitialYear,
+    projects,
+    projectsLoading,
+    loadProjects,
+    campaigns,
+    campaignsLoading,
+    currentCampaign,
+    setCurrentCampaign,
+    currentCampaignId,
+    montes,
+    montesLoading,
+    costsLoading,
+    addMonte,
+    updateMonte,
+    deleteMonte: deleteMonteContext,
+    updateCampaign: updateCampaignInContext,
+    changeProject,
+    deleteProject: deleteProjectContext,
+    loadCampaigns,
+    isOnboardingComplete,
+    isLoading,
+    completeOnboarding,
+  }), [
+    user, isTrialMode, projectName, currentProjectId, initialYear, projects,
+    projectsLoading, campaigns, campaignsLoading, currentCampaign,
+    currentCampaignId, montes, montesLoading, costsLoading, isOnboardingComplete, isLoading
+  ]);
 
   return (
     <AppContext.Provider
-      value={{
-         user,
-         isTrialMode,
-         projectName,
-         setProjectName,
-         currentProjectId,
-         setCurrentProjectId,
-         initialYear,
-         setInitialYear,
-         projects,
-         projectsLoading,
-         loadProjects,
-        campaigns,
-        campaignsLoading,
-        currentCampaign,
-        setCurrentCampaign,
-        currentCampaignId,
-        montes,
-        montesLoading,
-        costsLoading,
-        addMonte,
-        updateMonte,
-        deleteMonte: deleteMonteContext,
-        updateCampaign: updateCampaignInContext,
-        changeProject,
-        deleteProject: deleteProjectContext,
-        loadCampaigns,
-        isOnboardingComplete,
-        isLoading,
-        completeOnboarding,
-      }}
+      value={contextValue}
     >
       {children}
     </AppContext.Provider>

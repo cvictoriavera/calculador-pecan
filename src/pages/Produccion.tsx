@@ -37,7 +37,7 @@ interface ProductionRecord {
 const Produccion = () => {
   const { currentCampaign, campaigns, currentCampaignId, currentProjectId, updateCampaign, montes } = useApp();
   const { toast } = useToast();
-  
+
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -45,15 +45,15 @@ const Produccion = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
-  const { 
-    productionCampaigns, 
-    loadAllProductions, 
+  const {
+    productionCampaigns,
+    loadAllProductions,
     updateProductionCampaign,
     setProductionCampaigns,
     setProductions,
-    productions 
+    productions
   } = useDataStore();
-  
+
   const [isLoadingData, setIsLoadingData] = useState(productionCampaigns.length === 0);
 
   const isInitialized = useRef(false);
@@ -62,19 +62,19 @@ const Produccion = () => {
     const fetchData = async () => {
       // Solo cargamos si hay campañas, no tenemos datos de producción, y NO hemos inicializado antes
       if (campaigns && campaigns.length > 0 && productionCampaigns.length === 0 && !isInitialized.current) {
-         setIsLoadingData(true);
-         try {
-           await loadAllProductions(campaigns);
-         } catch (error) {
-           console.error("Error loading productions:", error);
-         } finally {
-           setIsLoadingData(false);
-           isInitialized.current = true; // Marcar como cargado
-         }
-      } else if (productionCampaigns.length > 0) {
-          // Si ya hay datos, marcamos como cargado para evitar recargas al borrar
-          isInitialized.current = true;
+        setIsLoadingData(true);
+        try {
+          await loadAllProductions(campaigns);
+        } catch (error) {
+          console.error("Error loading productions:", error);
+        } finally {
           setIsLoadingData(false);
+          isInitialized.current = true; // Marcar como cargado
+        }
+      } else if (productionCampaigns.length > 0) {
+        // Si ya hay datos, marcamos como cargado para evitar recargas al borrar
+        isInitialized.current = true;
+        setIsLoadingData(false);
       }
     };
     fetchData();
@@ -99,7 +99,7 @@ const Produccion = () => {
       if (currentCampaignId && currentProjectId) {
         // 1. OPTIMISTIC UPDATE (UI instantánea)
         const campaignId = `campaign-${currentCampaign}`;
-        
+
         updateProductionCampaign(campaignId, {
           averagePrice: data.precioPromedio,
           totalProduction: totalKg,
@@ -119,10 +119,10 @@ const Produccion = () => {
           date: new Date().toISOString(),
         }));
 
-        const otherProductions = productions.filter((p: any) => 
+        const otherProductions = productions.filter((p: any) =>
           String(p.campaign_id) !== String(currentCampaignId)
         );
-        
+
         setProductions([...otherProductions, ...newProductions]);
 
         // 3. UI Updates inmediatos (Antes del await)
@@ -132,8 +132,8 @@ const Produccion = () => {
         setEditOpen(false);
 
         toast({
-            title: "Datos Guardados",
-            description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
+          title: "Datos Guardados",
+          description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
         });
 
         // 4. GUARDAR EN EL SERVIDOR (Background)
@@ -162,16 +162,16 @@ const Produccion = () => {
       console.error('Error saving production:', error);
       // ROLLBACK simplificado
       if (currentCampaignId) {
-          // Solo si falla, intentamos recuperar la verdad del servidor
-          try {
-             const serverProductions = await getProductionsByCampaign(currentCampaignId);
-             const otherCampaignProductions = productions.filter((p: any) => 
-                String(p.campaign_id) !== String(currentCampaignId)
-             );
-             setProductions([...otherCampaignProductions, ...serverProductions]);
-          } catch (e) { console.error(e); }
+        // Solo si falla, intentamos recuperar la verdad del servidor
+        try {
+          const serverProductions = await getProductionsByCampaign(currentCampaignId);
+          const otherCampaignProductions = productions.filter((p: any) =>
+            String(p.campaign_id) !== String(currentCampaignId)
+          );
+          setProductions([...otherCampaignProductions, ...serverProductions]);
+        } catch (e) { console.error(e); }
       }
-      
+
       toast({
         title: "Error",
         description: "Hubo un problema al guardar en el servidor",
@@ -182,18 +182,18 @@ const Produccion = () => {
     }
   };
 
-  
-// Preparamos los datos para el gráfico calculando los totales
+
+  // Preparamos los datos para el gráfico calculando los totales
   // Preparamos los datos para el gráfico calculando nosotros mismos
   const chartData = useMemo(() => {
     const sortedCampaigns = [...campaigns].sort((a, b) => a.year - b.year);
 
     return sortedCampaigns.map(campaign => {
       // CORRECCIÓN: Convertimos ambos IDs a String para asegurar que coincidan
-      const campaignProductions = productions.filter(p => 
-          String(p.campaign_id) === String(campaign.id)
+      const campaignProductions = productions.filter(p =>
+        String(p.campaign_id) === String(campaign.id)
       );
-      
+
       const totalKg = campaignProductions.reduce((sum, p) => sum + Number(p.quantity_kg), 0);
       const facturacion = totalKg * (Number(campaign.average_price) || 0);
 
@@ -206,10 +206,10 @@ const Produccion = () => {
     });
   }, [campaigns, productions]);
 
-  
-  
-  const activeCampaignData = useMemo(() => 
-    campaigns.find(c => String(c.id) === String(currentCampaignId)), 
+
+
+  const activeCampaignData = useMemo(() =>
+    campaigns.find(c => String(c.id) === String(currentCampaignId)),
     [campaigns, currentCampaignId]
   );
 
@@ -228,8 +228,8 @@ const Produccion = () => {
   const totalFacturacion = totalProduccion * precioPromedio;
 
   // 5. Determinar si hay producción (para mostrar/ocultar estados vacíos)
-  const hasProduction = useMemo(() => 
-    totalProduccion > 0 || precioPromedio > 0 || productions.some(p => String(p.campaign_id) === String(currentCampaignId)), 
+  const hasProduction = useMemo(() =>
+    totalProduccion > 0 || precioPromedio > 0 || productions.some(p => String(p.campaign_id) === String(currentCampaignId)),
     [totalProduccion, precioPromedio, productions, currentCampaignId]
   );
 
@@ -256,7 +256,7 @@ const Produccion = () => {
     setIsSaving(true);
     try {
       // 1. OPTIMISTIC UPDATE: Limpiar filas (Tabla Evolución)
-      const otherProductions = productions.filter((p: any) => 
+      const otherProductions = productions.filter((p: any) =>
         String(p.campaign_id) !== String(currentCampaignId)
       );
       setProductions(otherProductions);
@@ -267,12 +267,12 @@ const Produccion = () => {
       const updatedProductionCampaigns = productionCampaigns.map(pc => {
         // Aseguramos comparar números con números
         if (Number(pc.year) === Number(currentCampaign)) {
-            return { 
-              ...pc, 
-              totalProduction: 0, 
-              averagePrice: 0,
-              date: new Date() // Forzar cambio de referencia
-            };
+          return {
+            ...pc,
+            totalProduction: 0,
+            averagePrice: 0,
+            date: new Date() // Forzar cambio de referencia
+          };
         }
         return pc;
       });
@@ -287,24 +287,24 @@ const Produccion = () => {
 
       // 4. ELIMINAR EN SERVIDOR (Background)
       const deletePromise = deleteProductionsByCampaign(currentCampaignId);
-      
+
       // También actualizamos la campaña general para consistencia en el backend
-      const updatePromise = updateCampaign(currentCampaignId, { 
-        average_price: 0, 
-        total_production: 0 
+      const updatePromise = updateCampaign(currentCampaignId, {
+        average_price: 0,
+        total_production: 0
       });
 
       await Promise.all([deletePromise, updatePromise]);
 
     } catch (error) {
       console.error('Error deleting production:', error);
-      
+
       // ROLLBACK: Solo si falla el servidor intentamos recuperar datos
       try {
         const serverProductions = await getProductionsByCampaign(currentCampaignId);
         // Aquí podrías volver a cargar los productionCampaigns si fuera crítico
-        const otherCampaignProductions = productions.filter((p: any) => 
-            String(p.campaign_id) !== String(currentCampaignId)
+        const otherCampaignProductions = productions.filter((p: any) =>
+          String(p.campaign_id) !== String(currentCampaignId)
         );
         setProductions([...otherCampaignProductions, ...serverProductions]);
       } catch (rollbackError) {
@@ -330,9 +330,9 @@ const Produccion = () => {
             Registro y análisis de cosecha - Campaña {currentCampaign}
           </p>
         </div>
-        
+
         {isLoadingData ? (
-           <Skeleton className="h-10 w-[180px]" />
+          <Skeleton className="h-10 w-[180px]" />
         ) : hasProduction ? (
           <div className="flex gap-2">
             <Button
@@ -359,11 +359,11 @@ const Produccion = () => {
                     const produccionPorMonte = montesDisponibles.map(monte => {
                       const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === String(monte.id).split('.')[0]);
                       return {
-                          monteId: monte.id,
-                          nombre: monte.nombre,
-                          hectareas: monte.hectareas,
-                          edad: monte.edad,
-                          kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0,
+                        monteId: monte.id,
+                        nombre: monte.nombre,
+                        hectareas: monte.hectareas,
+                        edad: monte.edad,
+                        kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0,
                       };
                     });
 
@@ -378,7 +378,7 @@ const Produccion = () => {
                   }
                 } catch (error) {
                   console.error('Error loading production data for edit:', error);
-                  
+
                   // Fallback: mostrar formulario vacío
                   const montesDisponibles = montes
                     .filter((m) => m.añoPlantacion <= currentCampaign)
@@ -386,7 +386,7 @@ const Produccion = () => {
                       ...m,
                       edad: Number(currentCampaign) - Number(m.añoPlantacion),
                     }));
-                    
+
                   const fallbackData = {
                     precioPromedio: 0,
                     metodo: 'detallado',
@@ -400,7 +400,7 @@ const Produccion = () => {
                   };
                   setEditData(fallbackData);
                   setEditOpen(true);
-                  
+
                 } finally {
                   setIsSaving(false);
                 }
@@ -437,10 +437,10 @@ const Produccion = () => {
                     }}
                   >
                     {isSaving ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Eliminando...
-                        </>
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Eliminando...
+                      </>
                     ) : "Eliminar"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -545,80 +545,80 @@ const Produccion = () => {
           </CardContent>
         </Card>
       )}
-      
+
       {/* Combo Chart */}
       {campaigns.length > 0 && (
-      <Card className="border-border/50 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-foreground">Evolución de Producción y Facturación</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingData ? (
-             <div className="flex items-center justify-center h-[350px]">
+        <Card className="border-border/50 shadow-md">
+          <CardHeader>
+            <CardTitle className="text-foreground">Evolución de Producción y Facturación</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingData ? (
+              <div className="flex items-center justify-center h-[350px]">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-             </div>
-          ) : (
-          <ResponsiveContainer width="100%" height={350}>
-            <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
-              <YAxis
-                yAxisId="left"
-                stroke="hsl(var(--muted-foreground))"
-                tickFormatter={(value) => `${(value / 1000).toFixed(0)}t`}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                stroke="hsl(var(--muted-foreground))"
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                }}
-                formatter={(value: number, name: string) => {
-                  if (name === "produccion") {
-                    return [value.toLocaleString() + " Kg", "Producción"];
-                  }
-                  if (name === "facturacion") {
-                    return [formatCurrency(value, true), "Facturación"];
-                  }
-                  return [value, name];
-                }}
-              />
-              <Legend />
-              <Bar
-                yAxisId="left"
-                dataKey="produccion"
-                fill="hsl(var(--accent))"
-                radius={[8, 8, 0, 0]}
-                name="Producción (Kg)"
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="facturacion"
-                stroke="hsl(var(--primary))"
-                strokeWidth={3}
-                dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
-                name="Facturación (USD)"
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-          )}
-        </CardContent>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={350}>
+                <ComposedChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="hsl(var(--muted-foreground))"
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}t`}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="hsl(var(--muted-foreground))"
+                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number, name: string) => {
+                      if (name === "produccion") {
+                        return [value.toLocaleString() + " Kg", "Producción"];
+                      }
+                      if (name === "facturacion") {
+                        return [formatCurrency(value, true), "Facturación"];
+                      }
+                      return [value, name];
+                    }}
+                  />
+                  <Legend />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="produccion"
+                    fill="hsl(var(--accent))"
+                    radius={[8, 8, 0, 0]}
+                    name="Producción (Kg)"
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="facturacion"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={3}
+                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
+                    name="Facturación (USD)"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
         </Card>
       )}
 
       {/* Production Evolution Matrix */}
       {montes.length > 0 && campaigns.length > 0 && (
-        <EvolucionProductiva 
-            campaigns={campaigns} 
-            montes={montes} 
-            isLoading={isLoadingData} 
+        <EvolucionProductiva
+          campaigns={campaigns}
+          montes={montes}
+          isLoading={isLoadingData}
         />
       )}
 

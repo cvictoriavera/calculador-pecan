@@ -60,7 +60,7 @@ const Campanas = () => {
   const isCampaignDisabled = isTrialMode() && manualCampaigns >= maxCampaigns;
 
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign, getTotalProductionByCampaign } = useCalculationsStore();
-  
+
   // Stores
   const loadAllProductions = useDataStore((state) => state.loadAllProductions);
   const productionCampaigns = useDataStore((state) => state.productionCampaigns); // Necesario para verificar si ya hay datos
@@ -82,12 +82,12 @@ const Campanas = () => {
   const [editingCosto, setEditingCosto] = useState<any>(null);
   const [inversionSheetOpen, setInversionSheetOpen] = useState(false);
   const [editingInversion, setEditingInversion] = useState<any>(null);
-  
+
   // UI States for specific interactions
   const [editingMonth, setEditingMonth] = useState<{ [year: number]: boolean }>({});
   const [updatingMonth, setUpdatingMonth] = useState<{ [year: number]: boolean }>({});
   const [loadingAction, setLoadingAction] = useState<{ [year: number]: string | null }>({}); // Controla spinner en botones
-  
+
   // Estado de carga inteligente (Stale-while-revalidate)
   const [isLoadingData, setIsLoadingData] = useState(productionCampaigns.length === 0);
   const isInitialized = useRef(false);
@@ -117,16 +117,16 @@ const Campanas = () => {
   }, [campaigns.length, productionCampaigns.length]);
 
   const handleNuevaCampana = async () => {
-   if (isTrialMode() && manualCampaigns >= maxCampaigns) {
-     toast({
-       title: "Límite alcanzado",
-       description: `Como usuario suscriptor, puedes crear un máximo de ${maxCampaigns} campañas adicionales a partir del año actual.`,
-       variant: "destructive",
-     });
-     return;
-   }
+    if (isTrialMode() && manualCampaigns >= maxCampaigns) {
+      toast({
+        title: "Límite alcanzado",
+        description: `Como usuario suscriptor, puedes crear un máximo de ${maxCampaigns} campañas adicionales a partir del año actual.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
-   setIsCreating(true);
+    setIsCreating(true);
     const maxYear = safeCampaigns.length > 0 ? Math.max(...safeCampaigns.map(c => c.year)) : (initialYear || new Date().getFullYear());
     const nextYear = maxYear + 1;
     const existing = safeCampaigns.find(c => c.year === nextYear);
@@ -193,12 +193,12 @@ const Campanas = () => {
 
   const formatCampaignDates = (campaign: Campaign | null, year: number) => {
     if (!campaign) {
-        return `Enero ${year} - Enero ${year + 1}`;
+      return `Enero ${year} - Enero ${year + 1}`;
     }
 
     if (campaign.start_date && !campaign.start_date.includes('-')) {
-        const endText = campaign.end_date || `${campaign.start_date.split(' ')[0]} ${year + 1}`;
-        return `${campaign.start_date} - ${endText}`;
+      const endText = campaign.end_date || `${campaign.start_date.split(' ')[0]} ${year + 1}`;
+      return `${campaign.start_date} - ${endText}`;
     }
 
     const start = new Date(campaign.start_date);
@@ -210,16 +210,16 @@ const Campanas = () => {
   const handleMonthChange = async (year: number, monthIndex: number) => {
     const campaign = getCampaignForYear(year);
     if (!campaign) return;
-    
+
     setUpdatingMonth(prev => ({ ...prev, [year]: true }));
     try {
       const startMonthName = months[monthIndex];
-      const endMonthIndex = (monthIndex - 1 + 12) % 12; 
+      const endMonthIndex = (monthIndex - 1 + 12) % 12;
       const endMonthName = months[endMonthIndex];
 
       const newStartDate = `${startMonthName} ${year}`;
       const newEndDate = `${endMonthName} ${year + 1}`;
-      
+
       await updateCampaign(campaign.id, {
         start_date: newStartDate,
         end_date: newEndDate,
@@ -238,10 +238,10 @@ const Campanas = () => {
     }
   };
 
-  const { 
+  const {
     updateProductionCampaign,
     setProductions,
-    productions 
+    productions
   } = useDataStore();
 
   const handleSaveProduccion = async (data: any) => {
@@ -257,10 +257,14 @@ const Campanas = () => {
           is_estimated: data.metodo === 'total' ? 1 : 0,
         }));
 
-      if (currentCampaignId && currentProjectId) {
+      // Use the campaign from editData if available, otherwise fall back to current
+      const targetCampaignId = editData?.campaignId ?? currentCampaignId;
+      const targetCampaignYear = editData?.campaignYear ?? currentCampaign;
+
+      if (targetCampaignId && currentProjectId) {
         // 1. OPTIMISTIC UPDATE
-        const campaignId = `campaign-${currentCampaign}`;
-        
+        const campaignId = `campaign-${targetCampaignYear}`;
+
         updateProductionCampaign(campaignId, {
           averagePrice: data.precioPromedio,
           totalProduction: totalKg,
@@ -270,7 +274,7 @@ const Campanas = () => {
         const newProductions = productionsData.map((p: any, index: number) => ({
           id: Date.now() + index,
           project_id: currentProjectId,
-          campaign_id: currentCampaignId,
+          campaign_id: targetCampaignId,
           monte_id: p.monte_id,
           entry_group_id: `temp-${Date.now()}`,
           quantity_kg: p.quantity_kg,
@@ -279,20 +283,20 @@ const Campanas = () => {
           date: new Date().toISOString(),
         }));
 
-        const otherProductions = productions.filter((p: any) => 
-          String(p.campaign_id) !== String(currentCampaignId)
+        const otherProductions = productions.filter((p: any) =>
+          String(p.campaign_id) !== String(targetCampaignId)
         );
-        
+
         setProductions([...otherProductions, ...newProductions]);
 
         // 2. BACKGROUND SAVE
-        createProductionsByCampaign(currentCampaignId, {
+        createProductionsByCampaign(targetCampaignId, {
           project_id: currentProjectId,
           productions: productionsData,
           input_type: data.metodo === 'detallado' ? 'detail' : 'total',
         }).catch(err => console.error(err));
 
-        updateCampaign(currentCampaignId, {
+        updateCampaign(targetCampaignId, {
           average_price: data.precioPromedio,
           total_production: totalKg,
           montes_contribuyentes: null,
@@ -326,11 +330,11 @@ const Campanas = () => {
       if (campaign.id) {
         // Cargar en store primero
         await loadProductions(campaign.id);
-        
+
         // Obtener datos para el formulario
         const productionsData = await getProductionsByCampaign(campaign.id) as ProductionRecord[];
         const precioPromedio = campaign.average_price ? parseFloat(campaign.average_price) : 0;
-  
+
         const firstRecord = productionsData[0] as ProductionRecord;
         const metodo = firstRecord?.input_type === 'detail' ? 'detallado' : 'total';
 
@@ -343,13 +347,13 @@ const Campanas = () => {
 
         const produccionPorMonte = montesDisponibles.map(monte => {
           const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === monte.id.split('.')[0]);
-  
+
           return {
-              monteId: monte.id,
-              nombre: monte.nombre,
-              hectareas: monte.hectareas,
-              edad: monte.edad,
-              kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0,
+            monteId: monte.id,
+            nombre: monte.nombre,
+            hectareas: monte.hectareas,
+            edad: monte.edad,
+            kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0,
           };
         });
 
@@ -357,6 +361,10 @@ const Campanas = () => {
           precioPromedio,
           metodo,
           produccionPorMonte,
+          // Store the correct campaign references so the save handler
+          // uses the edited campaign, not the globally selected one
+          campaignId: campaign.id,
+          campaignYear: campaign.year,
         };
         setEditData(editDataToSet);
         setEditOpen(true);
@@ -365,8 +373,8 @@ const Campanas = () => {
       console.error('Error loading production data for edit:', error);
       toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
     } finally {
-        // 2. Desactivar loading
-        setLoadingAction(prev => ({ ...prev, [campaign.year]: null }));
+      // 2. Desactivar loading
+      setLoadingAction(prev => ({ ...prev, [campaign.year]: null }));
     }
   };
 
@@ -402,7 +410,7 @@ const Campanas = () => {
         }
       }
       else if (typeof formData === 'object' && formData.category) {
-         if (formData.existingId) {
+        if (formData.existingId) {
           await updateCost(formData.existingId, {
             category: formData.category,
             details: formData.details,
@@ -564,7 +572,7 @@ const Campanas = () => {
             </p>
             <p className="text-sm text-amber-800/90 leading-relaxed">
               Cada campaña representa un <strong>ciclo productivo completo de 12 meses</strong> (ej: de Julio a Junio del año siguiente).
-              Para que el sistema calcule correctamente la rentabilidad, asegúrate de que todos los registros de 
+              Para que el sistema calcule correctamente la rentabilidad, asegúrate de que todos los registros de
               <strong> producción, costos e inversiones</strong> correspondan estrictamente al período de fechas indicado en la tarjeta de la campaña.
             </p>
           </div>
@@ -591,7 +599,7 @@ const Campanas = () => {
           {campaignYears.map((year) => {
             const campaign = getCampaignForYear(year);
             const isCurrentYear = year === currentCampaign;
-            const totalProductionKg = campaign ? getTotalProductionByCampaign(campaign.id) : 0;  
+            const totalProductionKg = campaign ? getTotalProductionByCampaign(campaign.id) : 0;
             const averagePrice = campaign ? Number(campaign.average_price || 0) : 0;
             const totalRevenue = totalProductionKg * averagePrice;
 
@@ -609,43 +617,43 @@ const Campanas = () => {
                       <div className="flex items-center gap-2 mt-1">
                         {editingMonth[year] ? (
                           <div className="flex items-center gap-2">
-                             {updatingMonth[year] ? (
-                                <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-muted">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    <span className="text-sm text-muted-foreground">Actualizando...</span>
-                                </div>
+                            {updatingMonth[year] ? (
+                              <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-muted">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span className="text-sm text-muted-foreground">Actualizando...</span>
+                              </div>
                             ) : (
-                                <Select
-                                    value={campaign?.start_date ? campaign.start_date.split(' ')[0] : months[0]}
-                                    onValueChange={(value: string) => {
-                                        const monthIndex = months.indexOf(value);
-                                        handleMonthChange(year, monthIndex);
-                                    }}
-                                    disabled={updatingMonth[year]}
-                                >
-                                    <SelectTrigger className="w-32">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {months.map((month, index) => (
-                                        <SelectItem key={index} value={month}>{month}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                              <Select
+                                value={campaign?.start_date ? campaign.start_date.split(' ')[0] : months[0]}
+                                onValueChange={(value: string) => {
+                                  const monthIndex = months.indexOf(value);
+                                  handleMonthChange(year, monthIndex);
+                                }}
+                                disabled={updatingMonth[year]}
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {months.map((month, index) => (
+                                    <SelectItem key={index} value={month}>{month}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             )}
-                            
+
                             {!updatingMonth[year] && (
-                                <Button
+                              <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setEditingMonth(prev => ({ ...prev, [year]: false }))}
                                 className="p-1 h-6 w-6"
-                                >
+                              >
                                 <X className="h-4 w-4" />
-                                </Button>
+                              </Button>
                             )}
                             {!updatingMonth[year] && (
-                                <p className="text-sm text-muted-foreground mb-0">Define el mes de inicio</p>
+                              <p className="text-sm text-muted-foreground mb-0">Define el mes de inicio</p>
                             )}
                           </div>
                         ) : (
@@ -703,7 +711,7 @@ const Campanas = () => {
                             <Skeleton className="h-6 w-24 bg-border/50" />
                           ) : (
                             <p className="text-lg font-semibold text-foreground mb-0">
-                                {totalProductionKg.toLocaleString()} kg
+                              {totalProductionKg.toLocaleString()} kg
                             </p>
                           )}
                         </div>
@@ -717,13 +725,13 @@ const Campanas = () => {
                       <div>
                         <p className="text-sm text-muted-foreground mb-0">Ingresos</p>
                         <div className="min-h-[28px] flex items-center">
-                            {isLoadingData ? (
-                                <Skeleton className="h-6 w-24 bg-border/50" />
-                            ) : (
-                                <p className="text-lg font-semibold text-accent mb-0">
-                                    {formatCurrency(totalRevenue, true)}
-                                </p>
-                            )}
+                          {isLoadingData ? (
+                            <Skeleton className="h-6 w-24 bg-border/50" />
+                          ) : (
+                            <p className="text-lg font-semibold text-accent mb-0">
+                              {formatCurrency(totalRevenue, true)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -735,34 +743,34 @@ const Campanas = () => {
                       <div>
                         <p className="text-sm text-muted-foreground mb-0">Costos</p>
                         <div className="min-h-[28px] flex items-center">
-                            {isLoadingData ? (
-                                <Skeleton className="h-6 w-24 bg-border/50" />
-                            ) : (
-                                <p className="text-lg font-semibold text-accent mb-0"> 
-                                    {campaign ? formatCurrency(getTotalCostsByCampaign(campaign.id), true) : '$0'}
-                                </p>
-                            )}
+                          {isLoadingData ? (
+                            <Skeleton className="h-6 w-24 bg-border/50" />
+                          ) : (
+                            <p className="text-lg font-semibold text-accent mb-0">
+                              {campaign ? formatCurrency(getTotalCostsByCampaign(campaign.id), true) : '$0'}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <div className="p-3 rounded-lg bg-cream">
-                         <TrendingUp className="h-6 w-6 text-accent" />
+                        <TrendingUp className="h-6 w-6 text-accent" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-0">Invertido</p>
                         <div className="min-h-[28px] flex items-center">
-                            {isLoadingData ? (
-                                <Skeleton className="h-6 w-24 bg-border/50" />
-                            ) : (
-                                <p className="text-lg font-semibold text-accent mb-0">
-                                {(() => {
-                                    const total = campaign ? getTotalInvestmentsByCampaign(campaign.id) : 0;
-                                    return formatCurrency(total, true);
-                                })()}
-                                </p>
-                            )}
+                          {isLoadingData ? (
+                            <Skeleton className="h-6 w-24 bg-border/50" />
+                          ) : (
+                            <p className="text-lg font-semibold text-accent mb-0">
+                              {(() => {
+                                const total = campaign ? getTotalInvestmentsByCampaign(campaign.id) : 0;
+                                return formatCurrency(total, true);
+                              })()}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -790,10 +798,10 @@ const Campanas = () => {
                       }}
                     >
                       {loadingAction[year] === 'produccion' ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Cargando...
-                          </>
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Cargando...
+                        </>
                       ) : (
                         campaign && getTotalProductionByCampaign(campaign.id) > 0 ? 'Editar Producción' : 'Cargar Producción'
                       )}
@@ -850,6 +858,7 @@ const Campanas = () => {
         onOpenChange={setEditOpen}
         onSave={handleSaveProduccion}
         editingData={editData}
+        campaignYear={editData?.campaignYear}
       />
 
       <AddCostoSheet

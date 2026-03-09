@@ -4,21 +4,19 @@ import { TrendingUp, DollarSign, Sprout, BarChart3, Loader2 } from "lucide-react
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
 import { useApp } from "@/contexts/AppContext";
 import { useCalculationsStore } from "@/stores/calculationsStore";
-import { formatCurrency } from "@/lib/calculations"; 
-import { useDataStore } from "@/stores"; 
+import { formatCurrency } from "@/lib/calculations";
+import { useDataStore } from "@/stores";
 
 const Dashboard = () => {
   // 1. Traemos las campañas
   const { campaigns, campaignsLoading } = useApp();
-  
+
   // 2. IMPORTANTE: Nos suscribimos a los datos crudos para que el componente
   // se actualice cuando terminen de cargarse desde el servidor.
-  const { 
-    costs, 
-    investments, 
-    productions,
-    loadAllProductions,  // <--- Necesario para traer la producción // <--- Recomendado para asegurar inversiones
-  } = useDataStore();
+  const costs = useDataStore(state => state.costs);
+  const investments = useDataStore(state => state.investments);
+  const productions = useDataStore(state => state.productions);
+  const loadAllProductions = useDataStore(state => state.loadAllProductions);
 
   // 3. Traemos las funciones de cálculo
   const { getTotalCostsByCampaign, getTotalInvestmentsByCampaign } = useCalculationsStore();
@@ -103,12 +101,12 @@ const Dashboard = () => {
 
   // Si no hay datos, mostrar estado vacío
   if (dashboardData.length === 0) {
-     return (
-        <div className="text-center py-10">
-           <h2 className="text-xl ">No hay datos registrados</h2>
-           <p className="text-muted-foreground">Comienza creando una campaña y registrando movimientos.</p>
-        </div>
-     )
+    return (
+      <div className="text-center py-10">
+        <h2 className="text-xl ">No hay datos registrados</h2>
+        <p className="text-muted-foreground">Comienza creando una campaña y registrando movimientos.</p>
+      </div>
+    )
   }
 
   return (
@@ -142,7 +140,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold text-foreground">${kpis.ingresosTotal.toLocaleString()}</div>
               <p className={`text-xs mt-1 ${kpis.ingresosVar >= 0 ? "text-accent" : "text-destructive"}`}>
-                 {kpis.ingresosVar > 0 ? "+" : ""}{kpis.ingresosVar.toFixed(1)}% vs. año anterior
+                {kpis.ingresosVar > 0 ? "+" : ""}{kpis.ingresosVar.toFixed(1)}% vs. año anterior
               </p>
             </CardContent>
           </Card>
@@ -204,7 +202,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-               {/* Usamos dashboardData en lugar de paybackData */}
+              {/* Usamos dashboardData en lugar de paybackData */}
               <LineChart data={dashboardData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
@@ -257,10 +255,10 @@ const Dashboard = () => {
                     <tr key={row.year} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
                       <td className="p-3 text-sm font-medium text-foreground">{row.year}</td>
                       <td className="p-3 text-sm text-right text-accent font-semibold">
-                      {formatCurrency(row.ingresos)}
+                        {formatCurrency(row.ingresos)}
                       </td>
                       <td className="p-3 text-sm text-right text-foreground">
-                      {formatCurrency(row.costos)}
+                        {formatCurrency(row.costos)}
                       </td>
                       <td className="p-3 text-sm text-right text-foreground">
                         ${row.inversiones.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -269,9 +267,8 @@ const Dashboard = () => {
                         ${row.flujoCaja.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </td>
                       <td
-                        className={`p-3 text-sm text-right font-bold ${
-                          row.flujoAcumulado >= 0 ? "text-accent" : "text-destructive"
-                        }`}
+                        className={`p-3 text-sm text-right font-bold ${row.flujoAcumulado >= 0 ? "text-accent" : "text-destructive"
+                          }`}
                       >
                         ${row.flujoAcumulado.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </td>

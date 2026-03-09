@@ -1,57 +1,238 @@
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaigns: (18) ['1', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '2', '18', '360']
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 1
-index-o9f66xlN.js?ver=1.0.0:1 Got 0 records for campaign 1
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2010
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 3
-index-o9f66xlN.js?ver=1.0.0:1 Got 0 records for campaign 3
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2011
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 4
-index-o9f66xlN.js?ver=1.0.0:1 Got 0 records for campaign 4
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2012
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 5
-index-o9f66xlN.js?ver=1.0.0:1 Got 0 records for campaign 5
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2013
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 6
-index-o9f66xlN.js?ver=1.0.0:1 Got 0 records for campaign 6
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2014
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 7
-index-o9f66xlN.js?ver=1.0.0:1 Got 1 records for campaign 7
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2015
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 8
-index-o9f66xlN.js?ver=1.0.0:1 Got 1 records for campaign 8
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2016
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 9
-index-o9f66xlN.js?ver=1.0.0:1 Got 1 records for campaign 9
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2017
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 10
-index-o9f66xlN.js?ver=1.0.0:1 Got 1 records for campaign 10
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2018
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 11
-index-o9f66xlN.js?ver=1.0.0:1 Got 1 records for campaign 11
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2019
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 12
-index-o9f66xlN.js?ver=1.0.0:1 Got 2 records for campaign 12
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2020
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 13
-index-o9f66xlN.js?ver=1.0.0:1 Got 2 records for campaign 13
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2021
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 14
-index-o9f66xlN.js?ver=1.0.0:1 Got 2 records for campaign 14
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2022
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 15
-index-o9f66xlN.js?ver=1.0.0:1 Got 2 records for campaign 15
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2023
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 16
-index-o9f66xlN.js?ver=1.0.0:1 Got 2 records for campaign 16
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2024
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 2
-index-o9f66xlN.js?ver=1.0.0:1 Got 2 records for campaign 2
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2025
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 18
-index-o9f66xlN.js?ver=1.0.0:1 Got 3 records for campaign 18
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2026
-index-o9f66xlN.js?ver=1.0.0:1 Loading productions for campaign 360
-index-o9f66xlN.js?ver=1.0.0:1 Got 0 records for campaign 360
-index-o9f66xlN.js?ver=1.0.0:1 Added production campaign for year 2027
-index-o9f66xlN.js?ver=1.0.0:1 Total productions loaded: 20
-index-o9f66xlN.js?ver=1.0.0:1 Total production campaigns: 18
+installHook.js:1 Error: useApp must be used within AppProvider
+    at Lt (index-Byh6PlWm.js:2:36653)
+    at Z (Dashboard-DSPivPai.js:1:477)
+    at Wu (vendor-D_G-3E1V.js:6:17319)
+    at tc (vendor-D_G-3E1V.js:8:3158)
+    at gy (vendor-D_G-3E1V.js:8:44986)
+    at hy (vendor-D_G-3E1V.js:8:40076)
+    at yk (vendor-D_G-3E1V.js:8:40004)
+    at jo (vendor-D_G-3E1V.js:8:39857)
+    at gc (vendor-D_G-3E1V.js:8:36170)
+    at uy (vendor-D_G-3E1V.js:8:35118)
+overrideMethod @ installHook.js:1
+ec @ vendor-D_G-3E1V.js:8
+Ig.l.callback @ vendor-D_G-3E1V.js:8
+og @ vendor-D_G-3E1V.js:6
+sy @ vendor-D_G-3E1V.js:8
+ay @ vendor-D_G-3E1V.js:8
+mk @ vendor-D_G-3E1V.js:8
+_k @ vendor-D_G-3E1V.js:8
+xi @ vendor-D_G-3E1V.js:8
+uy @ vendor-D_G-3E1V.js:8
+O @ vendor-D_G-3E1V.js:1
+B @ vendor-D_G-3E1V.js:1Understand this error
+vendor-D_G-3E1V.js:8 Uncaught Error: useApp must be used within AppProvider
+    at Lt (index-Byh6PlWm.js:2:36653)
+    at Z (Dashboard-DSPivPai.js:1:477)
+    at Wu (vendor-D_G-3E1V.js:6:17319)
+    at tc (vendor-D_G-3E1V.js:8:3158)
+    at gy (vendor-D_G-3E1V.js:8:44986)
+    at hy (vendor-D_G-3E1V.js:8:40076)
+    at yk (vendor-D_G-3E1V.js:8:40004)
+    at jo (vendor-D_G-3E1V.js:8:39857)
+    at gc (vendor-D_G-3E1V.js:8:36170)
+    at uy (vendor-D_G-3E1V.js:8:35118)
+Lt @ index-Byh6PlWm.js:2
+Z @ Dashboard-DSPivPai.js:1
+Wu @ vendor-D_G-3E1V.js:6
+tc @ vendor-D_G-3E1V.js:8
+gy @ vendor-D_G-3E1V.js:8
+hy @ vendor-D_G-3E1V.js:8
+yk @ vendor-D_G-3E1V.js:8
+jo @ vendor-D_G-3E1V.js:8
+gc @ vendor-D_G-3E1V.js:8
+uy @ vendor-D_G-3E1V.js:8
+O @ vendor-D_G-3E1V.js:1
+B @ vendor-D_G-3E1V.js:1Understand this error
+installHook.js:1 NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at ry (vendor-D_G-3E1V.js:8:26219)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+overrideMethod @ installHook.js:1
+ec @ vendor-D_G-3E1V.js:8
+Ig.l.callback @ vendor-D_G-3E1V.js:8
+og @ vendor-D_G-3E1V.js:6
+sy @ vendor-D_G-3E1V.js:8
+ay @ vendor-D_G-3E1V.js:8
+mk @ vendor-D_G-3E1V.js:8
+_k @ vendor-D_G-3E1V.js:8
+xi @ vendor-D_G-3E1V.js:8
+cy @ vendor-D_G-3E1V.js:8
+qn @ vendor-D_G-3E1V.js:6
+(anonymous) @ vendor-D_G-3E1V.js:8Understand this error
+vendor-D_G-3E1V.js:8 Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at ry (vendor-D_G-3E1V.js:8:26219)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+_k @ vendor-D_G-3E1V.js:8
+xi @ vendor-D_G-3E1V.js:8
+uy @ vendor-D_G-3E1V.js:8
+O @ vendor-D_G-3E1V.js:1
+B @ vendor-D_G-3E1V.js:1Understand this error
+installHook.js:1 NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at ry (vendor-D_G-3E1V.js:8:26219)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at Ar (vendor-D_G-3E1V.js:8:27540)
+    at iy (vendor-D_G-3E1V.js:8:27803)
+    at Ar (vendor-D_G-3E1V.js:8:27690)
+    at iy (vendor-D_G-3E1V.js:8:30772)
+    at Ar (vendor-D_G-3E1V.js:8:27690)
+    at iy (vendor-D_G-3E1V.js:8:30772)
+    at Ar (vendor-D_G-3E1V.js:8:27690)
+overrideMethod @ installHook.js:1
+ec @ vendor-D_G-3E1V.js:8
+Ig.l.callback @ vendor-D_G-3E1V.js:8
+og @ vendor-D_G-3E1V.js:6
+sy @ vendor-D_G-3E1V.js:8
+ay @ vendor-D_G-3E1V.js:8
+mk @ vendor-D_G-3E1V.js:8
+_k @ vendor-D_G-3E1V.js:8
+xi @ vendor-D_G-3E1V.js:8
+cy @ vendor-D_G-3E1V.js:8
+qn @ vendor-D_G-3E1V.js:6
+_k @ vendor-D_G-3E1V.js:8
+xi @ vendor-D_G-3E1V.js:8
+uy @ vendor-D_G-3E1V.js:8
+O @ vendor-D_G-3E1V.js:1
+B @ vendor-D_G-3E1V.js:1Understand this error
+vendor-D_G-3E1V.js:8 Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at ry (vendor-D_G-3E1V.js:8:26219)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at Ar (vendor-D_G-3E1V.js:8:27540)
+    at iy (vendor-D_G-3E1V.js:8:27803)
+    at Ar (vendor-D_G-3E1V.js:8:27690)
+    at iy (vendor-D_G-3E1V.js:8:30772)
+    at Ar (vendor-D_G-3E1V.js:8:27690)
+    at iy (vendor-D_G-3E1V.js:8:30772)
+    at Ar (vendor-D_G-3E1V.js:8:27690)
+ry @ vendor-D_G-3E1V.js:8
+jn @ vendor-D_G-3E1V.js:8
+ry @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+Ar @ vendor-D_G-3E1V.js:8
+iy @ vendor-D_G-3E1V.js:8
+_k @ vendor-D_G-3E1V.js:8
+xi @ vendor-D_G-3E1V.js:8
+uy @ vendor-D_G-3E1V.js:8
+O @ vendor-D_G-3E1V.js:1
+B @ vendor-D_G-3E1V.js:1Understand this error
+installHook.js:1 NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at ry (vendor-D_G-3E1V.js:8:26219)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+overrideMethod @ installHook.js:1
+ec @ vendor-D_G-3E1V.js:8
+Ig.l.callback @ vendor-D_G-3E1V.js:8
+og @ vendor-D_G-3E1V.js:6
+sy @ vendor-D_G-3E1V.js:8
+ay @ vendor-D_G-3E1V.js:8
+mk @ vendor-D_G-3E1V.js:8
+_k @ vendor-D_G-3E1V.js:8
+xi @ vendor-D_G-3E1V.js:8
+cy @ vendor-D_G-3E1V.js:8
+qn @ vendor-D_G-3E1V.js:6
+(anonymous) @ vendor-D_G-3E1V.js:8Understand this error
+vendor-D_G-3E1V.js:8 Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at ry (vendor-D_G-3E1V.js:8:26219)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)
+    at ry (vendor-D_G-3E1V.js:8:26686)
+    at jn (vendor-D_G-3E1V.js:8:25925)

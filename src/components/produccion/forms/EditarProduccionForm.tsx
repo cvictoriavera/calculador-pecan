@@ -40,6 +40,7 @@ interface EditarProduccionProps {
   onOpenChange: (open: boolean) => void;
   onSave: (data: RegistrarProduccionFormData) => void;
   isSaving?: boolean;
+  campaignYear?: number; // The year of the campaign being edited (overrides global context)
   editingData: {
     precioPromedio: number;
     metodo: "detallado" | "total";
@@ -47,19 +48,22 @@ interface EditarProduccionProps {
   };
 }
 
-export const EditarProduccionForm = React.memo<EditarProduccionProps>(function EditarProduccionForm({ open, onOpenChange, onSave, editingData, isSaving = false }) {
+export const EditarProduccionForm = React.memo<EditarProduccionProps>(function EditarProduccionForm({ open, onOpenChange, onSave, editingData, isSaving = false, campaignYear }) {
   const { currentCampaign, montes } = useApp();
+  // If a specific campaignYear is provided (editing a different campaign), use it.
+  // Otherwise fall back to the globally selected campaign year.
+  const targetYear = campaignYear ?? currentCampaign;
   const [showJovenes, setShowJovenes] = useState(false);
 
-  // Filter montes that exist in current campaign
+  // Filter montes that exist in the target campaign year
   const montesDisponibles = useMemo(() => {
     return montes
-      .filter((m) => m.añoPlantacion <= currentCampaign)
+      .filter((m) => m.añoPlantacion <= targetYear)
       .map((m) => ({
         ...m,
-        edad: currentCampaign - m.añoPlantacion,
+        edad: targetYear - m.añoPlantacion,
       }));
-  }, [montes, currentCampaign]);
+  }, [montes, targetYear]);
 
   const montesProductivos = montesDisponibles.filter((m) => m.edad >= 7);
   const montesJovenes = montesDisponibles.filter((m) => m.edad < 7);
@@ -85,22 +89,22 @@ export const EditarProduccionForm = React.memo<EditarProduccionProps>(function E
   useEffect(() => {
 
     if (editingData && montesDisponibles.length > 0) {
-  
+
       const produccionPorMonte = montesDisponibles.map(monte => {
-        
+
         const existingData = editingData.produccionPorMonte.find(
           (p: MonteProduccion) => String(p.monteId) === String(monte.id)
         );
 
         return {
-          monteId: monte.id, 
+          monteId: monte.id,
           nombre: monte.nombre,
           hectareas: monte.hectareas,
           edad: monte.edad,
-          kgRecolectados: existingData ? Number(existingData.kgRecolectados) : 0, 
+          kgRecolectados: existingData ? Number(existingData.kgRecolectados) : 0,
         };
       });
-      
+
 
       // Prepare form data
       const formData: RegistrarProduccionFormData = {
@@ -147,7 +151,7 @@ export const EditarProduccionForm = React.memo<EditarProduccionProps>(function E
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="text-xl font-bold text-foreground">
-            Editar Producción {currentCampaign}
+            Editar Producción {targetYear}
           </SheetTitle>
         </SheetHeader>
 
@@ -273,19 +277,19 @@ export const EditarProduccionForm = React.memo<EditarProduccionProps>(function E
                                     placeholder="Kg"
                                     value={inputField.value || ""}
                                     onChange={(e) => inputField.onChange(parseFloat(e.target.value) || 0)}
-                                />
-                              )}
-                            />
+                                  />
+                                )}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-               </div>
-             )}
-           </div>
-         ) : (
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
             <div className="space-y-6">
               <div>
                 <Label>Peso Total Recolectado (Kg)</Label>
@@ -439,8 +443,8 @@ export const EditarProduccionForm = React.memo<EditarProduccionProps>(function E
 
           {/* Botón de Guardar */}
           <div className="flex justify-end">
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="bg-accent hover:bg-accent/90"
               disabled={isSaving} // <--- Deshabilitar
             >
