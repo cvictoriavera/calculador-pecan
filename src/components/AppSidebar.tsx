@@ -14,7 +14,7 @@ import {
 import { useLocation } from "react-router-dom";
 
 const projectMenuItems = [
-  { title: "Inicio", url: "/", icon: Home },
+  { title: "Inicio", url: "/dashboard", icon: Home },
   { title: "Mis Montes", url: "/montes", icon: Sprout },
   { title: "Campañas", url: "/campanas", icon: CalendarRange },
   { title: "Producción", url: "/produccion", icon: Package },
@@ -58,7 +58,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === "/"}
+                      end={item.url === "/dashboard"}
                       className="hover:bg-sidebar-accent transition-colors no-underline"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
                     >

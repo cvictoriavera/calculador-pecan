@@ -74,7 +74,7 @@ const Inversiones = () => {
   // Calculate displayed years - only campaign years
   const displayedYears = useMemo(() => {
     if (campaigns.length === 0) return [];
-    const years = campaigns.map(c => c.year).sort((a, b) => a - b);
+    const years = [...campaigns].map(c => c.year).sort((a, b) => a - b);
     return years;
   }, [campaigns]);
 

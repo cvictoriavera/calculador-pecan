@@ -43,7 +43,8 @@ function AppRouter() {
 
   return (
     <Routes>
-      <Route path="/" element={<Layout><Dashboard /></Layout>} />
+      <Route path="/" element={<Navigate to="/projects" replace />} />
+      <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
       <Route path="/montes" element={<Layout><Montes /></Layout>} />
       <Route path="/campanas" element={<Layout><Campanas /></Layout>} />
       <Route path="/produccion" element={<Layout><Produccion /></Layout>} />
@@ -51,7 +52,7 @@ function AppRouter() {
       <Route path="/costos" element={<Layout><Costos /></Layout>} />
       <Route path="/config" element={<Layout><Config /></Layout>} />
       <Route path="/projects" element={<Layout><Projects /></Layout>} />
-      <Route path="/onboarding" element={<Layout><Onboarding /></Layout>} />
+      <Route path="/onboarding" element={<Navigate to="/projects" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

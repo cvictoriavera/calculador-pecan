@@ -7,14 +7,7 @@ import { apiRequest } from './api';
 const BASE_ENDPOINT = 'ccp/v1/montes';
 const TRIAL_MONTES_KEY = 'trialMontes';
 
-/**
- * Checks if the user is in trial mode.
- *
- * @returns True if in trial mode.
- */
-const isTrialMode = (): boolean => {
-	return localStorage.getItem('isTrialMode') === 'true';
-};
+import { isTrialMode } from '../lib/trialMode';
 
 export interface MonteDB {
   id: number;

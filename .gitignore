@@ -10,6 +10,7 @@ lerna-debug.log*
 # Dependencies
 node_modules/
 .agents/
+.agent/
 
 # Build outputs
 dist/

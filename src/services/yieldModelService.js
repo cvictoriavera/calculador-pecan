@@ -3,17 +3,9 @@
  */
 
 import { apiRequest } from './api';
+import { isTrialMode } from '../lib/trialMode';
 
 const BASE_ENDPOINT = 'ccp/v1/yield-models';
-
-/**
- * Checks if the user is in trial mode.
- *
- * @returns {boolean} True if in trial mode.
- */
-const isTrialMode = () => {
-	return localStorage.getItem('isTrialMode') === 'true';
-};
 
 /**
  * Fetches all yield models for a given project.

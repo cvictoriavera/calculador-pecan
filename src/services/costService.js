@@ -3,18 +3,10 @@
  */
 
 import { apiRequest } from './api';
+import { isTrialMode } from '@/lib/trialMode';
 
 const BASE_ENDPOINT = 'ccp/v1/costs';
 const TRIAL_RECORDS_KEY = 'trialAnnualRecords';
-
-/**
- * Checks if the user is in trial mode.
- *
- * @returns {boolean} True if in trial mode.
- */
-const isTrialMode = () => {
-	return localStorage.getItem('isTrialMode') === 'true';
-};
 
 /**
  * Fetches costs for a specific campaign.

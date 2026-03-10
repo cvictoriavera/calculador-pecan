@@ -5,6 +5,7 @@ import { getProjects, deleteProject } from "@/services/projectService";
 import { getMontesByProject, createMonte, updateMonte as updateMonteAPI, deleteMonte } from "@/services/monteService";
 import { getCurrentUser } from "@/services/userService";
 import { useDataStore } from "@/stores";
+import { setTrialMode } from '@/lib/trialMode';
 
 export interface Monte {
   id: string;
@@ -129,12 +130,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setUser(userData);
         const trial = userData.roles?.includes('subscriber') || false;
         setIsTrialMode(trial);
-        localStorage.setItem('isTrialMode', trial.toString());
+        setTrialMode(trial);
       } catch (error) {
         console.error('Error fetching user:', error);
         // If error, assume not trial
         setIsTrialMode(false);
-        localStorage.setItem('isTrialMode', 'false');
+        setTrialMode(false);
       }
     };
     fetchUser();
@@ -277,18 +278,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setCurrentProjectId(project.id);
           setProjectName(project.project_name);
 
-          // Fetch campaigns to get initial year
-          const campaignsData = await getCampaignsByProject(project.id);
-          if (campaignsData && campaignsData.length > 0) {
-            const years = campaignsData.map(c => c.year);
-            const minYear = Math.min(...years);
-            setInitialYear(minYear);
+          // Removed unused isTrial flag
+
+          // 2) Set active project (from localStorage or first available)
+          const storedProjectId = localStorage.getItem("currentProjectId");
+          if (storedProjectId && fetchedProjects.find(p => p.id.toString() === storedProjectId)) {
+            console.log(`Setting current project from storage: ${storedProjectId}`);
+            changeProject(parseInt(storedProjectId), fetchedProjects);
+          } else if (fetchedProjects.length > 0) {
+            const firstProjectId = fetchedProjects[0].id;
+            console.log(`Setting first project as active: ${firstProjectId}`);
+            changeProject(firstProjectId, fetchedProjects);
           }
 
+          // Fetch campaigns to get initial year
           // Load montes
           setMontesLoading(true);
+
           try {
-            const montesData = await getMontesByProject(project.id);
+            const [campaignsData, montesData] = await Promise.all([
+              getCampaignsByProject(project.id),
+              getMontesByProject(project.id)
+            ]);
+            
+            if (campaignsData && campaignsData.length > 0) {
+              const years = campaignsData.map(c => c.year);
+              const minYear = Math.min(...years);
+              setInitialYear(minYear);
+            }
+
             if (montesData && Array.isArray(montesData)) {
               // Transform DB data to frontend format
               const transformedMontes = montesData.map(monte => ({
@@ -305,7 +323,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               setMontes([]);
             }
           } catch (error) {
-            console.error('Error loading montes:', error);
+            console.error('Error loading initial data:', error);
           } finally {
             setMontesLoading(false);
             setIsChangingProject(false);
@@ -356,6 +374,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const createdCampaigns: Campaign[] = [];
 
     // Create campaigns for each year from initial year to current year
+    const campaignPromises = [];
     for (let y = year; y <= currentYear; y++) {
       const campaignData = {
         project_id: projectId,
@@ -367,28 +386,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
         is_current: y === currentYear ? 1 : 0,
       };
 
-      try {
-        const createdCampaign = await createCampaign(campaignData);
-        createdCampaigns.push(createdCampaign);
-      } catch (error) {
-        console.error(`Error creating campaign for year ${y}:`, error);
-        // Try to get existing campaign
-        try {
-          const existingCampaigns = await getCampaignsByProject(projectId);
-          const existing = existingCampaigns.find(c => c.year === y);
-          if (existing) {
-            createdCampaigns.push(existing);
-          } else {
-            console.error(`No existing campaign found for year ${y}`);
+      campaignPromises.push(
+        createCampaign(campaignData).catch(async (error) => {
+          console.error(`Error creating campaign for year ${y}:`, error);
+          // Try to get existing campaign
+          try {
+            const existingCampaigns = await getCampaignsByProject(projectId);
+            const existing = existingCampaigns.find(c => c.year === y);
+            if (existing) {
+              return existing;
+            } else {
+              console.error(`No existing campaign found for year ${y}`);
+              return null;
+            }
+          } catch (fetchError) {
+            console.error(`Error fetching existing campaign for year ${y}:`, fetchError);
+            return null;
           }
-        } catch (fetchError) {
-          console.error(`Error fetching existing campaign for year ${y}:`, fetchError);
-        }
-      }
+        })
+      );
     }
+    
+    const results = await Promise.all(campaignPromises);
+    results.filter(Boolean).forEach(c => createdCampaigns.push(c as Campaign));
 
     // Set campaigns directly from created ones to avoid timing issues
-    const sortedCampaigns = createdCampaigns.sort((a, b) => a.year - b.year);
+    const sortedCampaigns = [...createdCampaigns].sort((a, b) => a.year - b.year);
     setCampaigns(sortedCampaigns);
     setCurrentCampaign(currentYear);
 
@@ -518,8 +541,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const changeProject = async (projectId: number) => {
-    const project = projects.find(p => p.id === projectId);
+  const changeProject = async (projectId: number, customProjectsList?: Project[]) => {
+    const listToUse = customProjectsList || projects;
+    const project = listToUse.find(p => p.id === projectId);
     if (!project) return;
 
     setIsChangingProject(true);

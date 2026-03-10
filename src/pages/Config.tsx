@@ -11,7 +11,7 @@ import { apiRequest } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useApp } from "@/contexts/AppContext";
 import { updateProject, exportProject, importProject } from "@/services/projectService";
-import { createCampaign } from "@/services/campaignService";
+import { isTrialMode } from '@/lib/trialMode';
 import { useNavigate } from "react-router-dom";
 import { 
   AlertDialog, 
@@ -32,7 +32,6 @@ const Config = () => {
   const [isMigrating, setIsMigrating] = useState(false);
   const { toast } = useToast();
   const { initialYear, setInitialYear, currentProjectId, projects, deleteProject, loadCampaigns, loadProjects } = useApp();
-  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
 
   const [pais, setPais] = useState("Argentina");
   const [provincia, setProvincia] = useState("");

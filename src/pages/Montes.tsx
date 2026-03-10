@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isTrialMode } from '@/lib/trialMode';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Calendar, Info, Pencil, MoreVertical, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +29,6 @@ import { toast } from "sonner";
 const Montes = () => {
   const { montes, currentCampaign, deleteMonte } = useApp();
 
-  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
   const maxMontes = 3;
   const currentMontes = montes.length;
   const isDisabled = isTrialMode() && currentMontes >= maxMontes;

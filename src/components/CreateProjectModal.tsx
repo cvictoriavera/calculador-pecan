@@ -5,10 +5,11 @@ import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import { createProject } from "@/services/projectService";
 import { ProjectCreationForm } from "./ProjectCreationForm";
-import { useProjectForm } from "@/hooks/useProjectForm";
+import { isTrialMode } from '@/lib/trialMode';
 import type { ProjectFormData } from "@/types/project";
 import { ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useProjectForm } from "@/hooks/useProjectForm";
 
 interface CreateProjectModalProps {
   open: boolean;
@@ -35,7 +36,7 @@ export const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalPro
 
   const { geoData, loadGeoDataForCountry } = useProjectForm();
 
-  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
+
 
   // Reset form when modal opens
   useEffect(() => {

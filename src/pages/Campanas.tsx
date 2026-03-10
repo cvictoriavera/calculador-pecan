@@ -9,6 +9,7 @@ import { useApp } from "@/contexts/AppContext";
 import { formatCurrency } from "@/lib/calculations";
 import { useCalculationsStore } from "@/stores/calculationsStore";
 import { createCampaign, closeActiveCampaign } from "@/services/campaignService";
+import { isTrialMode } from '@/lib/trialMode';
 import { useToast } from "@/components/ui/use-toast";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
 import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
@@ -53,7 +54,6 @@ const Campanas = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
   const maxCampaigns = 5;
   const currentYear = new Date().getFullYear();
   const manualCampaigns = campaigns.filter(c => c.year > currentYear).length;

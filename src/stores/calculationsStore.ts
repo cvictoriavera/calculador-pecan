@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useDataStore } from './dataStore';
 
 export const useCalculationsStore = () => {
@@ -7,7 +8,7 @@ export const useCalculationsStore = () => {
   const campaigns = useDataStore(state => state.campaigns);
   const productionCampaigns = useDataStore(state => state.productionCampaigns);
 
-  return {
+  return useMemo(() => ({
     getTotalProductionByCampaign: (campaignId: number | string): number => {
       const targetId = Number(campaignId);
       if (!targetId) return 0;
@@ -115,5 +116,5 @@ export const useCalculationsStore = () => {
     hasProductionForYear: (year: number): boolean => {
       return productions.some(p => p.campaign_id === year);
     }
-  };
+  }), [costs, investments, productions, campaigns, productionCampaigns]);
 };

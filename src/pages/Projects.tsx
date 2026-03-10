@@ -96,7 +96,7 @@ const Projects = () => {
       await changeProject(projectId);
       // Store as last project
       localStorage.setItem('lastProjectId', projectId.toString());
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error changing project:', error);
     } finally {

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useApp } from "@/contexts/AppContext";
 import { createProject } from "@/services/projectService";
+import { isTrialMode } from '@/lib/trialMode';
 import { ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react";
 import { ProjectCreationForm } from "@/components/ProjectCreationForm";
 import { useProjectForm } from "@/hooks/useProjectForm";
@@ -26,8 +27,6 @@ const Onboarding = () => {
   const [allowBenchmarking, setAllowBenchmarking] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const isTrialMode = () => localStorage.getItem('isTrialMode') === 'true';
 
   // Use the new hook for geo data management
   const { geoData, loadGeoDataForCountry } = useProjectForm();
