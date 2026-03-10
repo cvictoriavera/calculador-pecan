@@ -575,6 +575,7 @@ const Config = () => {
       </Card>
 
       {/* CARD 4: IMPORT/EXPORT DE PROYECTO (DISEÑO MEJORADO) */}
+      {userRoles.includes('administrator') && (
       <Card className="border-border/50 shadow-md">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -688,6 +689,7 @@ const Config = () => {
 
         </CardContent>
       </Card>
+      )}
 
       {/* CARD 5: ELIMINAR PROYECTO */}
       <Card className="border-destructive/50 shadow-md">
