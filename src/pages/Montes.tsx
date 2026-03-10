@@ -27,13 +27,25 @@ import { EditMonteDialog } from "@/components/EditMonteDialog";
 import { toast } from "sonner";
 
 const Montes = () => {
-  const { montes, currentCampaign, deleteMonte } = useApp();
+  const { montes, currentCampaign, deleteMonte, montesLoading, isChangingProject } = useApp();
 
   const maxMontes = 3;
   const currentMontes = montes.length;
   const isDisabled = isTrialMode() && currentMontes >= maxMontes;
   const [editingMonte, setEditingMonte] = useState<Monte | null>(null);
   const [deletingMonte, setDeletingMonte] = useState<Monte | null>(null);
+
+  // Show loading spinner while data is being fetched
+  if (montesLoading || isChangingProject) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando datos del proyecto...</p>
+        </div>
+      </div>
+    );
+  }
   
   // Filter montes based on selected campaign and sort by planting year (oldest first)
   const filteredMontes = montes

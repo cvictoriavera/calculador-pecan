@@ -83,6 +83,7 @@ interface AppContextType {
   loadCampaigns: () => Promise<void>;
   isOnboardingComplete: boolean;
   isLoading: boolean;
+  isChangingProject: boolean;
   completeOnboarding: (name: string, year: number, projectId: number) => Promise<void>;
 }
 
@@ -224,10 +225,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Load campaigns when project changes
+  // Load campaigns when project changes (but NOT during completeOnboarding/changeProject)
   useEffect(() => {
-    loadCampaigns();
-  }, [currentProjectId]);
+    if (!isChangingProject) {
+      loadCampaigns();
+    }
+  }, [currentProjectId, isChangingProject]);
 
   // Update current campaign ID when currentCampaign changes
   const updateCurrentCampaignId = (campaignsData: Campaign[]) => {
@@ -350,6 +353,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const completeOnboarding = async (name: string, year: number, projectId: number) => {
+    // Mark as changing to prevent loadCampaigns effect from overwriting our data
+    setIsChangingProject(true);
     // Clear existing data before setting new project
     setMontes([]);
     setMontesLoading(true);
@@ -701,11 +706,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadCampaigns,
     isOnboardingComplete,
     isLoading,
+    isChangingProject,
     completeOnboarding,
   }), [
     user, isTrialMode, projectName, currentProjectId, initialYear, projects,
     projectsLoading, campaigns, campaignsLoading, currentCampaign,
-    currentCampaignId, montes, montesLoading, costsLoading, isOnboardingComplete, isLoading
+    currentCampaignId, montes, montesLoading, costsLoading, isOnboardingComplete, isLoading, isChangingProject
   ]);
 
   return (

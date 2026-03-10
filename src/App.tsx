@@ -28,9 +28,9 @@ const FallbackLoader = () => (
 );
 
 function AppRouter() {
-  const { isOnboardingComplete, isLoading } = useApp();
+  const { isOnboardingComplete, isLoading, isChangingProject } = useApp();
 
-  if (isLoading) return <FallbackLoader />;
+  if (isLoading || isChangingProject) return <FallbackLoader />;
 
   if (!isOnboardingComplete) {
     return (
