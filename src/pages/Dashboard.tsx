@@ -66,9 +66,17 @@ const Dashboard = () => {
   const kpis = useMemo(() => {
     if (dashboardData.length === 0) return null;
 
-    // Último año registrado (normalmente el actual o proyección futura)
-    const currentYearData = dashboardData[dashboardData.length - 1];
-    const previousYearData = dashboardData.length > 1 ? dashboardData[dashboardData.length - 2] : null;
+    const currentCalendarYear = new Date().getFullYear().toString();
+    let displayIndex = dashboardData.findIndex(d => d.year === currentCalendarYear);
+    
+    // Si no hay campaña para el año actual, mostramos la última
+    if (displayIndex === -1) {
+      displayIndex = dashboardData.length - 1;
+    }
+
+    // Datos del año actual o el último registrado
+    const currentYearData = dashboardData[displayIndex];
+    const previousYearData = displayIndex > 0 ? dashboardData[displayIndex - 1] : null;
 
     // Cálculo simple de variaciones (evitando división por cero)
     const getVariation = (current: number, previous: number) => {
@@ -81,6 +89,7 @@ const Dashboard = () => {
     const paybackYear = paybackYearObj ? paybackYearObj.year : "N/A";
 
     return {
+      displayYear: currentYearData.year,
       produccionTotal: currentYearData.produccion,
       produccionVar: previousYearData ? getVariation(currentYearData.produccion, previousYearData.produccion) : 0,
       ingresosTotal: currentYearData.ingresos,
@@ -121,7 +130,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Producción {dashboardData[dashboardData.length - 1].year}</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Producción {kpis.displayYear}</CardTitle>
               <Sprout className="h-5 w-5 text-accent" />
             </CardHeader>
             <CardContent>
@@ -134,7 +143,7 @@ const Dashboard = () => {
 
           <Card className="border-border/50 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos {dashboardData[dashboardData.length - 1].year}</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos {kpis.displayYear}</CardTitle>
               <DollarSign className="h-5 w-5 text-accent" />
             </CardHeader>
             <CardContent>
