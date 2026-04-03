@@ -68,7 +68,7 @@ const Dashboard = () => {
 
     const currentCalendarYear = new Date().getFullYear().toString();
     let displayIndex = dashboardData.findIndex(d => d.year === currentCalendarYear);
-    
+
     // Si no hay campaña para el año actual, mostramos la última
     if (displayIndex === -1) {
       displayIndex = dashboardData.length - 1;
@@ -254,8 +254,8 @@ const Dashboard = () => {
                   <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Ingresos</th>
                   <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Costos Op.</th>
                   <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Inversiones</th>
-                  <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Flujo Caja</th>
-                  <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Flujo Acumulado</th>
+                  <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Margen de Caja</th>
+                  <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Margen Acumulado</th>
                 </tr>
               </thead>
               <tbody>
