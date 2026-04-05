@@ -215,6 +215,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const campaignsData = Array.isArray(data) ? data : [];
       setCampaigns(campaignsData);
 
+      if (campaignsData.length > 0) {
+        const years = campaignsData.map(c => c.year);
+        const minYear = Math.min(...years);
+        if (Number.isFinite(minYear)) {
+          setInitialYear(minYear);
+        }
+      }
+
       // Set current campaign ID
       updateCurrentCampaignId(campaignsData);
     } catch (error) {

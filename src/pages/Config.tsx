@@ -11,6 +11,7 @@ import { apiRequest } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useApp } from "@/contexts/AppContext";
 import { updateProject, exportProject, importProject } from "@/services/projectService";
+import { createCampaign } from "@/services/campaignService";
 import { isTrialMode } from '@/lib/trialMode';
 import { useNavigate } from "react-router-dom";
 import { 
@@ -159,7 +160,23 @@ const Config = () => {
     setIsUpdatingHistory(true);
 
     try {
-        const promises = [];
+        if (typeof createCampaign !== 'function') {
+            console.error('extend-history diagnostic: createCampaign is not a function', {
+                type: typeof createCampaign,
+                projectId: currentProjectId,
+                fromYear: añoInicio,
+                toYearExclusive: currentStartYear,
+            });
+            toast({
+                title: "Error",
+                description: "No se pudo inicializar el servicio de campañas. Recarga la página e intenta nuevamente.",
+                variant: "destructive"
+            });
+            setAñoInicio(currentStartYear);
+            return;
+        }
+
+        const promises: Promise<unknown>[] = [];
         for (let year = añoInicio; year < currentStartYear; year++) {
             const campaignData = {
                 project_id: currentProjectId,
@@ -170,20 +187,10 @@ const Config = () => {
                 status: 'closed',
                 is_current: 0,
             };
-            // @ts-ignore 
             promises.push(createCampaign(campaignData));
         }
 
         await Promise.all(promises);
-
-        try {
-            await updateProject(currentProjectId, { 
-                // @ts-ignore 
-                initial_year: añoInicio 
-            });
-        } catch (e) {
-            console.warn("Backend update skipped for initial_year");
-        }
 
         setInitialYear(añoInicio);
         await loadCampaigns();

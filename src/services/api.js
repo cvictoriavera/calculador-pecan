@@ -19,6 +19,15 @@ const apiRoot = settings?.root ?? '/wp-json';
  */
 const apiNonce = settings?.nonce ?? '';
 
+/**
+ * @typedef {Error & {
+ *   status?: number,
+ *   code?: string,
+ *   data?: any,
+ *   endpoint?: string,
+ * }} ApiRequestError
+ */
+
 export const apiRequest = async (endpoint, options = {}) => {
     const url = `${apiRoot}${endpoint}`;
 
@@ -45,18 +54,35 @@ export const apiRequest = async (endpoint, options = {}) => {
         
 
         if (!response.ok) {
-            let errorText;
+            let errorText = '';
+            let errorData = null;
+
             try {
                 errorText = await response.text();
                 console.error('❌ API Error Response Text:', errorText);
-                const errorData = JSON.parse(errorText);
-                console.error('❌ API Error Parsed:', errorData);
+
+                if (errorText) {
+                    errorData = JSON.parse(errorText);
+                    console.error('❌ API Error Parsed:', errorData);
+                }
             } catch (parseError) {
-                console.error('❌ API Error: Response is not JSON, raw text:', errorText);
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - Response is HTML instead of JSON`);
+                console.error('❌ API Error: Could not parse JSON response', {
+                    endpoint,
+                    status: response.status,
+                    statusText: response.statusText,
+                    raw: errorText,
+                });
             }
 
-            throw new Error(errorData.message || 'Network response was not ok');
+            const fallbackMessage = `HTTP ${response.status}: ${response.statusText}`;
+            const message = errorData?.message || fallbackMessage;
+            /** @type {ApiRequestError} */
+            const error = new Error(message);
+            error.status = response.status;
+            error.code = errorData?.code;
+            error.data = errorData?.data;
+            error.endpoint = endpoint;
+            throw error;
         }
 
         const contentType = response.headers.get('content-type');
