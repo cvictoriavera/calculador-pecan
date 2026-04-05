@@ -6,7 +6,12 @@
 
 // Verificar si el usuario está logueado
 if (!is_user_logged_in()) {
-    wp_redirect(wp_login_url(get_permalink()));
+    $redirect_url = get_permalink();
+    $login_url = function_exists('calculador_pecan_get_login_url')
+        ? calculador_pecan_get_login_url($redirect_url)
+        : wp_login_url($redirect_url);
+
+    wp_redirect($login_url);
     exit;
 }
 

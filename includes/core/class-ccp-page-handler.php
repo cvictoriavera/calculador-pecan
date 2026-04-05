@@ -62,7 +62,10 @@ class CCP_Page_Handler {
             if (is_user_logged_in()) {
                 return '<div id="calculadora-pecan-root"></div>';
             } else {
-                $login_url = wp_login_url(get_permalink());
+                $redirect_url = get_permalink();
+                $login_url = function_exists('calculador_pecan_get_login_url')
+                    ? calculador_pecan_get_login_url($redirect_url)
+                    : wp_login_url($redirect_url);
                 return '<div class="calculadora-pecan-login-message">Por favor, <a href="' . esc_url($login_url) . '">inicia sesión</a> para acceder a la calculadora de costos.</div>';
             }
         }

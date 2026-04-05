@@ -17,6 +17,23 @@ if (!defined('ABSPATH')) {
 define('CALCULADOR_PECAN_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CALCULADOR_PECAN_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+/**
+ * Obtener la URL del login personalizado.
+ *
+ * @param string $redirect_to URL a la que volver despues del login.
+ * @return string
+ */
+function calculador_pecan_get_login_url($redirect_to = '')
+{
+    $login_url = home_url('/acceder/');
+
+    if (!empty($redirect_to)) {
+        $login_url = add_query_arg('redirect_to', $redirect_to, $login_url);
+    }
+
+    return $login_url;
+}
+
 // Registrar la plantilla de página personalizada
 function calculador_pecan_register_page_template($templates)
 {
