@@ -84,7 +84,6 @@ class CCP_Proyectos_DB {
 	 * @return int|false The ID of the newly created project or false on failure.
 	 */
 	public function create( $data ) {
-		error_log('CCP DB: Create project called with data: ' . print_r($data, true));
 		$user_id = isset( $data['user_id'] ) ? absint( $data['user_id'] ) : get_current_user_id();
 		if ( ! $user_id ) {
 			return false;
@@ -98,8 +97,6 @@ class CCP_Proyectos_DB {
 		$municipio    = isset( $data['municipio'] ) ? sanitize_text_field( $data['municipio'] ) : '';
 		$zona         = isset( $data['zona'] ) ? sanitize_text_field( $data['zona'] ) : '';
 		$allow_benchmarking = isset( $data['allow_benchmarking'] ) ? intval( $data['allow_benchmarking'] ) : 0;
-		error_log('CCP DB: allow_benchmarking value: ' . $allow_benchmarking);
-
 		$insert_data = array(
 			'user_id'      => $user_id,
 			'project_name' => $project_name,
@@ -114,8 +111,6 @@ class CCP_Proyectos_DB {
 			'created_at'   => current_time( 'mysql', 1 ),
 			'updated_at'   => current_time( 'mysql', 1 ),
 		);
-		error_log('CCP DB: Inserting data: ' . print_r($insert_data, true));
-
 		$result = $this->wpdb->insert(
 			$this->table_name,
 			$insert_data,
@@ -134,9 +129,6 @@ class CCP_Proyectos_DB {
 				'%s', // updated_at
 			)
 		);
-
-		error_log('CCP DB: Insert result: ' . ($result === false ? 'FAILED' : 'SUCCESS, ID: ' . $this->wpdb->insert_id));
-
 		if ( false === $result ) {
 			return false;
 		}

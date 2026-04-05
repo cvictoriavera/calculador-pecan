@@ -300,6 +300,64 @@ class CCP_Productions_DB {
 	}
 
 	/**
+	 * Get production summary for multiple campaigns in a single query.
+	 * Verifies user ownership through project relationship.
+	 *
+	 * @param array $campaign_ids Array of campaign IDs.
+	 * @param int   $user_id     The ID of the user.
+	 * @return array Associative array keyed by campaign_id, each containing an array of production rows.
+	 */
+	public function get_summary_by_campaigns( $campaign_ids, $user_id ) {
+		if ( ! is_array( $campaign_ids ) || empty( $campaign_ids ) || ! is_numeric( $user_id ) ) {
+			return array();
+		}
+
+		// Sanitize all IDs to integers.
+		$campaign_ids = array_map( 'absint', $campaign_ids );
+		$campaign_ids = array_filter( $campaign_ids ); // Remove zeros.
+
+		if ( empty( $campaign_ids ) ) {
+			return array();
+		}
+
+		// Build placeholders for IN clause.
+		$placeholders = implode( ', ', array_fill( 0, count( $campaign_ids ), '%d' ) );
+
+		// Single query: fetch all productions for all requested campaigns,
+		// filtered by user ownership via JOIN chain.
+		$query = $this->wpdb->prepare(
+			"SELECT p.campaign_id, p.monte_id, p.quantity_kg, p.input_type, p.entry_group_id, p.is_estimated,
+			        m.monte_name, m.area_hectareas
+			 FROM {$this->table_productions} p
+			 INNER JOIN {$this->table_campaigns} c ON p.campaign_id = c.id
+			 INNER JOIN {$this->table_projects} pr ON c.project_id = pr.id
+			 LEFT JOIN {$this->wpdb->prefix}pecan_montes m ON p.monte_id = m.id
+			 WHERE p.campaign_id IN ($placeholders) AND pr.user_id = %d
+			 ORDER BY p.campaign_id, p.entry_group_id, p.monte_id",
+			array_merge( $campaign_ids, array( absint( $user_id ) ) )
+		);
+
+		$results = $this->wpdb->get_results( $query );
+
+		// Initialize all requested campaign IDs with empty arrays.
+		// This ensures campaigns with no productions still appear in the result.
+		$grouped = array();
+		foreach ( $campaign_ids as $id ) {
+			$grouped[ $id ] = array();
+		}
+
+		// Group results by campaign_id.
+		if ( ! empty( $results ) ) {
+			foreach ( $results as $row ) {
+				$cid = (int) $row->campaign_id;
+				$grouped[ $cid ][] = $row;
+			}
+		}
+
+		return $grouped;
+	}
+
+	/**
 		* Delete all productions for a specific project.
 		* Used during project import to clear existing data.
 		*

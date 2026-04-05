@@ -259,25 +259,14 @@ class CCP_Productions_Controller extends WP_REST_Controller {
 		* @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 		*/
 	public function get_items_by_campaigns_batch( $request ) {
-		$user_id      = get_current_user_id();
+		$user_id = get_current_user_id();
 
 		// Get JSON data
-		$json_data = $request->get_json_params();
+		$json_data    = $request->get_json_params();
 		$campaign_ids = isset( $json_data['campaign_ids'] ) ? $json_data['campaign_ids'] : $request['campaign_ids'];
 
-		// campaign_ids is already sanitized by the args validation
-		$sanitized_campaign_ids = $campaign_ids;
-
-		$batch_productions = array();
-
-		foreach ( $sanitized_campaign_ids as $campaign_id ) {
-			$productions = $this->productions_db->get_summary_by_campaign( $campaign_id, $user_id );
-			if ( ! is_null( $productions ) ) {
-				$batch_productions[ $campaign_id ] = $productions;
-			} else {
-				$batch_productions[ $campaign_id ] = array();
-			}
-		}
+		// Use single-query batch method instead of N+1 loop
+		$batch_productions = $this->productions_db->get_summary_by_campaigns( $campaign_ids, $user_id );
 
 		$response = rest_ensure_response( $batch_productions );
 		return $response;

@@ -182,8 +182,6 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 		$project_id = (int) $request->get_param( 'project_id' );
 		$year       = (int) $request->get_param( 'year' );
 
-		error_log( 'CCP Campaigns: Starting create_item for user ' . $user_id . ' Year: ' . $year );
-
 		// --- CORRECCIÓN: BLINDAJE CONTRA DUPLICADOS ---
 		// 1. Obtenemos las campañas existentes de este proyecto
 		$existing_campaigns = $this->campaigns_db->get_all_by_project( $project_id, $user_id );
@@ -193,8 +191,6 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 			foreach ( $existing_campaigns as $campaign ) {
 				// Comparamos asegurando tipos numéricos
 				if ( (int) $campaign->year === $year ) {
-					error_log( 'CCP Campaigns: Campaign for year ' . $year . ' already exists. Returning existing ID: ' . $campaign->id );
-					
 					// Devolvemos la existente con código 200 (OK) en lugar de crear y fallar
 					return rest_ensure_response( $campaign );
 				}
@@ -216,13 +212,7 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 			'montes_contribuyentes'  => $request->get_param( 'montes_contribuyentes' ) ? sanitize_text_field( $request->get_param( 'montes_contribuyentes' ) ) : null,
 			'montes_production'      => $request->get_param( 'montes_production' ) ? sanitize_text_field( $request->get_param( 'montes_production' ) ) : null,
 		);
-
-		error_log( 'CCP Campaigns: Prepared data: ' . print_r( $data, true ) );
-		
 		$campaign_id = $this->campaigns_db->create( $data, $user_id );
-
-		error_log( 'CCP Campaigns: DB create result: ' . print_r( $campaign_id, true ) );
-
 		if ( is_wp_error( $campaign_id ) ) {
 			error_log( 'CCP Campaigns: WP_Error from DB create: ' . $campaign_id->get_error_message() );
 			// Return the WP_Error directly to provide proper error response
@@ -233,14 +223,8 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 			error_log( 'CCP Campaigns: DB create returned false' );
 			return new WP_Error( 'campaign_creation_failed', 'Failed to create campaign.', array( 'status' => 500 ) );
 		}
-
-		error_log( 'CCP Campaigns: Campaign created with ID: ' . $campaign_id );
-		
 		// Get the created campaign
 		$campaign = $this->campaigns_db->get_by_id( $campaign_id, $user_id );
-		
-		error_log( 'CCP Campaigns: Retrieved campaign: ' . print_r( $campaign, true ) );
-
 		$response = rest_ensure_response( $campaign );
 		$response->set_status( 201 );
 		return $response;

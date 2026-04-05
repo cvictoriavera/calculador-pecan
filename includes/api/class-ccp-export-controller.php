@@ -157,20 +157,14 @@ class CCP_Export_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
 	public function export_project( $request ) {
-		error_log( 'Export: Starting export for project ID: ' . $request->get_param( 'id' ) );
 		$project_id = $request->get_param( 'id' );
 		$user_id = get_current_user_id();
-		error_log( 'Export: User ID: ' . $user_id );
 
 		try {
-			// Get project data
-			error_log( 'Export: Getting project data' );
 			$project = $this->proyectos_db->get_by_id( $project_id, $user_id );
 			if ( ! $project ) {
-				error_log( 'Export: Project not found' );
 				return new WP_Error( 'project_not_found', __( 'Project not found.', 'calculador-pecan' ), array( 'status' => 404 ) );
 			}
-			error_log( 'Export: Project found: ' . print_r( $project, true ) );
 
 			// Build export data structure
 			$export_data = array(
@@ -188,53 +182,22 @@ class CCP_Export_Controller extends WP_REST_Controller {
 				),
 			);
 
-			// Get montes
-			error_log( 'Export: Getting montes' );
-			$export_data['montes'] = $this->montes_db->get_all_by_project( $project_id, $user_id );
-			error_log( 'Export: Montes: ' . print_r( $export_data['montes'], true ) );
-
-			// Get campaigns
-			error_log( 'Export: Getting campaigns' );
-			$export_data['campaigns'] = $this->campaigns_db->get_all_by_project( $project_id, $user_id );
-			error_log( 'Export: Campaigns count: ' . count( $export_data['campaigns'] ) );
-
-			// Get costs
-			error_log( 'Export: Getting costs' );
-			$export_data['costs'] = $this->costs_db->get_all_by_project( $project_id, $user_id );
-			error_log( 'Export: Costs count: ' . count( $export_data['costs'] ) );
-
-			// Get investments
-			error_log( 'Export: Getting investments' );
-			$export_data['investments'] = $this->investments_db->get_all_by_project( $project_id, $user_id );
-			error_log( 'Export: Investments count: ' . count( $export_data['investments'] ) );
-
-			// Get productions
-			error_log( 'Export: Getting productions' );
-			$export_data['productions'] = $this->productions_db->get_all_by_project( $project_id, $user_id );
-			error_log( 'Export: Productions count: ' . count( $export_data['productions'] ) );
-
-			// Get yield models
-			error_log( 'Export: Getting yield models' );
-			$export_data['yield_models'] = $this->yield_models_db->get_all_by_project( $project_id, $user_id );
-			error_log( 'Export: Yield models count: ' . count( $export_data['yield_models'] ) );
-
-			// Get annual records
-			error_log( 'Export: Getting annual records' );
+			$export_data['montes']         = $this->montes_db->get_all_by_project( $project_id, $user_id );
+			$export_data['campaigns']      = $this->campaigns_db->get_all_by_project( $project_id, $user_id );
+			$export_data['costs']          = $this->costs_db->get_all_by_project( $project_id, $user_id );
+			$export_data['investments']    = $this->investments_db->get_all_by_project( $project_id, $user_id );
+			$export_data['productions']    = $this->productions_db->get_all_by_project( $project_id, $user_id );
+			$export_data['yield_models']   = $this->yield_models_db->get_all_by_project( $project_id, $user_id );
 			$export_data['annual_records'] = $this->annual_records_db->get_all_by_project( $project_id, $user_id );
-			error_log( 'Export: Annual records count: ' . count( $export_data['annual_records'] ) );
 
-			// Return JSON response
-			error_log( 'Export: Preparing response' );
 			$response = new WP_REST_Response( $export_data );
 			$response->set_status( 200 );
 			$response->header( 'Content-Type', 'application/json' );
-			error_log( 'Export: Response prepared, returning' );
 
 			return $response;
 
 		} catch ( Exception $e ) {
-			error_log( 'Export error: ' . $e->getMessage() );
-			error_log( 'Export error trace: ' . $e->getTraceAsString() );
+			error_log( 'CCP Export error: ' . $e->getMessage() );
 			return new WP_Error( 'export_error', __( 'Error exporting project data.', 'calculador-pecan' ), array( 'status' => 500 ) );
 		}
 	}

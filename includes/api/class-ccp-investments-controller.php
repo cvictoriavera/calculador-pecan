@@ -408,6 +408,16 @@ class CCP_Investments_Controller extends WP_REST_Controller {
 
 		global $wpdb;
 
+		// Verify project ownership before querying investments
+		$project_owner = $wpdb->get_var( $wpdb->prepare(
+			"SELECT user_id FROM {$wpdb->prefix}pecan_projects WHERE id = %d",
+			$project_id
+		) );
+
+		if ( ! $project_owner || absint( $project_owner ) !== absint( $user_id ) ) {
+			return new WP_Error( 'rest_forbidden', 'You do not have access to this project.', array( 'status' => 403 ) );
+		}
+
 		// Create dynamic placeholders for the IN clause
 		$placeholders = str_repeat( '%d,', count( $campaign_ids ) - 1 ) . '%d';
 		$query        = $wpdb->prepare(

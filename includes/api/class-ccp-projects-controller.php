@@ -146,9 +146,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$user_id  = get_current_user_id();
-		error_log('CCP: get_items called for user_id: ' . $user_id);
 		$projects = $this->proyectos_db->get_all_by_user( $user_id );
-		error_log('CCP: projects found: ' . print_r($projects, true));
 
 		if ( is_null( $projects ) ) {
 			$projects = array();
@@ -327,13 +325,10 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		$params = $request->get_json_params();
 		$user_id = get_current_user_id();
 
-		error_log('CCP: Create project request received. Params: ' . print_r($params, true));
-
 		// Start transaction
 		$wpdb->query('START TRANSACTION');
 
 		try {
-			error_log('CCP: Starting project creation transaction');
 
 			// 1. Create Project
 			$project_data = array(
@@ -348,9 +343,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 				'allow_benchmarking' => intval($params['allow_benchmarking'] ?? 0),
 			);
 
-			error_log('CCP: Creating project with data: ' . print_r($project_data, true));
 			$project_id = $this->proyectos_db->create($project_data);
-			error_log('CCP: Project created with ID: ' . $project_id);
 
 			if (!$project_id) {
 				throw new Exception('Could not create project');
@@ -456,7 +449,6 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 			// Rollback on error
 			$wpdb->query('ROLLBACK');
 			error_log('CCP: Project creation failed: ' . $e->getMessage());
-			error_log('CCP: Stack trace: ' . $e->getTraceAsString());
 			return new WP_Error('create-failed', esc_html__('Could not create project: ' . $e->getMessage(), 'calculador-pecan'), array('status' => 500));
 		}
 	}

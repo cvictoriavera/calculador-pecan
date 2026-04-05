@@ -1,23 +1,20 @@
-1. ¿Por qué necesitas una "Página de Selección de Proyectos" (Project Hub)?
-Aunque el menú desplegable está genial para cambiar rápido mientras trabajas, la página inicial resuelve tres problemas críticos de UX:
+Los pilares del proyecto:
 
-Escalabilidad: Si un productor llega a tener 5 o 10 fincas, el menú desplegable se vuelve incómodo. Una página dedicada permite verlas todas con calma.
+1. La Escala de Tiempo es Estrictamente Anual
+El corazón financiero de la aplicación late una vez al año. Todos los montos económicos que el usuario ingresa en el sistema son valores anuales consolidados, no gastos del día a día ni promedios mensuales.
 
-Visión Global (The "Big Picture"): Esa página inicial no debe ser solo una lista de nombres. Es la oportunidad perfecta para mostrar una "Health Card" (Tarjeta de Salud) de cada finca sin tener que entrar.
+2. Estructura de Costos "Uno a Uno"
+El modelo operativo define un máximo de 8 categorías o rubros de costos por campaña (como insumos, combustible, mano de obra, cosecha, etc.). La regla inquebrantable es que el sistema solo permite un (1) registro por rubro en cada campaña. Costos tiene ademas un metodo de carga rapida para totales o de detalle para cada rubro.
 
-Ejemplo: En la tarjeta de "Finca Tútu", podrías mostrar un pequeño badge rojo si hay una alerta de riego o costos pendientes, antes de que el usuario entre.
+3. Dinámica de Producción: Realidad vs. Proyección
+El flujo de la cosecha tiene una dualidad brillante para adaptarse a la realidad del campo. Permite dos métodos de ingreso:
 
-El "Problema del Estado Cero": Cuando un usuario entra por primera vez, no tiene un proyecto "actual". Necesitas esa página para decirle: "Hola, bienvenido. Selecciona tu finca o crea la primera".
+Detallado: El productor hace el pesaje manual y exacto lote por lote (monte).
 
-2. La Estrategia de Navegación "Inteligente" (Smart Routing)
-Para que esta página no se sienta como un obstáculo innecesario cada vez que entran, te sugiero implementar esta lógica de redirección en tu App.jsx o componente de rutas principal:
+Balanza Total: Se ingresa un peso global de la cosecha y el sistema lo distribuye matemáticamente entre los montes basándose en el tamaño, la densidad y la edad de las plantas.
 
-Escenario A (1 solo proyecto): Si el usuario solo tiene una finca, omiite la página de lista y mándalo directo al Dashboard de esa finca. No le hagas dar un clic extra.
+Además, la rentabilidad final se calcula aplicando un "precio de venta" único y general a toda la campaña, cruzándolo con los kilos reales aportados por cada monte. Por ahora, la curva de rendimiento que nutre estas estimaciones es un modelo genérico por proyecto, pero la base de datos ya está preparada para soportar curvas específicas por variedad de árbol en el futuro.
 
-Escenario B (Varios proyectos + "Recordar último"): Si tiene varios, verifica si hay un lastProjectId guardado en el localStorage. Si existe, mándalo directo ahí.
+4. El Horizonte Estratégico: Inteligencia de Negocios
+La aplicación transaccional de hoy es solo la fase uno. El verdadero objetivo a largo plazo de la cámara es convertir este sistema en una herramienta de análisis macro y benchmarking. Buscan comparar los costos operativos regionales entre 3 países y ofrecerle al productor un "espejo" estadístico donde pueda evaluar cómo rinden sus plantaciones frente al promedio anónimo de otros productores de su misma zona.
 
-Escenario C (Navegación explícita): Solo muestra la página de lista si:
-
-El usuario hace clic explícitamente en "Ver todos los proyectos".
-
-Es su primera vez y tiene varios proyectos asignados pero ninguno "visitado".

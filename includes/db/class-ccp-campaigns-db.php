@@ -35,7 +35,6 @@ class CCP_Campaigns_DB {
 	 */
 	private $table_projects;
 
-
 	/**
 	 * CCP_Campaigns_DB constructor.
 	 */
@@ -135,8 +134,6 @@ class CCP_Campaigns_DB {
 	 * @return int|false The ID of the newly created campaign or false on failure.
 	 */
 	public function create( $data, $user_id ) {
-		error_log( 'CCP Campaigns DB: Starting create with data: ' . print_r( $data, true ) . ' user_id: ' . $user_id );
-
 		if ( empty( $data['project_id'] ) || empty( $data['campaign_name'] ) || empty( $data['year'] ) || empty( $data['start_date'] ) ) {
 			error_log( 'CCP Campaigns DB: Missing required data' );
 			return false;
@@ -146,9 +143,6 @@ class CCP_Campaigns_DB {
 		$project_owner = $this->wpdb->get_var(
 			$this->wpdb->prepare( "SELECT user_id FROM {$this->table_projects} WHERE id = %d", $data['project_id'] )
 		);
-
-		error_log( 'CCP Campaigns DB: Project owner check - project_id: ' . $data['project_id'] . ' owner: ' . $project_owner . ' user_id: ' . $user_id );
-
 		if ( absint( $project_owner ) !== absint( $user_id ) ) {
 			error_log( 'CCP Campaigns DB: User does not own project' );
 			return false; // User does not own the project.
@@ -170,9 +164,6 @@ class CCP_Campaigns_DB {
 			'created_at'            => current_time( 'mysql', 1 ),
 			'updated_at'            => current_time( 'mysql', 1 ),
 		);
-
-		error_log( 'CCP Campaigns DB: Insert data prepared: ' . print_r( $insert_data, true ) );
-
 		$result = $this->wpdb->insert(
 			$this->table_campaigns,
 			$insert_data,
@@ -193,9 +184,6 @@ class CCP_Campaigns_DB {
 				'%s', // updated_at
 			)
 		);
-
-		error_log( 'CCP Campaigns DB: Insert result: ' . $result . ' last_error: ' . $this->wpdb->last_error . ' insert_id: ' . $this->wpdb->insert_id );
-
 		if ( false === $result ) {
 			error_log( 'CCP Campaigns DB: Insert failed with error: ' . $this->wpdb->last_error );
 			return false;

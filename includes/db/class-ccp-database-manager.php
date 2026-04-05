@@ -243,7 +243,6 @@ class CCP_Database_Manager {
 
         // Log de creación
         if (!empty($tables_created)) {
-            error_log('CCP DB: Created/Updated tables: ' . implode(', ', $tables_created));
         }
 
         // --- IMPORTANTE: FORZAR CLAVES FORÁNEAS MANUALMENTE ---
@@ -294,6 +293,5 @@ class CCP_Database_Manager {
             $wpdb->query($query);
             $wpdb->suppress_errors(false);
         }
-        error_log('CCP DB: Foreign Keys enforced manually.');
     }
 }

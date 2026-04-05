@@ -38,24 +38,15 @@ add_filter('page_template', 'calculador_pecan_load_page_template');
 // Función de activación del plugin
 function calculador_pecan_activate()
 {
-    error_log('CCP: Starting plugin activation');
-
     // Crear las tablas de la base de datos
-    error_log('CCP: Requiring database manager');
     require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-database-manager.php';
-    error_log('CCP: Calling create_tables');
     CCP_Database_Manager::create_tables();
-    error_log('CCP: Tables created successfully');
-
     // Crear la página del dashboard si no existe
     $page_title = 'Calculador pecan';
     $page_content = ''; // Contenido vacío, la plantilla maneja todo
     $page_template = 'templates/dashboard.php';
-
-    error_log('CCP: Checking for existing dashboard page');
     $page_check = get_page_by_title($page_title);
     if (!$page_check) {
-        error_log('CCP: Creating new dashboard page');
         $page_id = wp_insert_post(array(
             'post_title' => $page_title,
             'post_content' => $page_content,
@@ -69,16 +60,13 @@ function calculador_pecan_activate()
             error_log('CCP: Error creating page: ' . $page_id->get_error_message());
         }
         else {
-            error_log('CCP: Page created with ID: ' . $page_id);
         }
     }
     else {
         $page_id = $page_check->ID;
-        error_log('CCP: Existing page found with ID: ' . $page_id);
     }
     // Guardar el ID de la página para referencia futura
     update_option('calculador_pecan_dashboard_page_id', $page_id);
-    error_log('CCP: Plugin activation completed');
 }
 register_activation_hook(__FILE__, 'calculador_pecan_activate');
 
@@ -90,7 +78,6 @@ function calculador_pecan_register_rest_routes()
     $api_manager->register_rest_routes();
 }
 add_action('rest_api_init', 'calculador_pecan_register_rest_routes');
-
 
 /**
  * Modificar la etiqueta <script> para agregar type="module"

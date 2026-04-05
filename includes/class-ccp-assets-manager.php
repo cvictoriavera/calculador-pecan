@@ -14,13 +14,8 @@ class CCP_Assets_Manager {
     }
 
     public function enqueue_assets() {
-        error_log('CCP: enqueue_assets called');
-        error_log('CCP: is_page_template: ' . (is_page_template('templates/dashboard.php') ? 'true' : 'false'));
-        error_log('CCP: current template: ' . get_page_template_slug());
-
         // Temporarily commenting condition to force loading
         // if (is_page_template('templates/dashboard.php')) {
-            error_log('CCP: Forcing asset loading');
             // CORRECCIÓN AQUÍ: CALCULADOR_... (sin la A)
             $asset_path = CALCULADOR_PECAN_PLUGIN_DIR . 'build/index.asset.php';
 
@@ -47,8 +42,6 @@ class CCP_Assets_Manager {
                     'nonce' => wp_create_nonce('wp_rest'),
                 )
             );
-            error_log('CCP: Script localized with wpApiSettings');
-
             wp_enqueue_style(
                 'calculadora-pecan-style',
                 CALCULADOR_PECAN_PLUGIN_URL . 'build/index.css',

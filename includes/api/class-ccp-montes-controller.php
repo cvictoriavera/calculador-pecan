@@ -229,9 +229,6 @@ class CCP_Montes_Controller extends WP_REST_Controller {
 		$user_id  = get_current_user_id();
 		$monte_id = (int) $request->get_param( 'id' );
 		$params   = $request->get_json_params();
-
-		error_log('CCP: update_item called for monte_id: ' . $monte_id . ', params: ' . print_r($params, true));
-
 		$update_data = array();
 
 		if ( isset( $params['monte_name'] ) ) {
@@ -253,17 +250,11 @@ class CCP_Montes_Controller extends WP_REST_Controller {
 		if ( isset( $params['variedad'] ) ) {
 			$update_data['variedad'] = sanitize_text_field( $params['variedad'] );
 		}
-
-		error_log('CCP: update_data: ' . print_r($update_data, true));
-
 		if ( empty( $update_data ) ) {
 			return new WP_Error( 'no_data', __( 'No data provided for update.', 'calculador-pecan' ), array( 'status' => 400 ) );
 		}
 
 		$updated = $this->montes_db->update( $monte_id, $update_data, $user_id );
-
-		error_log('CCP: update result: ' . ($updated ? 'success' : 'failed'));
-
 		if ( ! $updated ) {
 			return new WP_Error( 'update_failed', __( 'Could not update monte.', 'calculador-pecan' ), array( 'status' => 500 ) );
 		}
@@ -283,13 +274,7 @@ class CCP_Montes_Controller extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		$user_id  = get_current_user_id();
 		$monte_id = (int) $request->get_param( 'id' );
-
-		error_log('CCP: delete_item called for monte_id: ' . $monte_id);
-
 		$deleted = $this->montes_db->delete_permanent( $monte_id, $user_id );
-
-		error_log('CCP: delete result: ' . ($deleted ? 'success' : 'failed'));
-
 		if ( ! $deleted ) {
 			return new WP_Error( 'delete_failed', __( 'Could not delete monte.', 'calculador-pecan' ), array( 'status' => 500 ) );
 		}

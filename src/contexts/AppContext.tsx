@@ -226,9 +226,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   // Load campaigns when project changes (but NOT during completeOnboarding/changeProject)
+  // Also skip if campaigns are already loaded for this project (avoids duplicate fetch after changeProject)
   useEffect(() => {
-    if (!isChangingProject) {
-      loadCampaigns();
+    if (!isChangingProject && currentProjectId) {
+      const alreadyLoaded = campaigns.length > 0 && campaigns[0]?.project_id === currentProjectId;
+      if (!alreadyLoaded) {
+        loadCampaigns();
+      }
     }
   }, [currentProjectId, isChangingProject]);
 
