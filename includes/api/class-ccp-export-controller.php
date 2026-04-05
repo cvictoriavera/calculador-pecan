@@ -197,7 +197,6 @@ class CCP_Export_Controller extends WP_REST_Controller {
 			return $response;
 
 		} catch ( Exception $e ) {
-			error_log( 'CCP Export error: ' . $e->getMessage() );
 			return new WP_Error( 'export_error', __( 'Error exporting project data.', 'calculador-pecan' ), array( 'status' => 500 ) );
 		}
 	}

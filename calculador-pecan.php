@@ -57,7 +57,7 @@ function calculador_pecan_activate()
             ),
         ));
         if (is_wp_error($page_id)) {
-            error_log('CCP: Error creating page: ' . $page_id->get_error_message());
+            $page_id = 0;
         }
         else {
         }

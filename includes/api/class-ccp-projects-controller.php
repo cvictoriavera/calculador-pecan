@@ -448,8 +448,7 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		} catch (Exception $e) {
 			// Rollback on error
 			$wpdb->query('ROLLBACK');
-			error_log('CCP: Project creation failed: ' . $e->getMessage());
-			return new WP_Error('create-failed', esc_html__('Could not create project: ' . $e->getMessage(), 'calculador-pecan'), array('status' => 500));
+			return new WP_Error('create-failed', esc_html__('Could not create project.', 'calculador-pecan'), array('status' => 500));
 		}
 	}
 }

@@ -140,8 +140,7 @@ class CCP_Import_Controller extends WP_REST_Controller {
 		} catch ( Exception $e ) {
 			global $wpdb;
 			$wpdb->query( 'ROLLBACK' );
-			error_log( 'Import error: ' . $e->getMessage() );
-			return new WP_Error( 'import_error', $e->getMessage(), array( 'status' => 500 ) );
+			return new WP_Error( 'import_error', __( 'Error importing project data.', 'calculador-pecan' ), array( 'status' => 500 ) );
 		}
 	}
 

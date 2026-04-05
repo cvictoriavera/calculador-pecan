@@ -384,7 +384,7 @@ class CCP_Annual_Records_Controller extends WP_REST_Controller {
 		} catch ( Exception $e ) {
 			// Rollback on error
 			$wpdb->query( 'ROLLBACK' );
-			return new WP_Error( 'batch-save-failed', esc_html__( 'Could not save batch records: ' . $e->getMessage(), 'calculadora-costos-pecan' ), array( 'status' => 500 ) );
+			return new WP_Error( 'batch-save-failed', esc_html__( 'Could not save batch records.', 'calculadora-costos-pecan' ), array( 'status' => 500 ) );
 		}
 	}
 

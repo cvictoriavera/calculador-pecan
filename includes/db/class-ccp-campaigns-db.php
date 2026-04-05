@@ -135,7 +135,6 @@ class CCP_Campaigns_DB {
 	 */
 	public function create( $data, $user_id ) {
 		if ( empty( $data['project_id'] ) || empty( $data['campaign_name'] ) || empty( $data['year'] ) || empty( $data['start_date'] ) ) {
-			error_log( 'CCP Campaigns DB: Missing required data' );
 			return false;
 		}
 
@@ -144,7 +143,6 @@ class CCP_Campaigns_DB {
 			$this->wpdb->prepare( "SELECT user_id FROM {$this->table_projects} WHERE id = %d", $data['project_id'] )
 		);
 		if ( absint( $project_owner ) !== absint( $user_id ) ) {
-			error_log( 'CCP Campaigns DB: User does not own project' );
 			return false; // User does not own the project.
 		}
 
@@ -185,7 +183,6 @@ class CCP_Campaigns_DB {
 			)
 		);
 		if ( false === $result ) {
-			error_log( 'CCP Campaigns DB: Insert failed with error: ' . $this->wpdb->last_error );
 			return false;
 		}
 

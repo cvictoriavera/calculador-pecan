@@ -214,13 +214,11 @@ class CCP_Campaigns_Controller extends WP_REST_Controller {
 		);
 		$campaign_id = $this->campaigns_db->create( $data, $user_id );
 		if ( is_wp_error( $campaign_id ) ) {
-			error_log( 'CCP Campaigns: WP_Error from DB create: ' . $campaign_id->get_error_message() );
 			// Return the WP_Error directly to provide proper error response
 			return $campaign_id;
 		}
 
 		if ( false === $campaign_id ) {
-			error_log( 'CCP Campaigns: DB create returned false' );
 			return new WP_Error( 'campaign_creation_failed', 'Failed to create campaign.', array( 'status' => 500 ) );
 		}
 		// Get the created campaign
