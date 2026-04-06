@@ -80,6 +80,12 @@ if (file_exists($manifest_path)) {
 
 show_admin_bar(false);
 
+$pecan_settings = array(
+    'root' => esc_url_raw(rest_url()),
+    'nonce' => wp_create_nonce('wp_rest'),
+    'logoutUrl' => wp_logout_url(home_url('/acceder/')),
+);
+
 // Salida minimalista sin header/footer de WordPress
 ?>
 <!DOCTYPE html>
@@ -89,10 +95,7 @@ show_admin_bar(false);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php wp_title('|', true, 'right'); ?></title>
     <script type="text/javascript">
-        window.pecanSettings = {
-            root: "<?php echo esc_url_raw(rest_url()); ?>",
-            nonce: "<?php echo wp_create_nonce('wp_rest'); ?>"
-        };
+        window.pecanSettings = <?php echo wp_json_encode($pecan_settings); ?>;
     </script>
     <?php wp_head(); ?>
 </head>

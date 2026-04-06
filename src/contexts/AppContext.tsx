@@ -1,10 +1,10 @@
-import { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { createContext, useCallback, useContext, useState, useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
 import { createCampaign, getCampaignsByProject, updateCampaign } from "@/services/campaignService";
 import { getProjects, deleteProject } from "@/services/projectService";
 import { getMontesByProject, createMonte, updateMonte as updateMonteAPI, deleteMonte } from "@/services/monteService";
 import { getCurrentUser } from "@/services/userService";
-import { useDataStore } from "@/stores";
+import { useDataStore, useUiStore } from "@/stores";
 import { setTrialMode } from '@/lib/trialMode';
 
 export interface Monte {
@@ -83,8 +83,10 @@ interface AppContextType {
   loadCampaigns: () => Promise<void>;
   isOnboardingComplete: boolean;
   isLoading: boolean;
+  isLoggingOut: boolean;
   isChangingProject: boolean;
   completeOnboarding: (name: string, year: number, projectId: number) => Promise<void>;
+  logout: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -121,6 +123,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [costsLoading, setCostsLoading] = useState(false);
   const [isChangingProject, setIsChangingProject] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const isOnboardingComplete = projects.length > 0 || !!currentProjectId;
   // Fetch user data and set trial mode
@@ -144,6 +147,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const loadAllCosts = useDataStore(state => state.loadAllCosts);
   const loadAllInvestments = useDataStore(state => state.loadAllInvestments);
+  const resetUiState = useUiStore(state => state.resetUiState);
 
   // Sincronizar Contexto con Zustand (simplificado para evitar cascadas)
   useEffect(() => {
@@ -687,6 +691,98 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const logout = useCallback(() => {
+    setIsLoggingOut(true);
+
+    const authPatterns = [
+      'token',
+      'jwt',
+      'auth',
+      'access',
+      'refresh',
+      'session',
+      'nonce',
+    ];
+
+    const fixedKeys = [
+      'projectName',
+      'currentProjectId',
+      'initialYear',
+      'currentCampaign',
+      'lastProjectId',
+      'ui-store',
+      'calculador-data-store',
+    ];
+
+    const shouldRemoveKey = (key: string) => {
+      const normalized = key.toLowerCase();
+      if (fixedKeys.includes(key)) return true;
+      return authPatterns.some((pattern) => normalized.includes(pattern));
+    };
+
+    const localStorageKeys = Object.keys(localStorage);
+    localStorageKeys.forEach((key) => {
+      if (shouldRemoveKey(key)) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    const sessionStorageKeys = Object.keys(sessionStorage);
+    sessionStorageKeys.forEach((key) => {
+      if (shouldRemoveKey(key)) {
+        sessionStorage.removeItem(key);
+      }
+    });
+
+    const cookieNames = new Set<string>([
+      'sidebar:state',
+      'authToken',
+      'token',
+      'jwt',
+      'accessToken',
+      'refreshToken',
+      'session',
+      'sessionid',
+      'wp-rest-nonce',
+    ]);
+
+    const existingCookies = document.cookie ? document.cookie.split(';') : [];
+    existingCookies.forEach((cookie) => {
+      const [rawName] = cookie.trim().split('=');
+      if (!rawName) return;
+
+      const normalized = rawName.toLowerCase();
+      if (authPatterns.some((pattern) => normalized.includes(pattern))) {
+        cookieNames.add(rawName);
+      }
+    });
+
+    cookieNames.forEach((name) => {
+      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax`;
+    });
+
+    setUser(null);
+    setIsTrialMode(false);
+    setProjectName('');
+    setCurrentProjectId(null);
+    setInitialYear(null);
+    setProjects([]);
+    setProjectsLoading(false);
+    setCampaigns([]);
+    setCampaignsLoading(false);
+    setCurrentCampaign(new Date().getFullYear());
+    setCurrentCampaignId(null);
+    setMontes([]);
+    setMontesLoading(false);
+    setCostsLoading(false);
+    setIsChangingProject(false);
+    setIsLoading(false);
+
+    setTrialMode(false);
+    useDataStore.getState().clearAllData();
+    resetUiState();
+  }, [resetUiState]);
+
 
 
   const contextValue = useMemo(() => ({
@@ -718,12 +814,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadCampaigns,
     isOnboardingComplete,
     isLoading,
+    isLoggingOut,
     isChangingProject,
     completeOnboarding,
+    logout,
   }), [
     user, isTrialMode, projectName, currentProjectId, initialYear, projects,
     projectsLoading, campaigns, campaignsLoading, currentCampaign,
-    currentCampaignId, montes, montesLoading, costsLoading, isOnboardingComplete, isLoading, isChangingProject
+    currentCampaignId, montes, montesLoading, costsLoading, isOnboardingComplete, isLoading, isLoggingOut, isChangingProject,
+    logout
   ]);
 
   return (

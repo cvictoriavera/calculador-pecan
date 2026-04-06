@@ -41,7 +41,7 @@ export function AppSidebar() {
             <div className="flex items-center gap-2">
               <Sprout className="h-8 w-8 text-sidebar-primary" />
               <div>
-                <h1 className="text-lg m-0 text-sidebar-foreground">PecanManager</h1>
+                <h1 className="text-lg m-0 text-sidebar-foreground">CalculadorPecan</h1>
                 <p className="text-xs m-0 text-sidebar-foreground/70">Gestión Cultivo de Pecán</p>
               </div>
             </div>

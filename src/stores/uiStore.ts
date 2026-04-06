@@ -22,19 +22,24 @@ interface UiState {
   setLoading: (key: string, loading: boolean) => void;
   setError: (key: string, error: string | null) => void;
   clearErrors: () => void;
+  resetUiState: () => void;
 }
+
+const getInitialUiState = () => ({
+  activeProjectId: null as number | null,
+  activeCampaignId: null as number | null,
+  currentCampaign: new Date().getFullYear(),
+  currentPage: 'dashboard',
+  sidebarOpen: true,
+  loadingStates: {} as Record<string, boolean>,
+  errors: {} as Record<string, string | null>,
+});
 
 export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
       // Estado inicial
-      activeProjectId: null,
-      activeCampaignId: null,
-      currentCampaign: new Date().getFullYear(),
-      currentPage: 'dashboard',
-      sidebarOpen: true,
-      loadingStates: {},
-      errors: {},
+      ...getInitialUiState(),
 
       // Acciones
       setActiveProject: (id) => set({ activeProjectId: id }),
@@ -50,6 +55,7 @@ export const useUiStore = create<UiState>()(
           errors: { ...state.errors, [key]: error }
         })),
       clearErrors: () => set({ errors: {} }),
+      resetUiState: () => set(getInitialUiState()),
     }),
     {
       name: 'ui-store',

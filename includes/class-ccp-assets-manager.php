@@ -40,6 +40,7 @@ class CCP_Assets_Manager {
                 array(
                     'root'  => esc_url_raw(rest_url()),
                     'nonce' => wp_create_nonce('wp_rest'),
+                    'logoutUrl' => wp_logout_url(home_url('/acceder/')),
                 )
             );
             wp_enqueue_style(

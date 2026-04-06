@@ -17,11 +17,29 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode } = useApp();
+  const { projects, campaigns, currentCampaign, setCurrentCampaign, currentProjectId, montes, isTrialMode, logout } = useApp();
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
   const location = useLocation();
   const isProjectsPage = location.pathname === '/projects';
+
+  const handleLogout = () => {
+    logout();
+
+    const settings = (window as any).pecanSettings || (window as any).wpApiSettings || {};
+    const apiRoot = typeof settings.root === 'string' ? settings.root : '';
+    const homeBase = apiRoot.includes('/wp-json')
+      ? apiRoot.split('/wp-json')[0].replace(/\/$/, '')
+      : window.location.origin;
+    const redirectTo = `${homeBase}/acceder/`;
+    const fallbackLogoutUrl = `${homeBase}/wp-login.php?action=logout&redirect_to=${encodeURIComponent(redirectTo)}`;
+    const rawLogoutUrl = settings.logoutUrl || fallbackLogoutUrl;
+    const logoutUrl = typeof rawLogoutUrl === 'string'
+      ? rawLogoutUrl.replace(/&amp;/g, '&')
+      : fallbackLogoutUrl;
+
+    window.location.replace(logoutUrl);
+  };
 
   // 1. Detectamos si es pantalla gigante (> 1400px)
   const isLargeScreen = useIsLargeScreen();
@@ -125,7 +143,7 @@ export function Layout({ children }: LayoutProps) {
                    </DropdownMenuItem>
                    <DropdownMenuSeparator />
                    <DropdownMenuItem onClick={() => navigate('/config')}>Configuración</DropdownMenuItem>
-                   <DropdownMenuItem onClick={() => window.location.href = '/'}>Volver a Cappecan</DropdownMenuItem>
+                   <DropdownMenuItem onClick={handleLogout}>Cerrar Sesión</DropdownMenuItem>
                  </DropdownMenuContent>
               </DropdownMenu>
             </div>
