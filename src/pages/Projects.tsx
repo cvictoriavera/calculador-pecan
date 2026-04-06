@@ -126,7 +126,7 @@ const Projects = () => {
           <h1 className="text-3xl ">Mis Proyectos</h1>
           <p className="text-muted-foreground">Selecciona un proyecto para continuar</p>
         </div>
-        <Button onClick={() => setCreateProjectModalOpen(true)}>
+        <Button className="hidden" onClick={() => setCreateProjectModalOpen(true)}>
           Nuevo Proyecto
         </Button>
       </div>

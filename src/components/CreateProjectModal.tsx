@@ -10,6 +10,7 @@ import type { ProjectFormData } from "@/types/project";
 import { ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectForm } from "@/hooks/useProjectForm";
+import { buildCampaignsFromInitialYear } from "@/lib/campaigns";
 
 interface CreateProjectModalProps {
   open: boolean;
@@ -107,21 +108,26 @@ export const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalPro
 
     setIsCreating(true);
     try {
+      const currentYear = new Date().getFullYear();
+      const parsedInitialYear = parseInt(formData.initialYear, 10);
+      const initialYear = Number.isFinite(parsedInitialYear) ? parsedInitialYear : currentYear;
+      const finalProjectName = formData.projectName || "Proyecto 1";
       const projectData = {
-        project_name: formData.projectName || "Proyecto 1",
+        project_name: finalProjectName,
         description: formData.descripcion,
         pais: formData.pais,
         provincia: formData.provincia,
         departamento: formData.departamento,
         municipio: formData.municipio,
         allow_benchmarking: formData.allowBenchmarking ? 1 : 0,
+        campaigns: buildCampaignsFromInitialYear(initialYear),
       };
 
       const createdProject = await createProject(projectData);
       const projectId = createdProject.id;
 
-      // Complete onboarding with project ID to create campaigns
-      await completeOnboarding(formData.projectName, parseInt(formData.initialYear), projectId);
+      // Complete onboarding with project ID to load initial state
+      await completeOnboarding(finalProjectName, initialYear, projectId, { skipCampaignCreation: true });
 
       toast.success("Proyecto creado exitosamente");
       onOpenChange(false);

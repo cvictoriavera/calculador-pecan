@@ -7,6 +7,7 @@ import { isTrialMode } from '@/lib/trialMode';
 
 const BASE_ENDPOINT = 'ccp/v1/projects';
 const TRIAL_PROJECTS_KEY = 'trialProjects';
+const TRIAL_CAMPAIGNS_KEY = 'trialCampaigns';
 
 /**
  * Fetches all projects for the current user.
@@ -55,6 +56,11 @@ export const createProject = (projectData) => {
 	if (isTrialMode()) {
 		// Create project in localStorage
 		const projects = JSON.parse(localStorage.getItem(TRIAL_PROJECTS_KEY) || '[]');
+		const campaigns = JSON.parse(localStorage.getItem(TRIAL_CAMPAIGNS_KEY) || '[]');
+		const nowIso = new Date().toISOString();
+		const validCampaignYears = Array.isArray(projectData.campaigns)
+			? projectData.campaigns.map(c => Number(c.year)).filter(Number.isFinite)
+			: [];
 		const newProject = {
 			id: Date.now() + Math.random(), // Unique ID
 			user_id: 0, // Dummy
@@ -64,11 +70,37 @@ export const createProject = (projectData) => {
 			provincia: projectData.provincia || '',
 			departamento: projectData.departamento || '',
 			municipio: projectData.municipio || '',
+			initial_year: validCampaignYears.length > 0
+				? Math.min(...validCampaignYears)
+				: undefined,
 			status: 'active',
-			created_at: new Date().toISOString(),
-			updated_at: new Date().toISOString(),
+			created_at: nowIso,
+			updated_at: nowIso,
 		};
 		projects.push(newProject);
+
+		if (Array.isArray(projectData.campaigns) && projectData.campaigns.length > 0) {
+			for (const campaign of projectData.campaigns) {
+				const campaignNowIso = new Date().toISOString();
+				campaigns.push({
+					id: Date.now() + Math.random(),
+					project_id: newProject.id,
+					campaign_name: campaign.campaign_name,
+					year: campaign.year,
+					start_date: campaign.start_date,
+					end_date: campaign.end_date,
+					status: campaign.status || 'open',
+					is_current: campaign.is_current || 0,
+					notes: campaign.notes || null,
+					average_price: campaign.average_price || 0,
+					total_production: campaign.total_production || 0,
+					created_at: campaignNowIso,
+					updated_at: campaignNowIso,
+				});
+			}
+			localStorage.setItem(TRIAL_CAMPAIGNS_KEY, JSON.stringify(campaigns));
+		}
+
 		localStorage.setItem(TRIAL_PROJECTS_KEY, JSON.stringify(projects));
 		return Promise.resolve(newProject);
 	}

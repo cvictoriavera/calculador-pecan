@@ -349,9 +349,61 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 				throw new Exception('Could not create project');
 			}
 
-			// 2. Create Initial Campaign (optional)
+			// 2. Create Campaigns (bulk via `campaigns` or legacy `initial_campaign`)
 			$campaign_id = null;
-			if (isset($params['initial_campaign'])) {
+			if (isset($params['campaigns']) && is_array($params['campaigns']) && !empty($params['campaigns'])) {
+				$years_seen = array();
+				$latest_year = null;
+				$latest_campaign_id = null;
+
+				foreach ($params['campaigns'] as $campaign_payload) {
+					if (!is_array($campaign_payload)) {
+						throw new Exception('Invalid campaign payload');
+					}
+
+					$campaign_year = intval($campaign_payload['year'] ?? 0);
+					if ($campaign_year <= 0) {
+						throw new Exception('Invalid campaign year');
+					}
+
+					if (in_array($campaign_year, $years_seen, true)) {
+						throw new Exception('Duplicate campaign year in payload');
+					}
+					$years_seen[] = $campaign_year;
+
+					$is_current = !empty($campaign_payload['is_current']) ? 1 : 0;
+					$campaign_data = array(
+						'project_id' => $project_id,
+						'campaign_name' => sanitize_text_field($campaign_payload['campaign_name'] ?? ('Campaña ' . $campaign_year)),
+						'year' => $campaign_year,
+						'start_date' => sanitize_text_field($campaign_payload['start_date'] ?? ('Julio ' . $campaign_year)),
+						'end_date' => isset($campaign_payload['end_date']) ? sanitize_text_field($campaign_payload['end_date']) : null,
+						'status' => sanitize_text_field($campaign_payload['status'] ?? ($is_current ? 'open' : 'closed')),
+						'is_current' => $is_current,
+						'notes' => isset($campaign_payload['notes']) ? sanitize_textarea_field($campaign_payload['notes']) : null,
+						'average_price' => isset($campaign_payload['average_price']) ? floatval($campaign_payload['average_price']) : 0.00,
+						'total_production' => isset($campaign_payload['total_production']) ? floatval($campaign_payload['total_production']) : 0.00,
+					);
+
+					$created_campaign_id = $this->campaigns_db->create($campaign_data, $user_id);
+					if (!$created_campaign_id) {
+						throw new Exception('Could not create campaign');
+					}
+
+					if ($is_current === 1) {
+						$campaign_id = $created_campaign_id;
+					}
+
+					if (is_null($latest_year) || $campaign_year > $latest_year) {
+						$latest_year = $campaign_year;
+						$latest_campaign_id = $created_campaign_id;
+					}
+				}
+
+				if (is_null($campaign_id)) {
+					$campaign_id = $latest_campaign_id;
+				}
+			} elseif (isset($params['initial_campaign'])) {
 				$campaign_year = intval($params['initial_campaign']['year'] ?? date('Y'));
 				$campaign_data = array(
 					'project_id' => $project_id,

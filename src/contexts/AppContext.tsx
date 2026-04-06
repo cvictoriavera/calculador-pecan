@@ -85,7 +85,7 @@ interface AppContextType {
   isLoading: boolean;
   isLoggingOut: boolean;
   isChangingProject: boolean;
-  completeOnboarding: (name: string, year: number, projectId: number) => Promise<void>;
+  completeOnboarding: (name: string, year: number, projectId: number, options?: { skipCampaignCreation?: boolean }) => Promise<void>;
   logout: () => void;
 }
 
@@ -368,7 +368,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     checkExistingProjects();
   }, []);
 
-  const completeOnboarding = async (name: string, year: number, projectId: number) => {
+  const completeOnboarding = async (name: string, year: number, projectId: number, options?: { skipCampaignCreation?: boolean }) => {
     // Mark as changing to prevent loadCampaigns effect from overwriting our data
     setIsChangingProject(true);
     // Clear existing data before setting new project
@@ -392,49 +392,77 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     const currentYear = new Date().getFullYear();
-    const createdCampaigns: Campaign[] = [];
 
-    // Create campaigns for each year from initial year to current year
-    const campaignPromises = [];
-    for (let y = year; y <= currentYear; y++) {
-      const campaignData = {
-        project_id: projectId,
-        campaign_name: `Campaña ${y}`,
-        year: y,
-        start_date: `Julio ${y}`,
-        end_date: `Junio ${y + 1}`,
-        status: y === currentYear ? 'open' : 'closed',
-        is_current: y === currentYear ? 1 : 0,
-      };
+    if (!options?.skipCampaignCreation) {
+      const createdCampaigns: Campaign[] = [];
 
-      campaignPromises.push(
-        createCampaign(campaignData).catch(async (error) => {
-          console.error(`Error creating campaign for year ${y}:`, error);
-          // Try to get existing campaign
-          try {
-            const existingCampaigns = await getCampaignsByProject(projectId);
-            const existing = existingCampaigns.find(c => c.year === y);
-            if (existing) {
-              return existing;
-            } else {
-              console.error(`No existing campaign found for year ${y}`);
+      // Create campaigns for each year from initial year to current year
+      const campaignPromises = [];
+      for (let y = year; y <= currentYear; y++) {
+        const campaignData = {
+          project_id: projectId,
+          campaign_name: `Campaña ${y}`,
+          year: y,
+          start_date: `Julio ${y}`,
+          end_date: `Junio ${y + 1}`,
+          status: y === currentYear ? 'open' : 'closed',
+          is_current: y === currentYear ? 1 : 0,
+        };
+
+        campaignPromises.push(
+          createCampaign(campaignData).catch(async (error) => {
+            console.error(`Error creating campaign for year ${y}:`, error);
+            // Try to get existing campaign
+            try {
+              const existingCampaigns = await getCampaignsByProject(projectId);
+              const existing = existingCampaigns.find(c => c.year === y);
+              if (existing) {
+                return existing;
+              } else {
+                console.error(`No existing campaign found for year ${y}`);
+                return null;
+              }
+            } catch (fetchError) {
+              console.error(`Error fetching existing campaign for year ${y}:`, fetchError);
               return null;
             }
-          } catch (fetchError) {
-            console.error(`Error fetching existing campaign for year ${y}:`, fetchError);
-            return null;
-          }
-        })
-      );
-    }
-    
-    const results = await Promise.all(campaignPromises);
-    results.filter(Boolean).forEach(c => createdCampaigns.push(c as Campaign));
+          })
+        );
+      }
 
-    // Set campaigns directly from created ones to avoid timing issues
-    const sortedCampaigns = [...createdCampaigns].sort((a, b) => a.year - b.year);
-    setCampaigns(sortedCampaigns);
-    setCurrentCampaign(currentYear);
+      const results = await Promise.all(campaignPromises);
+      results.filter(Boolean).forEach(c => createdCampaigns.push(c as Campaign));
+
+      // Set campaigns directly from created ones to avoid timing issues
+      const sortedCampaigns = [...createdCampaigns].sort((a, b) => a.year - b.year);
+      setCampaigns(sortedCampaigns);
+      setCurrentCampaign(currentYear);
+    } else {
+      try {
+        const campaignsData = await getCampaignsByProject(projectId);
+        const campaignsArray = Array.isArray(campaignsData) ? campaignsData : [];
+        const sortedCampaigns = [...campaignsArray].sort((a, b) => a.year - b.year);
+        setCampaigns(sortedCampaigns);
+
+        const currentCampaignData = sortedCampaigns.find(c => c.year === currentYear);
+        if (currentCampaignData) {
+          setCurrentCampaign(currentCampaignData.year);
+          setCurrentCampaignId(currentCampaignData.id);
+        } else if (sortedCampaigns.length > 0) {
+          const latestCampaign = sortedCampaigns[sortedCampaigns.length - 1];
+          setCurrentCampaign(latestCampaign.year);
+          setCurrentCampaignId(latestCampaign.id);
+        } else {
+          setCurrentCampaign(currentYear);
+          setCurrentCampaignId(null);
+        }
+      } catch (campaignsError) {
+        console.error('Error loading campaigns for new project:', campaignsError);
+        setCampaigns([]);
+        setCurrentCampaign(currentYear);
+        setCurrentCampaignId(null);
+      }
+    }
 
     // Load montes for the new project
     try {

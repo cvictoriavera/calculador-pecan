@@ -1,6 +1,19 @@
 export interface ProjectData {
   project_name: string;
   description?: string;
+  campaigns?: ProjectCampaignData[];
+}
+
+export interface ProjectCampaignData {
+  campaign_name: string;
+  year: number;
+  start_date: string;
+  end_date: string;
+  status?: string;
+  is_current?: number;
+  notes?: string;
+  average_price?: number;
+  total_production?: number;
 }
 
 export interface UpdateProjectData {

@@ -11,6 +11,7 @@ import { ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react";
 import { ProjectCreationForm } from "@/components/ProjectCreationForm";
 import { useProjectForm } from "@/hooks/useProjectForm";
 import type { ProjectFormData } from "@/types/project";
+import { buildCampaignsFromInitialYear } from "@/lib/campaigns";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -107,6 +108,9 @@ const Onboarding = () => {
     setError(null);
 
     const finalProjectName = projectName || "Proyecto 1";
+    const currentYear = new Date().getFullYear();
+    const rawParsedInitialYear = parseInt(initialYear, 10);
+    const parsedInitialYear = Number.isFinite(rawParsedInitialYear) ? rawParsedInitialYear : currentYear;
 
     try {
       // Create the project
@@ -118,13 +122,14 @@ const Onboarding = () => {
         departamento,
         municipio,
         allow_benchmarking: allowBenchmarking ? 1 : 0,
+        campaigns: buildCampaignsFromInitialYear(parsedInitialYear),
       };
 
       const createdProject = await createProject(projectData);
       const projectId = createdProject.id;
 
-      // Complete onboarding with project ID to create campaigns
-      await completeOnboarding(finalProjectName, parseInt(initialYear), projectId);
+      // Complete onboarding with project ID to load initial state
+      await completeOnboarding(finalProjectName, parsedInitialYear, projectId, { skipCampaignCreation: true });
 
       navigate("/montes");
     } catch (err) {
