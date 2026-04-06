@@ -213,7 +213,7 @@ const Onboarding = () => {
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <Label htmlFor="allowBenchmarking" className="text-sm font-medium">
-                He leído y acepto las políticas de privacidad
+                He leído y acepto las <a href="https://app.latampecan.com/politica-privacidad/" target="_blank">políticas de privacidad</a> 
               </Label>
             </div>
           </div>

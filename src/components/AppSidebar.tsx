@@ -81,7 +81,7 @@ export function AppSidebar() {
                     className="hover:bg-sidebar-accent transition-colors no-underline w-full text-left"
                   >
                     <HelpCircle className="h-5 w-5" />
-                    {open && <span className="ml-3">Ayuda / Soporte</span>}
+                    {open && <span className="ml-3"><a href="mailto:asistenciausuariocapp@gmail.com"> Ayuda / Soporte </a></span>}
                   </button>
                 ) : (
                   <NavLink
