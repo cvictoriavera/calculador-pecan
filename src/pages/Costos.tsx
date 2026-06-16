@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, Pencil, Trash2, Info } from "lucide-react";
+import { Plus, TrendingUp, Pencil, Trash2, Info, Scale } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,7 +73,15 @@ const Costos = () => {
   const addCost = useDataStore(state => state.addCost);
   const updateCost = useDataStore(state => state.updateCost);
   const deleteCost = useDataStore(state => state.deleteCost);
-  const { getCostByCategory, getTotalCostsByCampaign } = useCalculationsStore();
+  const { getCostByCategory, getTotalCostsByCampaign, getTotalProductionByCampaign } = useCalculationsStore();
+  const loadAllProductions = useDataStore(state => state.loadAllProductions);
+
+  // Cargar producciones para calcular Kilos Reales Cosechados
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      loadAllProductions(campaigns);
+    }
+  }, [campaigns, loadAllProductions]);
 
   // Selección segura de la campaña
   const currentCampaignObj = useMemo(() => {
@@ -90,6 +98,12 @@ const Costos = () => {
 
   // Costo total por hectárea
   const costoPorHectarea = totalAreaPlantada > 0 ? totalCostos / totalAreaPlantada : 0;
+
+  // Kilos Reales Cosechados (total de producción de la campaña actual)
+  const totalKilos = currentCampaignObj ? getTotalProductionByCampaign(currentCampaignObj.id) : 0;
+
+  // Costo por Kilo: Total de Gastos Operativos / Kilos Reales Cosechados
+  const costoPorKilo = totalKilos > 0 ? totalCostos / totalKilos : 0;
 
   // Filtrado de lista (Tabla inferior)
   const costosFiltered = useMemo(() => {
@@ -300,7 +314,7 @@ const Costos = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">
           <CardHeader>
             <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
@@ -330,6 +344,26 @@ const Costos = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Costo Total por ha</p>
                 <p className="text-4xl font-bold text-foreground">${costoPorHectarea.toLocaleString()} <span className="text-lg font-normal text-muted-foreground">USD/Ha</span></p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">
+          <CardHeader>
+            <CardTitle className="text-foreground">Costo por Kilo {currentCampaign}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-emerald-500/10">
+                <Scale className="h-8 w-8 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Costo por Kilo</p>
+                <p className="text-4xl font-bold text-foreground">
+                  ${costoPorKilo.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                  <span className="text-lg font-normal text-muted-foreground">USD/Kg</span>
+                </p>
               </div>
             </div>
           </CardContent>

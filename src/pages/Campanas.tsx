@@ -12,13 +12,11 @@ import { createCampaign, closeActiveCampaign } from "@/services/campaignService"
 import { isTrialMode } from '@/lib/trialMode';
 import { useToast } from "@/components/ui/use-toast";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
-import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
 import { useDataStore } from "@/stores/dataStore";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import AddInversionSheet from "@/components/inversiones/AddInversionSheet";
 import { createInvestment, updateInvestment as updateInvestmentApi } from "@/services/investmentService";
-import { createProductionsByCampaign, getProductionsByCampaign } from "@/services/productionService";
-import type { ProductionRecord } from '@/stores/dataStore';
+import { createProductionsByCampaign } from "@/services/productionService";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const categoriaLabels: Record<string, string> = {
@@ -50,7 +48,7 @@ interface Campaign {
 }
 
 const Campanas = () => {
-  const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign, currentCampaignId, montes } = useApp();
+  const { initialYear, currentCampaign, currentProjectId, campaigns, campaignsLoading, loadCampaigns, updateCampaign, setCurrentCampaign, currentCampaignId } = useApp();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -70,13 +68,11 @@ const Campanas = () => {
   const investments = useDataStore((state) => state.investments);
   const addInvestment = useDataStore((state) => state.addInvestment);
   const updateInvestment = useDataStore((state) => state.updateInvestment);
-  const loadProductions = useDataStore((state) => state.loadProductions);
 
   // States
   const [isCreating, setIsCreating] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
-  const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [costoSheetOpen, setCostoSheetOpen] = useState(false);
   const [editingCosto, setEditingCosto] = useState<any>(null);
@@ -86,7 +82,7 @@ const Campanas = () => {
   // UI States for specific interactions
   const [editingMonth, setEditingMonth] = useState<{ [year: number]: boolean }>({});
   const [updatingMonth, setUpdatingMonth] = useState<{ [year: number]: boolean }>({});
-  const [loadingAction, setLoadingAction] = useState<{ [year: number]: string | null }>({}); // Controla spinner en botones
+  const [loadingAction] = useState<{ [year: number]: string | null }>({}); // Controla spinner en botones
 
   // Estado de carga inteligente (Stale-while-revalidate)
   const [isLoadingData, setIsLoadingData] = useState(productionCampaigns.length === 0);
@@ -307,7 +303,7 @@ const Campanas = () => {
       setEditingData(null);
       setWizardOpen(false);
       setEditData(null);
-      setEditOpen(false);
+      
       toast({
         title: "Datos Guardados",
         description: isEdit ? "Los datos se actualizaron correctamente" : "Los datos se guardaron correctamente",
@@ -322,61 +318,7 @@ const Campanas = () => {
     }
   };
 
-  const handleOpenEdit = async (campaign: Campaign) => {
-    // 1. Activar loading para este botón específico
-    setLoadingAction(prev => ({ ...prev, [campaign.year]: 'produccion' }));
-
-    try {
-      if (campaign.id) {
-        // Cargar en store primero
-        await loadProductions(campaign.id);
-
-        // Obtener datos para el formulario
-        const productionsData = await getProductionsByCampaign(campaign.id) as ProductionRecord[];
-        const precioPromedio = campaign.average_price ? parseFloat(campaign.average_price) : 0;
-
-        const firstRecord = productionsData[0] as ProductionRecord;
-        const metodo = firstRecord?.input_type === 'detail' ? 'detallado' : 'total';
-
-        const montesDisponibles = montes
-          .filter((m) => m.añoPlantacion <= campaign.year)
-          .map((m) => ({
-            ...m,
-            edad: Number(campaign.year) - Number(m.añoPlantacion),
-          }));
-
-        const produccionPorMonte = montesDisponibles.map(monte => {
-          const productionRecord = productionsData.find((p: ProductionRecord) => String(p.monte_id) === monte.id.split('.')[0]);
-
-          return {
-            monteId: monte.id,
-            nombre: monte.nombre,
-            hectareas: monte.hectareas,
-            edad: monte.edad,
-            kgRecolectados: productionRecord ? Number(productionRecord.quantity_kg) : 0,
-          };
-        });
-
-        const editDataToSet = {
-          precioPromedio,
-          metodo,
-          produccionPorMonte,
-          // Store the correct campaign references so the save handler
-          // uses the edited campaign, not the globally selected one
-          campaignId: campaign.id,
-          campaignYear: campaign.year,
-        };
-        setEditData(editDataToSet);
-        setEditOpen(true);
-      }
-    } catch (error) {
-      console.error('Error loading production data for edit:', error);
-      toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
-    } finally {
-      // 2. Desactivar loading
-      setLoadingAction(prev => ({ ...prev, [campaign.year]: null }));
-    }
-  };
+  
 
   const handleUpdateCosto = async (categoriaOrData: string | any, formData?: any) => {
     if (!currentProjectId) {
@@ -782,15 +724,19 @@ const Campanas = () => {
                       className="flex-1 gap-2"
                       disabled={loadingAction[year] === 'produccion'}
                       onClick={() => {
+                        // 1. Siempre establecemos la campaña seleccionada primero
+                        setCurrentCampaign(year); 
+                        
                         if (isTrialMode()) {
-                          setCurrentCampaign(year);
                           navigate('/produccion');
                         } else {
                           const hayDatos = campaign ? getTotalProductionByCampaign(campaign.id) > 0 : false;
+                          
                           if (hayDatos) {
-                            handleOpenEdit(campaign!);
+                            // 2. Si hay datos, ahora navega a la página en lugar de abrir el modal
+                            navigate('/produccion'); 
                           } else {
-                            setCurrentCampaign(year);
+                            // 3. Si no hay datos, mantiene el comportamiento de abrir el wizard de creación
                             setEditingData(null);
                             setWizardOpen(true);
                           }
@@ -853,13 +799,7 @@ const Campanas = () => {
         editingData={editingData}
       />
 
-      <EditarProduccionForm
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        onSave={handleSaveProduccion}
-        editingData={editData}
-        campaignYear={editData?.campaignYear}
-      />
+    
 
       <AddCostoSheet
         open={costoSheetOpen}
