@@ -30,6 +30,7 @@ const categoriaLabels: Record<string, string> = {
   "gastos-admin": "Administración",
   mantenimientos: "Mantenimientos",
   "costos-oportunidad": "Oportunidad",
+  otros: "Otros",
 };
 
 const categoriaColors: Record<string, string> = {
@@ -41,6 +42,7 @@ const categoriaColors: Record<string, string> = {
   "gastos-admin": "#762c4d",
   mantenimientos: "#cb2030",
   "costos-oportunidad": "#bc5930",
+  otros: "#64748b",
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {

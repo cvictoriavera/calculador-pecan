@@ -17,6 +17,7 @@ import {
   Wrench,
   TrendingUp,
   ArrowLeft,
+  MoreHorizontal,
 } from "lucide-react";
 import InsumosForm from "./forms/InsumosForm";
 import CombustibleForm from "./forms/CombustibleForm";
@@ -26,6 +27,7 @@ import CosechaForm from "./forms/CosechaForm";
 import GastosAdminForm from "./forms/GastosAdminForm";
 import MantenimientosForm from "./forms/MantenimientosForm";
 import CostosOportunidadForm from "./forms/CostosOportunidadForm";
+import OtrosForm from "./forms/OtrosForm";
 
 interface Categoria {
   id: string;
@@ -44,6 +46,7 @@ const categorias: Categoria[] = [
   { id: "gastos-admin", label: "Gastos Administrativos", icon: FileText, color: "bg-muted-foreground/10 text-muted-foreground" },
   { id: "mantenimientos", label: "Mantenimientos", icon: Wrench, color: "bg-cocoa/10 text-cocoa" },
   { id: "costos-oportunidad", label: "Costos de Oportunidad", icon: TrendingUp, color: "bg-warning/10 text-warning" },
+  { id: "otros", label: "Otros", icon: MoreHorizontal, color: "bg-slate-500/10 text-slate-600" },
 ];
 
 
@@ -181,6 +184,8 @@ export default function AddCostoSheet({ open, onOpenChange, onSave, editingCosto
         return <MantenimientosForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       case "costos-oportunidad":
         return <CostosOportunidadForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
+      case "otros":
+        return <OtrosForm onSave={handleSave} onCancel={handleBack} initialData={initialData} existingCosts={existingCosts} />;
       default:
         return null;
     }

@@ -155,6 +155,18 @@ export const calcularTotalMantenimientos = (items: MantenimientoItem[]): number 
   return items.reduce((acc, item) => acc + (item.precioReparacion || 0), 0);
 };
 
+// ============= OTROS =============
+export interface OtrosItem {
+  id: string;
+  concepto: string;
+  monto: number;
+}
+
+export const calcularTotalOtros = (items: OtrosItem[]): number => {
+  return items.reduce((acc, item) => acc + (item.monto || 0), 0);
+};
+
+
 // ============= COSTOS DE OPORTUNIDAD =============
 export const calcularTotalOportunidad = (cantidad: number, precioUnidad: number): number => {
   return cantidad * precioUnidad;

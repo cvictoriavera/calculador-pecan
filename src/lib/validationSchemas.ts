@@ -119,6 +119,18 @@ export const mantenimientosFormSchema = z.object({
   items: z.array(mantenimientoItemSchema).min(1, "Debe agregar al menos un ítem"),
 });
 
+// ============= OTROS =============
+export const otroItemSchema = z.object({
+  id: z.string(),
+  concepto: z.string().min(1, "Concepto requerido"),
+  monto: z.number().min(0.01, "Monto debe ser mayor a 0"),
+});
+
+export const otrosFormSchema = z.object({
+  type: z.literal("otros"),
+  items: z.array(otroItemSchema).min(1, "Debe agregar al menos un ítem"),
+});
+
 // ============= COSTOS DE OPORTUNIDAD =============
 export const costosOportunidadFormSchema = z.object({
   type: z.literal("Arrendamiento"),
@@ -177,6 +189,7 @@ export type CombustibleFormData = z.infer<typeof combustibleFormSchema>;
 export type ManoObraFormData = z.infer<typeof manoObraFormSchema>;
 export type GastosAdminFormData = z.infer<typeof gastosAdminFormSchema>;
 export type MantenimientosFormData = z.infer<typeof mantenimientosFormSchema>;
+export type OtrosFormData = z.infer<typeof otrosFormSchema>;
 export type CostosOportunidadFormData = z.infer<typeof costosOportunidadFormSchema>;
 export type CosechaFormData = z.infer<typeof cosechaFormSchema>;
 export type EnergiaFormData = z.infer<typeof energiaFormSchema>;
