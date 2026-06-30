@@ -31,13 +31,17 @@ interface EnergiaFormProps {
 }
 
 export default function EnergiaForm({ onSave, onCancel, initialData, existingCosts }: EnergiaFormProps) {
+  const hasDetailedRecords = existingCosts?.some(
+    cost => cost.category === 'energia' && !cost.details?.quickMode
+  );
+
   const [isQuickMode, setIsQuickMode] = useState<boolean>(() => {
-    // For new loads, start with quick mode (true)
+    // For new loads, start with quick mode (true) if no detailed records exist
     // For editing, use the mode from initialData (true if quick, false if detailed)
     if (initialData) {
       return initialData.quickMode || false;
     }
-    return true;
+    return !hasDetailedRecords;
   });
   const [quickTotal, setQuickTotal] = useState<number>(() => {
     // Initialize with initialData total if available
@@ -148,8 +152,8 @@ export default function EnergiaForm({ onSave, onCancel, initialData, existingCos
   if (isQuickMode) {
     return (
       <div className="space-y-6">
-        {/* Mode switch - only show for new entries */}
-        {!initialData && (
+        {/* Mode switch - only show for new entries if no detailed records exist */}
+        {!initialData && !hasDetailedRecords && (
           <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
             <div>
               <Label className="text-sm font-medium">Modo de Carga</Label>
@@ -179,6 +183,27 @@ export default function EnergiaForm({ onSave, onCancel, initialData, existingCos
               placeholder="0"
             />
           </div>
+
+          {/* Reference list */}
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Tipos de energía de referencia</Label>
+            <div className="grid grid-cols-2 gap-4">
+              {tiposEnergia.map((tipo) => {
+                const IconComponent = tipo.icon;
+                return (
+                  <div key={tipo.id} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-secondary/30">
+                    <div className={`p-2 rounded-lg ${tipo.color} text-white flex-shrink-0`}>
+                      <IconComponent className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="font-medium text-sm">{tipo.label}</span>
+                      <p className="text-xs text-muted-foreground">{tipo.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Total */}
@@ -207,8 +232,8 @@ export default function EnergiaForm({ onSave, onCancel, initialData, existingCos
   if (currentStep === 'selection') {
     return (
       <div className="space-y-6">
-        {/* Mode switch - only show for new entries */}
-        {!initialData && (
+        {/* Mode switch - only show for new entries if no detailed records exist */}
+        {!initialData && !hasDetailedRecords && (
           <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
             <div>
               <Label className="text-sm font-medium">Modo de Carga</Label>
@@ -264,8 +289,8 @@ export default function EnergiaForm({ onSave, onCancel, initialData, existingCos
 
   return (
     <div className="space-y-6">
-      {/* Mode switch - only show for new entries */}
-      {!initialData && (
+      {/* Mode switch - only show for new entries if no detailed records exist */}
+      {!initialData && !hasDetailedRecords && (
         <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
           <div>
             <Label className="text-sm font-medium">Modo de Carga</Label>

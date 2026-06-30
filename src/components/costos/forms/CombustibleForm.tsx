@@ -57,13 +57,17 @@ interface CombustibleFormProps {
 }
 
 export default function CombustibleForm({ onSave, onCancel, initialData, existingCosts }: CombustibleFormProps) {
+  const hasDetailedRecords = existingCosts?.some(
+    cost => cost.category === 'combustible' && !cost.details?.quickMode
+  );
+
   const [isQuickMode, setIsQuickMode] = useState<boolean>(() => {
-    // For new loads, start with quick mode (true)
+    // For new loads, start with quick mode (true) if no detailed records exist
     // For editing, use the mode from initialData (true if quick, false if detailed)
     if (initialData) {
       return initialData.quickMode || false;
     }
-    return true;
+    return !hasDetailedRecords;
   });
   const [quickTotal, setQuickTotal] = useState<number>(() => {
     // Initialize with initialData total if available
@@ -421,8 +425,8 @@ export default function CombustibleForm({ onSave, onCancel, initialData, existin
   if (isQuickMode) {
     return (
       <div className="space-y-6">
-        {/* Mode switch - only show for new entries */}
-        {!initialData && (
+        {/* Mode switch - only show for new entries if no detailed records exist */}
+        {!initialData && !hasDetailedRecords && (
           <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
             <div>
               <Label className="text-sm font-medium">Modo de Carga</Label>
@@ -508,8 +512,8 @@ export default function CombustibleForm({ onSave, onCancel, initialData, existin
   if (currentStep === 'selection') {
     return (
       <div className="space-y-6">
-        {/* Mode switch - only show for new entries */}
-        {!initialData && (
+        {/* Mode switch - only show for new entries if no detailed records exist */}
+        {!initialData && !hasDetailedRecords && (
           <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
             <div>
               <Label className="text-sm font-medium">Modo de Carga</Label>
@@ -565,8 +569,8 @@ export default function CombustibleForm({ onSave, onCancel, initialData, existin
 
   return (
     <div className="space-y-6">
-      {/* Mode switch - only show for new entries */}
-      {!initialData && (
+      {/* Mode switch - only show for new entries if no detailed records exist */}
+      {!initialData && !hasDetailedRecords && (
         <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
           <div>
             <Label className="text-sm font-medium">Modo de Carga</Label>
