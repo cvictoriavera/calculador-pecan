@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, ArrowLeft, FileText, Users } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, FileText, Users, AlertTriangle } from "lucide-react";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   calcularCostoStaff,
@@ -36,6 +36,8 @@ const tiposGastosAdmin = [
 
 const gastosGeneralesOptions = [
   { key: "contador", label: "Contador" },
+  { key: "consultoria_tecnica", label: "Consultoría Técnica" },
+  { key: "consultoria_juridica", label: "Consultoría Jurídica" },
   { key: "gastos_bancarios", label: "Gastos bancarios" },
   { key: "telefonia", label: "Telefonía" },
   { key: "energia_oficina", label: "Energía eléctrica (oficina)" },
@@ -54,8 +56,7 @@ const gastosGeneralesOptions = [
 const rolesAdmin = [
   "Gerente general",
   "Secretaria",
-  "Consultoría Técnica",
-  "Consultoría Jurídica",
+  "Otros",
 ];
 
 interface GastoGeneralItem {
@@ -272,10 +273,15 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
     sum + calcularCostoStaff(item.remuneracion, item.cargasSociales, item.nroProfesionales), 0
   );
 
-  // Obtener roles disponibles (excluyendo los ya seleccionados)
+  const hasHistoricalRoles = staffItems.some(
+    (item) => item.rol === "Consultoría Técnica" || item.rol === "Consultoría Jurídica"
+  );
+
+  // Obtener roles disponibles (excluyendo los ya seleccionados, excepto "Otros")
   const getAvailableRoles = () => {
     const selectedRoles = staffItems.map(item => item.rol).filter(rol => rol.trim() !== '');
-    return rolesAdmin.filter(role => !selectedRoles.includes(role));
+    const rolesToFilter = selectedRoles.filter(role => role !== "Otros");
+    return rolesAdmin.filter(role => role === "Otros" || !rolesToFilter.includes(role));
   };
 
   // Obtener tipos de gastos disponibles (excluyendo los ya seleccionados)
@@ -352,6 +358,10 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
       for (const item of staffItems) {
         if (!item.rol || item.rol.trim() === '') {
           alert('Por favor selecciona un rol para todos los miembros del staff.');
+          return;
+        }
+        if (item.rol === 'Otros') {
+          alert('Por favor especifica el nombre del rol personalizado.');
           return;
         }
         if (!item.remuneracion || item.remuneracion <= 0) {
@@ -635,6 +645,16 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
         </div>
       ) : (
         <div className="space-y-4">
+          {hasHistoricalRoles && (
+            <div className="p-4 border border-amber-500/30 bg-amber-500/10 rounded-lg text-amber-600 dark:text-amber-400 text-sm flex gap-3 items-start">
+              <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold block mb-1">Cambio de Categoría Detectado</span>
+                Las opciones de Consultoría Técnica y Jurídica ahora se registran en "Gastos Generales".
+                Recomendamos eliminar este ítem de Staff y registrar su monto anual consolidado directamente en Gastos Generales para mantener tus datos organizados.
+              </div>
+            </div>
+          )}
           {staffItems.map((item) => (
             <div key={item.id} className="p-4 border border-border rounded-lg space-y-3 bg-secondary/30">
               <div className="flex justify-between items-start">
@@ -643,7 +663,7 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
                   <div>
                     <Label className="text-xs">Rol/Puesto</Label>
                     <Select
-                      value={item.rol}
+                      value={rolesAdmin.includes(item.rol) ? item.rol : (item.rol ? "Otros" : "")}
                       onValueChange={(value) => updateStaffItem(item.id, { rol: value })}
                     >
                       <SelectTrigger>
@@ -655,8 +675,8 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
                             {role}
                           </SelectItem>
                         ))}
-                        {/* Si ya tiene un rol seleccionado, mostrarlo aunque esté duplicado */}
-                        {item.rol && !getAvailableRoles().includes(item.rol) && (
+                        {/* Si ya tiene un rol seleccionado (y no es 'Otros'), mostrarlo aunque esté duplicado */}
+                        {item.rol && item.rol !== "Otros" && !getAvailableRoles().includes(item.rol) && (
                           <SelectItem value={item.rol}>
                             {item.rol}
                           </SelectItem>
@@ -664,6 +684,18 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Rol personalizado si se selecciona 'Otros' */}
+                  {(item.rol ? (!rolesAdmin.includes(item.rol) || item.rol === "Otros") : false) && (
+                    <div className="mt-2 space-y-1">
+                      <Label className="text-xs text-muted-foreground">Especifique el rol/puesto</Label>
+                      <Input
+                        value={item.rol === "Otros" ? "" : item.rol}
+                        onChange={(e) => updateStaffItem(item.id, { rol: e.target.value || "Otros" })}
+                        placeholder="Ej. Asesor Técnico, Auditor..."
+                      />
+                    </div>
+                  )}
 
                   {/* Remuneración and Cargas Sociales */}
                   <div className="grid grid-cols-2 gap-4">
