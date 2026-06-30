@@ -417,6 +417,27 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
               placeholder="0"
             />
           </div>
+
+          {/* Reference list */}
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Tipos de gastos administrativos de referencia</Label>
+            <div className="grid grid-cols-2 gap-4">
+              {tiposGastosAdmin.map((tipo) => {
+                const IconComponent = tipo.icon;
+                return (
+                  <div key={tipo.id} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-secondary/30">
+                    <div className={`p-2 rounded-lg ${tipo.color} text-white flex-shrink-0`}>
+                      <IconComponent className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="font-medium text-sm">{tipo.label}</span>
+                      <p className="text-xs text-muted-foreground">{tipo.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Total */}
