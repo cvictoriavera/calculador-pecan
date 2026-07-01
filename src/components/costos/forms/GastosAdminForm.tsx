@@ -553,9 +553,11 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
 
       {/* Header with back button */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+        {!initialData && (
+          <Button variant="ghost" size="icon" onClick={handleBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
         <div className="flex items-center gap-2">
           <div className={`p-2 rounded-lg ${selectedType.color} text-white`}>
             <IconComponent className="h-5 w-5" />
@@ -780,9 +782,15 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
       )}
 
       <div className="flex gap-3 pt-4">
-        <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
-          Atrás
-        </Button>
+        {initialData ? (
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+            Cancelar
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+            Atrás
+          </Button>
+        )}
         <Button
           onClick={handleSave}
           className="flex-1"
