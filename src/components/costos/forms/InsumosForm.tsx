@@ -447,16 +447,31 @@ export default function InsumosForm({ onSave, onCancel, initialData, existingCos
         <div className="grid grid-cols-2 gap-4">
           {tiposInsumo.map((tipo) => {
             const IconComponent = tipo.icon;
+            const isAlreadyRegistered = existingCosts?.some(
+              cost => cost.category === 'insumos' && cost.details?.type === tipo.label
+            );
             return (
               <button
                 key={tipo.id}
                 onClick={() => handleTypeSelect(tipo)}
-                className="flex flex-col items-center gap-3 p-6 rounded-lg border border-border hover:bg-secondary/50 transition-colors text-center"
+                disabled={isAlreadyRegistered}
+                className={`flex flex-col items-center gap-3 p-6 rounded-lg border text-center transition-colors ${
+                  isAlreadyRegistered
+                    ? "border-border/50 bg-secondary/20 text-muted-foreground cursor-not-allowed opacity-50"
+                    : "border-border hover:bg-secondary/50 text-foreground"
+                }`}
               >
-                <div className={`p-3 rounded-lg ${tipo.color} text-white`}>
+                <div className={`p-3 rounded-lg ${isAlreadyRegistered ? "bg-muted text-muted-foreground" : `${tipo.color} text-white`}`}>
                   <IconComponent className="h-6 w-6" />
                 </div>
-                <span className="font-medium text-sm">{tipo.label}</span>
+                <div className="flex flex-col items-center">
+                  <span className="font-medium text-sm">{tipo.label}</span>
+                  {isAlreadyRegistered && (
+                    <span className="text-[10px] text-muted-foreground mt-1 bg-secondary px-1.5 py-0.5 rounded border border-border/50 font-normal">
+                      Ya registrado
+                    </span>
+                  )}
+                </div>
               </button>
             );
           })}
