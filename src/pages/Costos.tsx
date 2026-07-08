@@ -13,13 +13,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import { useDataStore } from "@/stores";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCalculationsStore } from "@/stores/calculationsStore";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const categoriaLabels: Record<string, string> = {
   insumos: "Insumos",
@@ -112,6 +113,24 @@ const Costos = () => {
     if (!currentCampaignObj) return [];
     return costs.filter((c: any) => String(c.campaign_id) === String(currentCampaignObj.id));
   }, [costs, currentCampaignObj]);
+
+  // Desglose de costos por categoría para la campaña seleccionada
+  const categoriesBreakdown = useMemo(() => {
+    const currentCostsByCategory = currentCampaignObj ? getCostByCategory(currentCampaignObj.id) : {};
+    const data = Object.entries(categoriaLabels).map(([key, label]) => {
+      const amount = currentCostsByCategory[key] || 0;
+      const percentage = totalCostos > 0 ? (amount / totalCostos) * 100 : 0;
+      return {
+        key,
+        name: label,
+        value: amount,
+        percentage: percentage,
+        color: categoriaColors[key] || "#cccccc"
+      };
+    });
+    // Ordenar de mayor a menor por monto (value)
+    return data.sort((a, b) => b.value - a.value);
+  }, [currentCampaignObj, getCostByCategory, totalCostos, costs]);
 
   const currentYear = new Date().getFullYear();
 
@@ -286,9 +305,6 @@ const Costos = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl mb-2">Costos Operativos</h1>
-          <p className="text-muted-foreground">
-            Registro de gastos operacionales - Campaña {currentCampaign}
-          </p>
         </div>
         <Button
           onClick={() => setSheetOpen(true)}
@@ -316,264 +332,344 @@ const Costos = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">
-          <CardHeader>
-            <CardTitle className="text-foreground">Resumen de Costos {currentCampaign}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-warning/10">
-                <TrendingUp className="h-8 w-8 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Costos Operativos</p>
-                <p className="text-4xl font-bold text-foreground">${totalCostos.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="resumen" className="w-full space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="resumen">Resumen de campaña {currentCampaign}</TabsTrigger>
+          <TabsTrigger value="historica">Evolución histórica</TabsTrigger>
+        </TabsList>
 
-        <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">
-          <CardHeader>
-            <CardTitle className="text-foreground">Costo por Hectárea {currentCampaign}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-blue-500/10">
-                <TrendingUp className="h-8 w-8 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Costo Total por ha</p>
-                <p className="text-4xl font-bold text-foreground">${costoPorHectarea.toLocaleString()} <span className="text-lg font-normal text-muted-foreground">USD/Ha</span></p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">
-          <CardHeader>
-            <CardTitle className="text-foreground">Costo por Kilo {currentCampaign}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-emerald-500/10">
-                <Scale className="h-8 w-8 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Costo por Kilo</p>
-                <p className="text-4xl font-bold text-foreground">
-                  ${costoPorKilo.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                  <span className="text-lg font-normal text-muted-foreground">USD/Kg</span>
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="border-border/50 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-foreground">Evolución de Costos por Categoría</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis />
-                <Tooltip content={CustomTooltip} />
-                <Legend />
-                {Object.keys(categoriaLabels).map((category) => (
-                  <Bar
-                    key={category}
-                    dataKey={category}
-                    stackId="a"
-                    fill={categoriaColors[category] || "#cccccc"}
-                    name={categoriaLabels[category]}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              Sin datos para mostrar
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* --- TABLA EVOLUCIÓN --- */}
-      <Card className="border-border/50 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-foreground">Evolución de Costos</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1">
-          <div className="relative w-full max-w-full overflow-x-auto border-none pb-1">
-            <table className="w-full min-w-max border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted">
-                  <th className="sticky left-0 z-[5] bg-muted p-3 text-left font-semibold text-muted-foreground shadow-[1px_0_0_0_hsl(var(--border))]">
-                    Categoría
-                  </th>
-                  {displayedYears.map((year, index) => {
-                    const isHistorical = year < currentYear;
-                    const isCurrentYear = year === currentYear;
-                    const nextYear = displayedYears[index + 1];
-                    return (
-                      <th
-                        key={year}
-                        className={cn(
-                          "text-center p-3 font-semibold relative min-w-[100px]",
-                          isHistorical && "bg-slate-50/50",
-                          isCurrentYear && "border-r-2 border-yellow-500"
-                        )}
-                      >
-                        <div className="flex items-center justify-center gap-1">
-                          <span className="text-muted-foreground">{year}</span>
+        <TabsContent value="resumen" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* LADO IZQUIERDO: Gráfico circular y barras de progreso */}
+            <Card className="lg:col-span-2 border-border/50 shadow-md bg-white">
+              <CardHeader>
+                <CardTitle className="text-foreground">Desglose de Costos {currentCampaign}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {totalCostos > 0 ? (
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                    {/* Barras de progreso */}
+                    <div className="w-full md:w-1/2 space-y-3.5">
+                      {categoriesBreakdown.map((item) => (
+                        <div key={item.key} className="space-y-1">
+                          <div className="flex justify-between items-center text-sm font-medium">
+                            <span className="text-muted-foreground">{item.name}</span>
+                            <span className="text-foreground font-semibold">{item.percentage.toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${item.percentage}%`,
+                                backgroundColor: item.color
+                              }}
+                            />
+                          </div>
                         </div>
-                        {isCurrentYear && nextYear && (
-                          <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
-                        )}
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(categoriaLabels).map(([categoryKey, categoryName]) => (
-                  <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-                    <td className="sticky left-0 z-[5] bg-card p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
-                      <Badge
-                        style={{
-                          backgroundColor: categoriaColors[categoryKey] || "#cccccc",
-                          color: "white",
-                        }}
-                        className="whitespace-nowrap"
-                      >
-                        {categoryName}
-                      </Badge>
-                    </td>
-                    {displayedYears.map((year) => {
-                      const amount = getCostForCategoryAndYear(categoryKey, year);
-                      const isHistorical = year < currentYear;
+                      ))}
+                    </div>
 
-                      return (
-                        <td
-                          key={year}
-                          className={cn(
-                            "text-center p-3",
-                            amount === 0 ? "text-muted-foreground/30" : "font-semibold text-foreground",
-                            isHistorical && "bg-slate-50/20"
-                          )}
-                        >
-                          ${amount.toLocaleString()}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-border bg-primary/5 font-medium">
-                  <td className="sticky left-0 z-[5] bg-background p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
-                    <div className="font-semibold text-foreground">Total U$D</div>
-                  </td>
-                  {displayedYears.map((year) => {
-                    const total = Object.keys(categoriaLabels).reduce(
-                      (sum, category) => sum + getCostForCategoryAndYear(category, year),
-                      0
-                    );
-                    const isHistorical = year < currentYear;
+                    {/* Gráfico circular / Donut */}
+                    <div className="w-full md:w-1/2 flex justify-center">
+                      <div className="relative flex justify-center items-center shrink-0 w-[300px] h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={categoriesBreakdown.filter(item => item.value > 0)}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={85}
+                              outerRadius={115}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              {categoriesBreakdown.filter(item => item.value > 0).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Monto"]}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
+                          <span className="text-3xl font-extrabold text-foreground">100%</span>
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Desglose</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-[240px] flex items-center justify-center text-muted-foreground">
+                    Sin costos registrados para esta campaña
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-                    return (
-                      <td
-                        key={year}
-                        className={cn(
-                          "text-center p-3 font-bold text-foreground",
-                          isHistorical && "bg-slate-50/20"
-                        )}
-                      >
-                        ${total.toLocaleString()}
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tfoot>
-            </table>
+            {/* LADO DERECHO: Tarjetas apiladas verticalmente */}
+            <div className="flex flex-col gap-6 justify-between">
+              {/* Card 1: Total Costos Operativos */}
+              <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-warning/10">
+                      <TrendingUp className="h-8 w-8 text-warning" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Costos Operativos</p>
+                      <p className="text-3xl font-bold text-foreground">${totalCostos.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 2: Costo por Hectárea */}
+              <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-blue-500/10">
+                      <TrendingUp className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Costo Total por ha</p>
+                      <p className="text-3xl font-bold text-foreground">
+                        ${costoPorHectarea.toLocaleString()}{" "}
+                        <span className="text-base font-normal text-muted-foreground">USD/Ha</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 3: Costo por Kilo */}
+              <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-emerald-500/10">
+                      <Scale className="h-8 w-8 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Costo por Kilo</p>
+                      <p className="text-3xl font-bold text-foreground">
+                        ${costoPorKilo.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                        <span className="text-base font-normal text-muted-foreground">USD/Kg</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card className="border-border/50 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-foreground">Registro de Costos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {costosFiltered.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Año</th>
-                    <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Categoría</th>
-                    <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Descripción</th>
-                    <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Monto</th>
-                    <th className="text-center p-3 text-sm font-semibold text-muted-foreground">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {costosFiltered.map((costo: any) => (
-                    <tr key={costo.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                      <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
-                      <td className="p-3 text-sm">
-                        <Badge
-                          style={{
-                            backgroundColor: categoriaColors[costo.category] || "#cccccc",
-                            color: "white",
-                          }}
-                        >
-                          {categoriaLabels[costo.category] || costo.category}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-sm text-foreground">{getCostoDescription(costo)}</td>
-                      <td className="p-3 text-sm text-right font-semibold text-foreground">
-                        ${Number(costo.total_amount).toLocaleString()}
-                      </td>
-                      <td className="p-3 text-sm text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary"
-                            onClick={() => handleEditCosto(costo)}
-                            title="Editar costo"
+          {/* Registro de costos (Debajo del grid) */}
+          <Card className="border-border/50 shadow-md">
+            <CardHeader>
+              <CardTitle className="text-foreground">Detalle de Costos campaña {currentCampaign}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {costosFiltered.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Año</th>
+                        <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Categoría</th>
+                        <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Descripción</th>
+                        <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Monto</th>
+                        <th className="text-center p-3 text-sm font-semibold text-muted-foreground">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {costosFiltered.map((costo: any) => (
+                        <tr key={costo.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
+                          <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
+                          <td className="p-3 text-sm">
+                            <Badge
+                              style={{
+                                backgroundColor: categoriaColors[costo.category] || "#cccccc",
+                                color: "white",
+                              }}
+                            >
+                              {categoriaLabels[costo.category] || costo.category}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm text-foreground">{getCostoDescription(costo)}</td>
+                          <td className="p-3 text-sm text-right font-semibold text-foreground">
+                            ${Number(costo.total_amount).toLocaleString()}
+                          </td>
+                          <td className="p-3 text-sm text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                onClick={() => handleEditCosto(costo)}
+                                title="Editar costo"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleDeleteCosto(costo)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>No hay costos registrados para la campaña {currentCampaign}.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="historica" className="space-y-6">
+          {/* Evolución de costos por categoría */}
+          <Card className="border-border/50 shadow-md">
+            <CardHeader>
+              <CardTitle className="text-foreground">Evolución de Costos por Categoría</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip content={CustomTooltip} />
+                    <Legend />
+                    {Object.keys(categoriaLabels).map((category) => (
+                      <Bar
+                        key={category}
+                        dataKey={category}
+                        stackId="a"
+                        fill={categoriaColors[category] || "#cccccc"}
+                        name={categoriaLabels[category]}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                  Sin datos para mostrar
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* --- TABLA EVOLUCIÓN --- */}
+          <Card className="border-border/50 shadow-md">
+            <CardHeader>
+              <CardTitle className="text-foreground">Evolución de Costos</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1">
+              <div className="relative w-full max-w-full overflow-x-auto border-none pb-1">
+                <table className="w-full min-w-max border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted">
+                      <th className="sticky left-0 z-[5] bg-muted p-3 text-left font-semibold text-muted-foreground shadow-[1px_0_0_0_hsl(var(--border))]">
+                        Categoría
+                      </th>
+                      {displayedYears.map((year, index) => {
+                        const isHistorical = year < currentYear;
+                        const isCurrentYear = year === currentYear;
+                        const nextYear = displayedYears[index + 1];
+                        return (
+                          <th
+                            key={year}
+                            className={cn(
+                              "text-center p-3 font-semibold relative min-w-[100px]",
+                              isHistorical && "bg-slate-50/50",
+                              isCurrentYear && "border-r-2 border-yellow-500"
+                            )}
                           >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleDeleteCosto(costo)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
+                            <div className="flex items-center justify-center gap-1">
+                              <span className="text-muted-foreground">{year}</span>
+                            </div>
+                            {isCurrentYear && nextYear && (
+                              <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-yellow-500"></div>
+                            )}
+                          </th>
+                        );
+                      })}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>No hay costos registrados para la campaña {currentCampaign}.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </thead>
+                  <tbody>
+                    {Object.entries(categoriaLabels).map(([categoryKey, categoryName]) => (
+                      <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                        <td className="sticky left-0 z-[5] bg-card p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
+                          <Badge
+                            style={{
+                              backgroundColor: categoriaColors[categoryKey] || "#cccccc",
+                              color: "white",
+                            }}
+                            className="whitespace-nowrap"
+                          >
+                            {categoryName}
+                          </Badge>
+                        </td>
+                        {displayedYears.map((year) => {
+                          const amount = getCostForCategoryAndYear(categoryKey, year);
+                          const isHistorical = year < currentYear;
+
+                          return (
+                            <td
+                              key={year}
+                              className={cn(
+                                "text-center p-3",
+                                amount === 0 ? "text-muted-foreground/30" : "font-semibold text-foreground",
+                                isHistorical && "bg-slate-50/20"
+                              )}
+                            >
+                              ${amount.toLocaleString()}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-border bg-primary/5 font-medium">
+                      <td className="sticky left-0 z-[5] bg-background p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
+                        <div className="font-semibold text-foreground">Total U$D</div>
+                      </td>
+                      {displayedYears.map((year) => {
+                        const total = Object.keys(categoriaLabels).reduce(
+                          (sum, category) => sum + getCostForCategoryAndYear(category, year),
+                          0
+                        );
+                        const isHistorical = year < currentYear;
+
+                        return (
+                          <td
+                            key={year}
+                            className={cn(
+                              "text-center p-3 font-bold text-foreground",
+                              isHistorical && "bg-slate-50/20"
+                            )}
+                          >
+                            ${total.toLocaleString()}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <AddCostoSheet
         open={sheetOpen}
