@@ -23,14 +23,14 @@ const tiposGastosAdmin = [
     label: "Gastos Generales",
     icon: FileText,
     color: "bg-blue-600",
-    description: "Gastos administrativos generales"
+    description: "Contador, consultorias, telefonia, internet, etc"
   },
   {
     id: "staff-administrativo",
     label: "Staff Administrativo",
     icon: Users,
     color: "bg-green-600",
-    description: "Personal administrativo y consultorías"
+    description: "Personal administrativo"
   },
 ];
 
@@ -512,11 +512,10 @@ export default function GastosAdminForm({ onSave, onCancel, initialData, existin
                 key={tipo.id}
                 onClick={() => handleTypeSelect(tipo)}
                 disabled={isAlreadyRegistered}
-                className={`flex flex-col items-center gap-3 p-6 rounded-lg border text-center transition-colors ${
-                  isAlreadyRegistered
+                className={`flex flex-col items-center gap-3 p-6 rounded-lg border text-center transition-colors ${isAlreadyRegistered
                     ? "border-border/50 bg-secondary/20 text-muted-foreground cursor-not-allowed opacity-50"
                     : "border-border hover:bg-secondary/50 text-foreground"
-                }`}
+                  }`}
               >
                 <div className={`p-3 rounded-lg ${isAlreadyRegistered ? "bg-muted text-muted-foreground" : `${tipo.color} text-white`}`}>
                   <IconComponent className="h-6 w-6" />
