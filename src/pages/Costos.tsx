@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, Pencil, Trash2, Info, Scale } from "lucide-react";
+import { Plus, TrendingUp, Pencil, Trash2, Info, Scale, Eye, X, Beaker, Fuel, Users, Zap, Wheat, FileText, Wrench, MoreHorizontal } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +44,18 @@ const categoriaColors: Record<string, string> = {
   mantenimientos: "#cb2030",
   "costos-oportunidad": "#bc5930",
   otros: "#64748b",
+};
+
+const categoryIcons: Record<string, any> = {
+  insumos: Beaker,
+  combustible: Fuel,
+  "mano-obra": Users,
+  energia: Zap,
+  cosecha: Wheat,
+  "gastos-admin": FileText,
+  mantenimientos: Wrench,
+  "costos-oportunidad": TrendingUp,
+  otros: MoreHorizontal,
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -114,6 +126,25 @@ const Costos = () => {
     return costs.filter((c: any) => String(c.campaign_id) === String(currentCampaignObj.id));
   }, [costs, currentCampaignObj]);
 
+  // Agrupar costos por categoría
+  const costosGrouped = useMemo(() => {
+    const groups: Record<string, { category: string; total_amount: number; costs: any[] }> = {};
+
+    costosFiltered.forEach((costo: any) => {
+      if (!groups[costo.category]) {
+        groups[costo.category] = {
+          category: costo.category,
+          total_amount: 0,
+          costs: []
+        };
+      }
+      groups[costo.category].total_amount += Number(costo.total_amount);
+      groups[costo.category].costs.push(costo);
+    });
+
+    return Object.values(groups);
+  }, [costosFiltered]);
+
   // Desglose de costos por categoría para la campaña seleccionada
   const categoriesBreakdown = useMemo(() => {
     const currentCostsByCategory = currentCampaignObj ? getCostByCategory(currentCampaignObj.id) : {};
@@ -179,32 +210,469 @@ const Costos = () => {
     return categoriaLabels[costo.category] || costo.category;
   };
 
+  const [selectedCostForDetail, setSelectedCostForDetail] = useState<any>(null);
+  const hasInitializedDetailRef = useRef(false);
+
+  // Clear detail when current campaign changes
+  useEffect(() => {
+    setSelectedCostForDetail(null);
+  }, [currentCampaign]);
+
+  // Load last cost group on first render once costs are loaded
+  useEffect(() => {
+    if (!costsLoading && costosGrouped.length > 0 && !hasInitializedDetailRef.current) {
+      const lastCost = [...costosFiltered].sort((a, b) => b.id - a.id)[0];
+      if (lastCost) {
+        const lastGroup = costosGrouped.find(g => g.category === lastCost.category);
+        if (lastGroup) {
+          setSelectedCostForDetail(lastGroup);
+          hasInitializedDetailRef.current = true;
+        }
+      }
+    }
+  }, [costsLoading, costosFiltered, costosGrouped]);
+
+  const renderCostDetail = (group: any) => {
+    const costsList = group.costs || [];
+    if (costsList.length === 0) return null;
+
+    return (
+      <div className="space-y-6">
+        {costsList.map((costo: any, index: number) => {
+          const details = costo.details || {};
+          const isQuick = !!details.quickMode;
+
+          return (
+            <div key={costo.id} className="space-y-4">
+              {costsList.length > 1 && (
+                <div className="text-sm font-semibold text-primary border-b pb-1">
+                  Registro #{index + 1}: {getCostoDescription(costo)}
+                </div>
+              )}
+              {(() => {
+                switch (costo.category) {
+                  case "insumos": {
+                    if (isQuick) {
+                      const subtotals = details.subtotals || {};
+                      const activeSubtotals = Object.entries(subtotals).filter(([_, val]) => Number(val) > 0);
+                      return (
+                        <div className="space-y-3">
+                          <div className="text-sm font-semibold text-muted-foreground mb-1">Carga Rápida (Subtotales)</div>
+                          {activeSubtotals.length > 0 ? (
+                            <div className="divide-y divide-border rounded-md border bg-slate-50/50">
+                              {activeSubtotals.map(([key, val]) => {
+                                const label = {
+                                  "fertilizantes-suelo": "Fertilizantes al suelo",
+                                  "fertilizantes-foliares": "Fertilizantes foliares",
+                                  "fungicidas": "Fungicidas",
+                                  "herbicidas": "Herbicidas",
+                                  "insecticidas": "Insecticidas",
+                                  "otros": "Otros"
+                                }[key] || key;
+                                return (
+                                  <div key={key} className="flex justify-between p-2.5 text-sm">
+                                    <span className="font-medium text-foreground">{label}</span>
+                                    <span className="font-semibold text-right">${Number(val).toLocaleString()}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">No hay subtotales registrados.</p>
+                          )}
+                        </div>
+                      );
+                    } else {
+                      const items = details.items || [];
+                      return (
+                        <div className="space-y-4">
+                          <div className="text-sm font-semibold text-muted-foreground mb-1">Insumo: {details.type}</div>
+                          {items.length > 0 ? (
+                            <div className="space-y-3">
+                              {items.map((item: any, idx: number) => (
+                                <div key={item.id || idx} className="p-3 border rounded-lg bg-slate-50/50 space-y-2">
+                                  <div className="flex justify-between font-semibold text-sm">
+                                    <span className="text-foreground">{item.product}</span>
+                                    <span className="text-foreground">${Number(item.cost).toLocaleString()}</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                    <div>Precio unitario: ${Number(item.unit_price).toLocaleString()}</div>
+                                    {item.quantity_used !== undefined ? (
+                                      <div>Cantidad usada: {item.quantity_used} kg/L</div>
+                                    ) : (
+                                      <>
+                                        <div>Dosis: {item.application_dose_ml} ml/ha</div>
+                                        <div>Volumen: {item.application_volume_l} L/ha</div>
+                                        <div className="col-span-2">Aplicaciones: {item.application_count}</div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">No hay productos registrados en este detalle.</p>
+                          )}
+                        </div>
+                      );
+                    }
+                  }
+
+                  case "combustible": {
+                    if (isQuick) {
+                      return (
+                        <div className="p-3 border rounded-lg bg-slate-50/50 flex justify-between items-center text-sm">
+                          <span className="font-medium text-muted-foreground">Carga rápida</span>
+                          <span className="font-bold text-foreground">${Number(costo.total_amount).toLocaleString()}</span>
+                        </div>
+                      );
+                    } else {
+                      const fuelData = details.data || {};
+                      const breakdown = details.breakdown || {};
+                      return (
+                        <div className="space-y-4">
+                          <div className="text-sm font-semibold text-muted-foreground mb-1">Combustible: {details.type}</div>
+
+                          {details.type === "Tractores" && (
+                            <div className="space-y-3">
+                              <div className="p-3 border rounded-lg bg-slate-50/50 space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Litros estimados:</span>
+                                  <span className="font-semibold text-foreground">{Number(fuelData.fuel_liters).toLocaleString()} L</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Precio por litro:</span>
+                                  <span className="font-semibold text-foreground">${Number(fuelData.fuel_price).toLocaleString()}</span>
+                                </div>
+                                <div className="border-t border-dashed my-2 pt-2 flex justify-between font-semibold">
+                                  <span>Total combustible:</span>
+                                  <span>${Number(breakdown.total_fuel_cost).toLocaleString()}</span>
+                                </div>
+                              </div>
+                              {fuelData.machinery_list && fuelData.machinery_list.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-semibold text-muted-foreground">Horas y Consumo de Maquinaria</div>
+                                  <div className="space-y-1.5">
+                                    {fuelData.machinery_list.map((m: any, idx: number) => (
+                                      <div key={idx} className="p-2 border rounded bg-white text-xs space-y-1">
+                                        <div className="font-semibold text-foreground">{m.name}</div>
+                                        <div className="flex justify-between text-muted-foreground">
+                                          <span>Horas: {m.hours_used} h | Consumo: {m.consumption_rate} L/h</span>
+                                          <span className="font-semibold text-foreground">{(m.hours_used * m.consumption_rate).toFixed(1)} L</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {details.type === "Vehículos/Rodados" && (
+                            <div className="space-y-3">
+                              <div className="p-3 border rounded-lg bg-slate-50/50 space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Litros:</span>
+                                  <span className="font-semibold text-foreground">{Number(fuelData.fuel_liters).toLocaleString()} L</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Precio por litro:</span>
+                                  <span className="font-semibold text-foreground">${Number(fuelData.fuel_price).toLocaleString()}</span>
+                                </div>
+                              </div>
+                              {fuelData.fleet_list && fuelData.fleet_list.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-semibold text-muted-foreground">Flota de Vehículos</div>
+                                  <div className="space-y-1.5">
+                                    {fuelData.fleet_list.map((v: any, idx: number) => (
+                                      <div key={idx} className="flex justify-between p-2 border rounded bg-white text-xs">
+                                        <span className="font-medium text-foreground">{v.name}</span>
+                                        <span className="text-muted-foreground">Valor: ${Number(v.value).toLocaleString()}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {(details.type === "Riego" || details.type === "Otros") && (
+                            <div className="p-3 border rounded-lg bg-slate-50/50 space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Litros:</span>
+                                <span className="font-semibold text-foreground">{Number(fuelData.fuel_liters).toLocaleString()} L</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Precio por litro:</span>
+                                <span className="font-semibold text-foreground">${Number(fuelData.fuel_price).toLocaleString()}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                  }
+
+                  case "mano-obra": {
+                    if (isQuick) {
+                      return (
+                        <div className="p-3 border rounded-lg bg-slate-50/50 flex justify-between items-center text-sm">
+                          <span className="font-medium text-muted-foreground">Carga rápida</span>
+                          <span className="font-bold text-foreground">${Number(costo.total_amount).toLocaleString()}</span>
+                        </div>
+                      );
+                    } else {
+                      const staffList = details.data?.staff_list || [];
+                      const breakdown = details.breakdown || {};
+                      return (
+                        <div className="space-y-4">
+                          <div className="text-sm font-semibold text-muted-foreground mb-1">Mano de Obra: {details.type}</div>
+                          <div className="p-3 border rounded-lg bg-slate-50/50 space-y-1.5 text-xs text-muted-foreground">
+                            <div className="flex justify-between text-sm text-foreground font-semibold">
+                              <span>Total Anual:</span>
+                              <span>${Number(breakdown.total_annual_gross).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Planilla Mensual:</span>
+                              <span>${Number(breakdown.total_monthly_payroll).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          {staffList.length > 0 ? (
+                            <div className="space-y-2">
+                              <div className="text-xs font-semibold text-muted-foreground">Personal Registrado</div>
+                              {staffList.map((s: any, idx: number) => {
+                                const monthlyCost = s.salary_base * (1 + s.social_tax_pct / 100) * s.people_count;
+                                return (
+                                  <div key={idx} className="p-2.5 border rounded bg-white text-xs space-y-1">
+                                    <div className="flex justify-between font-semibold text-foreground">
+                                      <span>{s.role} ({s.people_count})</span>
+                                      <span>${monthlyCost.toLocaleString()}/mes</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Sueldo Base: ${Number(s.salary_base).toLocaleString()}</span>
+                                      <span>Cargas Sociales: {s.social_tax_pct}%</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">No hay personal registrado.</p>
+                          )}
+                        </div>
+                      );
+                    }
+                  }
+
+                  case "energia": {
+                    if (isQuick) {
+                      return (
+                        <div className="p-3 border rounded-lg bg-slate-50/50 flex justify-between items-center text-sm">
+                          <span className="font-medium text-muted-foreground">Carga rápida</span>
+                          <span className="font-bold text-foreground">${Number(costo.total_amount).toLocaleString()}</span>
+                        </div>
+                      );
+                    } else {
+                      const subtotalAnual = details.data?.subtotalAnual || 0;
+                      return (
+                        <div className="space-y-3">
+                          <div className="text-sm font-semibold text-muted-foreground mb-1">Energía: {details.type}</div>
+                          <div className="p-3 border rounded-lg bg-slate-50/50 flex justify-between text-sm">
+                            <span className="text-muted-foreground">Subtotal Anual:</span>
+                            <span className="font-bold text-foreground">${Number(subtotalAnual).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                  }
+
+                  case "cosecha": {
+                    const data = details.data || {};
+                    const valores = data.valores || {};
+                    const activeValores = Object.entries(valores).filter(([_, val]) => Number(val) > 0);
+                    const labels: Record<string, string> = {
+                      cosecha_maquinaria: "Cosecha maquinaria",
+                      cosecha_mano_obra: "Cosecha mano de obra",
+                      limpieza_maquinaria: "Limpieza maquinaria",
+                      limpieza_mano_obra: "Limpieza mano de obra",
+                      cosecha_tercerizada: "Cosecha tercerizada",
+                      secado_clasificacion: "Secado, clasificación y almacén",
+                      transporte: "Transporte nacional e internacional",
+                    };
+                    return (
+                      <div className="space-y-3">
+                        <div className="text-sm font-semibold text-muted-foreground mb-1">Desglose de Cosecha</div>
+                        {activeValores.length > 0 ? (
+                          <div className="divide-y divide-border rounded-md border bg-slate-50/50">
+                            {activeValores.map(([key, val]) => (
+                              <div key={key} className="flex justify-between p-2.5 text-sm">
+                                <span className="font-medium text-foreground">{labels[key] || key}</span>
+                                <span className="font-semibold text-right">${Number(val).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">No hay costos de cosecha registrados.</p>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  case "gastos-admin": {
+                    if (isQuick) {
+                      return (
+                        <div className="p-3 border rounded-lg bg-slate-50/50 flex justify-between items-center text-sm">
+                          <span className="font-medium text-muted-foreground">Carga rápida</span>
+                          <span className="font-bold text-foreground">${Number(costo.total_amount).toLocaleString()}</span>
+                        </div>
+                      );
+                    } else {
+                      const data = details.data || {};
+                      const isGenerales = details.type === "Gastos Generales";
+                      return (
+                        <div className="space-y-4">
+                          <div className="text-sm font-semibold text-muted-foreground mb-1">Gastos de Administración: {details.type}</div>
+                          {isGenerales ? (
+                            <div className="space-y-2">
+                              {(data.items || []).map((item: any, idx: number) => (
+                                <div key={item.id || idx} className="flex justify-between p-2.5 border rounded bg-slate-50/50 text-xs">
+                                  <span className="font-medium text-foreground">{item.tipo}</span>
+                                  <span className="font-bold text-foreground">${Number(item.monto).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {(data.staff || []).map((item: any, idx: number) => {
+                                const totalRemun = item.remuneracion * (1 + item.cargasSociales / 100) * item.nroProfesionales;
+                                return (
+                                  <div key={item.id || idx} className="p-2.5 border rounded bg-slate-50/50 text-xs space-y-1">
+                                    <div className="flex justify-between font-semibold text-foreground">
+                                      <span>{item.rol} ({item.nroProfesionales})</span>
+                                      <span>${totalRemun.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Remuneración: ${Number(item.remuneracion).toLocaleString()}</span>
+                                      <span>Cargas Sociales: {item.cargasSociales}%</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                  }
+
+                  case "mantenimientos": {
+                    const items = details.items || [];
+                    return (
+                      <div className="space-y-3">
+                        <div className="text-sm font-semibold text-muted-foreground mb-1">Herramientas y Reparaciones</div>
+                        {items.length > 0 ? (
+                          <div className="divide-y divide-border rounded-md border bg-slate-50/50">
+                            {items.map((item: any, idx: number) => (
+                              <div key={item.id || idx} className="flex justify-between p-2.5 text-sm">
+                                <span className="font-medium text-foreground">{item.nombreHerramienta}</span>
+                                <span className="font-semibold text-right">${Number(item.precioReparacion).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">No hay herramientas registradas.</p>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  case "costos-oportunidad": {
+                    return (
+                      <div className="space-y-3">
+                        <div className="text-sm font-semibold text-muted-foreground mb-1">Detalle de Costo de Oportunidad</div>
+                        <div className="p-3 border rounded-lg bg-slate-50/50 space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Tipo:</span>
+                            <span className="font-semibold text-foreground">{details.type}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Cantidad / Hectáreas:</span>
+                            <span className="font-semibold text-foreground">{details.cantidad}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Precio por Unidad:</span>
+                            <span className="font-semibold text-foreground">${Number(details.precioUnidad).toLocaleString()}</span>
+                          </div>
+                          <div className="border-t border-dashed my-2 pt-2 flex justify-between font-bold">
+                            <span>Total:</span>
+                            <span>${Number(details.total).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  case "otros": {
+                    const items = details.items || [];
+                    return (
+                      <div className="space-y-3">
+                        <div className="text-sm font-semibold text-muted-foreground mb-1">Conceptos Adicionales</div>
+                        {items.length > 0 ? (
+                          <div className="divide-y divide-border rounded-md border bg-slate-50/50">
+                            {items.map((item: any, idx: number) => (
+                              <div key={item.id || idx} className="flex justify-between p-2.5 text-sm">
+                                <span className="font-medium text-foreground">{item.concepto}</span>
+                                <span className="font-semibold text-right">${Number(item.monto).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">No hay conceptos registrados.</p>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  default:
+                    return <pre className="text-xs overflow-auto max-h-40">{JSON.stringify(details, null, 2)}</pre>;
+                }
+              })()}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCosto, setEditingCosto] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [costoToDelete, setCostoToDelete] = useState<any>(null);
+  const [groupToDelete, setGroupToDelete] = useState<any>(null);
 
-  const handleDeleteCosto = (costo: any) => {
-    setCostoToDelete(costo);
+  const handleDeleteCostoGroup = (group: any) => {
+    setGroupToDelete(group);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (costoToDelete) {
+    if (groupToDelete) {
       try {
-        await deleteCost(costoToDelete.id);
-        toast.success("Costo eliminado correctamente");
+        await Promise.all(groupToDelete.costs.map((costo: any) => deleteCost(costo.id)));
+        toast.success("Categoría eliminada correctamente");
+        if (selectedCostForDetail?.category === groupToDelete.category) {
+          setSelectedCostForDetail(null);
+        }
       } catch (error) {
-        toast.error("Error al eliminar el costo");
-        console.error("Error deleting cost:", error);
+        toast.error("Error al eliminar los costos de la categoría");
+        console.error("Error deleting cost group:", error);
       }
     }
     setDeleteDialogOpen(false);
-    setCostoToDelete(null);
+    setGroupToDelete(null);
   };
 
-  const handleEditCosto = (costo: any) => {
-    setEditingCosto(costo);
+  const handleEditCostoGroup = (group: any) => {
+    setEditingCosto(group.costs[0]);
     setSheetOpen(true);
   };
 
@@ -280,6 +748,7 @@ const Costos = () => {
         });
         toast.success("Costo registrado");
       }
+      setSelectedCostForDetail(null);
     } catch (error) {
       toast.error("Error al guardar el costo");
       console.error("Error saving cost:", error);
@@ -463,74 +932,130 @@ const Costos = () => {
           </div>
 
           {/* Registro de costos (Debajo del grid) */}
-          <Card className="border-border/50 shadow-md">
-            <CardHeader>
-              <CardTitle className="text-foreground">Detalle de Costos campaña {currentCampaign}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {costosFiltered.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Año</th>
-                        <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Categoría</th>
-                        <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Descripción</th>
-                        <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Monto</th>
-                        <th className="text-center p-3 text-sm font-semibold text-muted-foreground">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {costosFiltered.map((costo: any) => (
-                        <tr key={costo.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                          <td className="p-3 text-sm font-medium text-foreground">{currentCampaign}</td>
-                          <td className="p-3 text-sm">
-                            <Badge
-                              style={{
-                                backgroundColor: categoriaColors[costo.category] || "#cccccc",
-                                color: "white",
-                              }}
-                            >
-                              {categoriaLabels[costo.category] || costo.category}
-                            </Badge>
-                          </td>
-                          <td className="p-3 text-sm text-foreground">{getCostoDescription(costo)}</td>
-                          <td className="p-3 text-sm text-right font-semibold text-foreground">
-                            ${Number(costo.total_amount).toLocaleString()}
-                          </td>
-                          <td className="p-3 text-sm text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                onClick={() => handleEditCosto(costo)}
-                                title="Editar costo"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={() => handleDeleteCosto(costo)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <Card className={cn("border-border/50 shadow-md transition-all w-full", selectedCostForDetail ? "lg:w-2/3" : "w-full")}>
+              <CardHeader>
+                <CardTitle className="text-foreground">Detalle de Costos campaña {currentCampaign}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {costosGrouped.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Rubro/Categoría</th>
+                          <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Total</th>
+                          <th className="text-center p-3 text-sm font-semibold text-muted-foreground">Acciones</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {costosGrouped.map((group: any) => (
+                          <tr key={group.category} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
+                            <td className="p-3 text-sm">
+                              <div className="flex items-center gap-2.5">
+                                {(() => {
+                                  const IconComponent = categoryIcons[group.category] || MoreHorizontal;
+                                  return (
+                                    <IconComponent
+                                      className="h-5 w-5 shrink-0"
+                                      style={{ color: categoriaColors[group.category] || "#64748b" }}
+                                    />
+                                  );
+                                })()}
+                                <span className="font-semibold text-foreground">
+                                  {categoriaLabels[group.category] || group.category}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-sm text-right font-semibold text-foreground">
+                              ${Number(group.total_amount).toLocaleString()}
+                            </td>
+                            <td className="p-3 text-sm text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn(
+                                    "h-8 w-8 text-muted-foreground hover:text-primary",
+                                    selectedCostForDetail?.category === group.category && "text-primary bg-primary/10"
+                                  )}
+                                  onClick={() => {
+                                    if (selectedCostForDetail?.category === group.category) {
+                                      setSelectedCostForDetail(null);
+                                    } else {
+                                      setSelectedCostForDetail(group);
+                                    }
+                                  }}
+                                  title="Ver detalle"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                  onClick={() => handleEditCostoGroup(group)}
+                                  title="Editar costos de la categoría"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => handleDeleteCostoGroup(group)}
+                                  title="Eliminar costos de la categoría"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>No hay costos registrados para la campaña {currentCampaign}.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {selectedCostForDetail && (
+              <Card className="border-border/50 shadow-md bg-white w-full lg:w-1/3 shrink-0 flex flex-col justify-between h-fit min-h-[300px]">
+                <div>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-border/50">
+                    <div className="flex flex-col">
+                      <CardTitle className="text-foreground text-base font-semibold">
+                        {categoriaLabels[selectedCostForDetail.category] || selectedCostForDetail.category} - Campaña {currentCampaign}
+                      </CardTitle>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full"
+                      onClick={() => setSelectedCostForDetail(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    {renderCostDetail(selectedCostForDetail)}
+                  </CardContent>
                 </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No hay costos registrados para la campaña {currentCampaign}.</p>
+                <div className="p-6 pt-4 mt-auto border-t border-border bg-slate-50/50 rounded-b-xl">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-muted-foreground">Monto Total:</span>
+                    <span className="text-2xl font-bold text-foreground">
+                      ${Number(selectedCostForDetail.total_amount).toLocaleString()}
+                    </span>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="historica" className="space-y-6">
@@ -685,9 +1210,9 @@ const Costos = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar este costo?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar costos de esta categoría?</AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminará permanentemente el registro.
+              Se eliminarán permanentemente todos los registros asociados a esta categoría.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
