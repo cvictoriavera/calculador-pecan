@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 // ScrollArea eliminado en la tabla de evolución, pero mantenido por si se usa en otros lados, 
 // aunque aquí usamos div nativo para el sticky.
-import { Plus, DollarSign, Pencil, Trash2, Info } from "lucide-react";
+import { Plus, DollarSign, Pencil, Trash2, Info, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import {
@@ -95,6 +95,9 @@ const Inversiones = () => {
       .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
   };
 
+  const [showInfoCard, setShowInfoCard] = useState(() => {
+    return localStorage.getItem("hide_inversiones_info_card") !== "true";
+  });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingInversion, setEditingInversion] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -251,20 +254,32 @@ const Inversiones = () => {
         </Button>
       </div>
 
-      <Card className="bg-amber-50 border-amber-200 mb-6">
-        <CardContent className="flex items-start gap-4 p-4">
-          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <p className="font-medium font-semibold text-amber-900">
-              Al registrar tus inversiones recuerda:
-            </p>
-            <p className="text-sm text-amber-800/90 leading-relaxed">
-              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros.
-              <br />
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {showInfoCard && (
+        <Card className="relative bg-amber-50 border-amber-200 mb-6">
+          <CardContent className="flex items-start gap-4 p-4 pr-10">
+            <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-medium font-semibold text-amber-900">
+                Al registrar tus inversiones recuerda:
+              </p>
+              <p className="text-sm text-amber-800/90 leading-relaxed">
+                Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros.
+                <br />
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem("hide_inversiones_info_card", "true");
+                setShowInfoCard(false);
+              }}
+              className="absolute top-3 right-3 text-amber-600 hover:text-amber-800 hover:bg-amber-100/60 p-1 rounded-full transition-colors"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Card */}
       <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">

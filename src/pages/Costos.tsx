@@ -1,4 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, TrendingUp, Pencil, Trash2, Info, Scale, Eye, X, Beaker, Fuel, Users, Zap, Wheat, FileText, Wrench, MoreHorizontal } from "lucide-react";
@@ -13,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { ResponsiveContainer, Legend, Tooltip, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ComposedChart, Line } from "recharts";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import { useDataStore } from "@/stores";
 import { useApp } from "@/contexts/AppContext";
@@ -68,7 +72,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         backgroundColor: "hsl(var(--card))",
         border: "1px solid hsl(var(--border))",
         borderRadius: "8px",
-        padding: "10px"
+        padding: "10px",
+        fontSize: "12px"
       }}>
         <p style={{ margin: 0, fontWeight: 'bold' }}>{`Año: ${label}`}</p>
         {filteredPayload.map((item: any, index: number) => (
@@ -90,6 +95,18 @@ const Costos = () => {
   const deleteCost = useDataStore(state => state.deleteCost);
   const { getCostByCategory, getTotalCostsByCampaign, getTotalProductionByCampaign } = useCalculationsStore();
   const loadAllProductions = useDataStore(state => state.loadAllProductions);
+
+  // Filtros de evolución histórica
+  const [filterType, setFilterType] = useState<"all" | "3years" | "5years" | "custom">("all");
+  const [customStartYear, setCustomStartYear] = useState<number>(0);
+  const [customEndYear, setCustomEndYear] = useState<number>(0);
+  const [customModalOpen, setCustomModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  // Estados temporales del modal de rango personalizado
+  const [tempFilterType, setTempFilterType] = useState<"3years" | "5years" | "custom">("3years");
+  const [tempStartYear, setTempStartYear] = useState<number>(0);
+  const [tempEndYear, setTempEndYear] = useState<number>(0);
 
   // Cargar producciones para calcular Kilos Reales Cosechados
   useEffect(() => {
@@ -173,18 +190,41 @@ const Costos = () => {
       .sort((a, b) => Number(a.year) - Number(b.year))
       .map((campaign) => {
         const year = Number(campaign.year);
-
         const costsByCategory = getCostByCategory(campaign.id);
+        const totalCost = selectedCategory === "all"
+          ? Object.values(costsByCategory).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0)
+          : Number(costsByCategory[selectedCategory]) || 0;
 
-        const yearData: any = { year };
+        // Calcular kilos reales cosechados para esta campaña
+        const totalKilos = getTotalProductionByCampaign(campaign.id);
+        const costoPorKilo = totalKilos > 0 ? totalCost / totalKilos : 0;
 
-        Object.keys(categoriaLabels).forEach((category) => {
-          yearData[category] = costsByCategory[category] || 0;
-        });
-
-        return yearData;
+        return {
+          year,
+          totalCost,
+          costoPorKilo,
+        };
       });
-  }, [campaigns, getCostByCategory, costs]);
+  }, [campaigns, getCostByCategory, costs, selectedCategory, getTotalProductionByCampaign]);
+
+  const displayedYears = useMemo(() => {
+    if (campaigns.length === 0) return [];
+    return campaigns.map(c => Number(c.year)).sort((a, b) => a - b);
+  }, [campaigns]);
+
+  // Filtrar los datos del gráfico según la selección
+  const filteredChartData = useMemo(() => {
+    if (chartData.length === 0) return [];
+    let data = [...chartData];
+    if (filterType === "3years") {
+      data = data.slice(-3);
+    } else if (filterType === "5years") {
+      data = data.slice(-5);
+    } else if (filterType === "custom") {
+      data = data.filter(d => d.year >= customStartYear && d.year <= customEndYear);
+    }
+    return data;
+  }, [chartData, filterType, customStartYear, customEndYear]);
 
   // Helper para la tabla de evolución
   const getCostForCategoryAndYear = (category: string, year: number): number => {
@@ -211,7 +251,30 @@ const Costos = () => {
   };
 
   const [selectedCostForDetail, setSelectedCostForDetail] = useState<any>(null);
+  const [showInfoCard, setShowInfoCard] = useState(() => {
+    return localStorage.getItem("hide_costos_info_card") !== "true";
+  });
+  const [showCostoPorKiloLine, setShowCostoPorKiloLine] = useState(true);
   const hasInitializedDetailRef = useRef(false);
+
+  const handleOpenCustomModal = () => {
+    setTempFilterType(filterType === "custom" ? "custom" : "3years");
+    setTempStartYear(customStartYear || displayedYears[0] || 0);
+    setTempEndYear(customEndYear || displayedYears[displayedYears.length - 1] || 0);
+    setCustomModalOpen(true);
+  };
+
+  // Inicializar rango de años
+  useEffect(() => {
+    if (displayedYears.length > 0) {
+      if (customStartYear === 0) {
+        setCustomStartYear(displayedYears[0]);
+      }
+      if (customEndYear === 0) {
+        setCustomEndYear(displayedYears[displayedYears.length - 1]);
+      }
+    }
+  }, [displayedYears, customStartYear, customEndYear]);
 
   // Clear detail when current campaign changes
   useEffect(() => {
@@ -755,10 +818,7 @@ const Costos = () => {
     }
   };
 
-  const displayedYears = useMemo(() => {
-    if (campaigns.length === 0) return [];
-    return campaigns.map(c => Number(c.year)).sort((a, b) => a - b);
-  }, [campaigns]);
+
 
   if (costsLoading) {
     return (
@@ -784,22 +844,34 @@ const Costos = () => {
         </Button>
       </div>
 
-      <Card className="bg-amber-50 border-amber-200 mb-6">
-        <CardContent className="flex items-start gap-4 p-4">
-          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <p className="font-medium font-semibold text-amber-900">
-              Al registrar tus costos recuerda:
-            </p>
-            <p className="text-sm text-amber-800/90 leading-relaxed">
-              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses
-              que duro la campaña en cada uno de los rubros.
-              <br />
-              <span className="italic mt-1 block">Nota: Si compraste maquinaria, instalaste riego o realizaste mejoras permanentes, se registran en la sección de <strong>Inversiones</strong>.</span>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {showInfoCard && (
+        <Card className="relative bg-amber-50 border-amber-200 mb-6">
+          <CardContent className="flex items-start gap-4 p-4 pr-10">
+            <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-medium font-semibold text-amber-900">
+                Al registrar tus costos recuerda:
+              </p>
+              <p className="text-sm text-amber-800/90 leading-relaxed">
+                Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses
+                que duro la campaña en cada uno de los rubros.
+                <br />
+                <span className="italic mt-1 block">Nota: Si compraste maquinaria, instalaste riego o realizaste mejoras permanentes, se registran en la sección de <strong>Inversiones</strong>.</span>
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem("hide_costos_info_card", "true");
+                setShowInfoCard(false);
+              }}
+              className="absolute top-3 right-3 text-amber-600 hover:text-amber-800 hover:bg-amber-100/60 p-1 rounded-full transition-colors"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="resumen" className="w-full space-y-6">
         <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -1059,30 +1131,142 @@ const Costos = () => {
         </TabsContent>
 
         <TabsContent value="historica" className="space-y-6">
-          {/* Evolución de costos por categoría */}
+          {/* Evolución de costos por año */}
           <Card className="border-border/50 shadow-md">
-            <CardHeader>
-              <CardTitle className="text-foreground">Evolución de Costos por Categoría</CardTitle>
+            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4">
+              <div>
+                <CardTitle className="text-foreground">
+                  {selectedCategory === "all"
+                    ? "Evolución de Costos Operativos Totales Anuales"
+                    : `Evolución de Costos Anuales: ${categoriaLabels[selectedCategory]}`}
+                </CardTitle>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Selector de Categoría/Rubro */}
+                <div className="w-[180px]">
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={setSelectedCategory}
+                  >
+                    <SelectTrigger className="h-9 text-xs bg-white">
+                      <SelectValue placeholder="Categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="text-xs">Todos los rubros</SelectItem>
+                      {Object.entries(categoriaLabels).map(([key, label]) => (
+                        <SelectItem key={key} value={key} className="text-xs">
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Botones de filtro rápido */}
+                <div className="flex items-center border rounded-md p-0.5 bg-slate-50">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-8 px-3 text-xs",
+                      filterType === "all" ? "bg-white shadow-sm font-semibold text-foreground" : "text-muted-foreground"
+                    )}
+                    onClick={() => setFilterType("all")}
+                  >
+                    Todos
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-8 px-3 text-xs",
+                      filterType === "3years" ? "bg-white shadow-sm font-semibold text-foreground" : "text-muted-foreground"
+                    )}
+                    onClick={() => setFilterType("3years")}
+                  >
+                    Últimos 3 años
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-8 px-3 text-xs",
+                      filterType === "5years" ? "bg-white shadow-sm font-semibold text-foreground" : "text-muted-foreground"
+                    )}
+                    onClick={() => setFilterType("5years")}
+                  >
+                    Últimos 5 años
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-8 px-3 text-xs",
+                      filterType === "custom" ? "bg-white shadow-sm font-semibold text-foreground" : "text-muted-foreground"
+                    )}
+                    onClick={handleOpenCustomModal}
+                  >
+                    Personalizado {filterType === "custom" && `(${customStartYear}-${customEndYear})`}
+                  </Button>
+                </div>
+
+                <div className="flex items-center space-x-2 border-l pl-4">
+                  <Switch
+                    id="show-costo-kg"
+                    checked={showCostoPorKiloLine}
+                    onCheckedChange={setShowCostoPorKiloLine}
+                  />
+                  <Label htmlFor="show-costo-kg" className="text-sm font-medium cursor-pointer whitespace-nowrap">
+                    Mostrar Costo / Kg
+                  </Label>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              {chartData.length > 0 ? (
+              {filteredChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <ComposedChart data={filteredChartData} margin={{ top: 20, right: 40, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis />
+                    <XAxis
+                      dataKey="year"
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      stroke="hsl(var(--muted-foreground))"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `$${Number(value).toLocaleString()}`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      stroke="hsl(var(--muted-foreground))"
+                      tick={{ fontSize: 12 }}
+                      label={{ value: "USD / Kg", angle: 90, position: "insideRight", style: { fill: "hsl(var(--muted-foreground))", fontSize: "12px", textAnchor: "middle" } }}
+                      tickFormatter={(value) => `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    />
                     <Tooltip content={CustomTooltip} />
-                    <Legend />
-                    {Object.keys(categoriaLabels).map((category) => (
-                      <Bar
-                        key={category}
-                        dataKey={category}
-                        stackId="a"
-                        fill={categoriaColors[category] || "#cccccc"}
-                        name={categoriaLabels[category]}
+                    <Legend wrapperStyle={{ fontSize: "12px" }} />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="totalCost"
+                      fill={selectedCategory === "all" ? "hsl(var(--primary))" : (categoriaColors[selectedCategory] || "#cccccc")}
+                      radius={[4, 4, 0, 0]}
+                      name={selectedCategory === "all" ? "Costo Total" : `Costo: ${categoriaLabels[selectedCategory]}`}
+                    />
+                    {showCostoPorKiloLine && (
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="costoPorKilo"
+                        stroke="#f2794a"
+                        strokeWidth={3}
+                        dot={{ fill: "#f2794a", r: 4 }}
+                        activeDot={{ r: 6 }}
+                        name="Costo por Kilo"
                       />
-                    ))}
-                  </BarChart>
+                    )}
+                  </ComposedChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[400px] flex items-center justify-center text-muted-foreground">
@@ -1223,6 +1407,143 @@ const Costos = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={customModalOpen} onOpenChange={setCustomModalOpen}>
+        <DialogContent className="max-w-[420px] p-6 rounded-xl bg-white border border-border shadow-lg">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-xl font-semibold text-foreground">Intervalo de años</DialogTitle>
+          </DialogHeader>
+
+          {/* Custom Tabs (Visual) */}
+          <div className="flex border-b border-border text-sm mb-4">
+            <button className="px-4 py-2 font-semibold text-primary border-b-2 border-primary -mb-[2px]">
+              Filtrar
+            </button>
+            <button className="px-4 py-2 font-medium text-muted-foreground cursor-not-allowed" disabled>
+              Comparar
+            </button>
+          </div>
+
+          {/* Options */}
+          <div className="space-y-4 py-2">
+            {/* Option 3 years */}
+            <label className="flex items-center space-x-3 cursor-pointer py-1 group">
+              <input
+                type="radio"
+                name="modalFilterType"
+                checked={tempFilterType === "3years"}
+                onChange={() => setTempFilterType("3years")}
+                className="h-4 w-4 accent-primary border-border focus:ring-primary focus:ring-2"
+              />
+              <span className="text-sm font-medium text-foreground group-hover:text-foreground/80">
+                Últimos 3 años
+              </span>
+            </label>
+
+            {/* Option 5 years */}
+            <label className="flex items-center space-x-3 cursor-pointer py-1 group">
+              <input
+                type="radio"
+                name="modalFilterType"
+                checked={tempFilterType === "5years"}
+                onChange={() => setTempFilterType("5years")}
+                className="h-4 w-4 accent-primary border-border focus:ring-primary focus:ring-2"
+              />
+              <span className="text-sm font-medium text-foreground group-hover:text-foreground/80">
+                Últimos 5 años
+              </span>
+            </label>
+
+            {/* Option custom */}
+            <label className="flex items-center space-x-3 cursor-pointer py-1 group">
+              <input
+                type="radio"
+                name="modalFilterType"
+                checked={tempFilterType === "custom"}
+                onChange={() => setTempFilterType("custom")}
+                className="h-4 w-4 accent-primary border-border focus:ring-primary focus:ring-2"
+              />
+              <span className="text-sm font-medium text-foreground group-hover:text-foreground/80">
+                Personalizado
+              </span>
+            </label>
+
+            {/* Custom Range select inputs */}
+            {tempFilterType === "custom" && (
+              <div className="flex items-center gap-4 pt-3 pl-7 animate-in fade-in slide-in-from-top-1 duration-200">
+                {/* Start year select */}
+                <div className="relative border border-slate-300 rounded-md p-2.5 flex-1 bg-white focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+                  <span className="absolute -top-2 left-2 px-1 text-[10px] font-semibold text-muted-foreground bg-white">
+                    Año de inicio
+                  </span>
+                  <select
+                    value={tempStartYear}
+                    onChange={(e) => setTempStartYear(Number(e.target.value))}
+                    className="w-full bg-transparent text-sm focus:outline-none appearance-none cursor-pointer pr-6 font-medium text-foreground"
+                  >
+                    {displayedYears.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground text-xs">
+                    ▼
+                  </div>
+                </div>
+
+                <span className="text-muted-foreground font-semibold">—</span>
+
+                {/* End year select */}
+                <div className="relative border border-slate-300 rounded-md p-2.5 flex-1 bg-white focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+                  <span className="absolute -top-2 left-2 px-1 text-[10px] font-semibold text-muted-foreground bg-white">
+                    Año de finalización
+                  </span>
+                  <select
+                    value={tempEndYear}
+                    onChange={(e) => setTempEndYear(Number(e.target.value))}
+                    className="w-full bg-transparent text-sm focus:outline-none appearance-none cursor-pointer pr-6 font-medium text-foreground"
+                  >
+                    {displayedYears.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground text-xs">
+                    ▼
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex justify-end items-center gap-3 pt-6 border-t border-border mt-4">
+            <Button
+              variant="ghost"
+              onClick={() => setCustomModalOpen(false)}
+              className="text-primary hover:bg-slate-100 px-4 py-2 rounded-full font-semibold text-sm"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                setFilterType(tempFilterType);
+                if (tempFilterType === "custom") {
+                  setCustomStartYear(tempStartYear);
+                  setCustomEndYear(tempEndYear);
+                }
+                setCustomModalOpen(false);
+              }}
+              className="bg-primary hover:bg-primary/95 text-white px-5 py-2 rounded-full font-semibold text-sm shadow-sm"
+              disabled={tempFilterType === "custom" && tempStartYear > tempEndYear}
+            >
+              Aplicar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
