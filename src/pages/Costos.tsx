@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, Pencil, Trash2, Info, Scale, Eye, X, Beaker, Fuel, Users, Zap, Wheat, FileText, Wrench, MoreHorizontal } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, TrendingUp, Pencil, Trash2, Info, Scale, Eye, X, Beaker, Fuel, Users, Zap, Wheat, FileText, Wrench, MoreHorizontal, ChevronLeft, ChevronRight, Save } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,13 +89,17 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const Costos = () => {
-  const { currentProjectId, campaigns, currentCampaign, costsLoading, montes } = useApp();
+  const { currentProjectId, campaigns, currentCampaign, setCurrentCampaign, costsLoading, montes } = useApp();
   const costs = useDataStore(state => state.costs);
   const addCost = useDataStore(state => state.addCost);
   const updateCost = useDataStore(state => state.updateCost);
   const deleteCost = useDataStore(state => state.deleteCost);
   const { getCostByCategory, getTotalCostsByCampaign, getTotalProductionByCampaign } = useCalculationsStore();
   const loadAllProductions = useDataStore(state => state.loadAllProductions);
+
+  // Estados para edición rápida inline y navegación
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTotals, setEditedTotals] = useState<Record<string, string>>({});
 
   // Filtros de evolución histórica
   const [filterType, setFilterType] = useState<"all" | "3years" | "5years" | "custom">("all");
@@ -161,6 +166,178 @@ const Costos = () => {
 
     return Object.values(groups);
   }, [costosFiltered]);
+
+  // Inicializar o actualizar los inputs al cambiar de campaña, activar el modo edición, o actualizar datos de costos
+  useEffect(() => {
+    if (isEditing) {
+      const initial: Record<string, string> = {};
+      Object.keys(categoriaLabels).forEach(cat => {
+        const group = costosGrouped.find(g => g.category === cat);
+        initial[cat] = group ? String(group.total_amount) : "0";
+      });
+      setEditedTotals(initial);
+    } else {
+      setEditedTotals({});
+    }
+  }, [currentCampaign, isEditing, costosGrouped]);
+
+  // Lógica de navegación de campaña y cambios sin guardar
+  const campaignYears = useMemo(() => {
+    return campaigns
+      .map(c => Number(c.year))
+      .sort((a, b) => a - b);
+  }, [campaigns]);
+
+  const currentCampaignIndex = useMemo(() => {
+    return campaignYears.indexOf(Number(currentCampaign));
+  }, [campaignYears, currentCampaign]);
+
+  const hasPrevCampaign = currentCampaignIndex > 0;
+  const hasNextCampaign = currentCampaignIndex >= 0 && currentCampaignIndex < campaignYears.length - 1;
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isEditing) return false;
+    return Object.keys(categoriaLabels).some(cat => {
+      const group = costosGrouped.find(g => g.category === cat);
+      const original = group ? group.total_amount : 0;
+      const currentVal = editedTotals[cat];
+      if (currentVal === undefined) return false;
+      const currentNum = parseFloat(currentVal);
+      const originalNum = parseFloat(String(original));
+      const normCurrent = isNaN(currentNum) ? 0 : currentNum;
+      const normOriginal = isNaN(originalNum) ? 0 : originalNum;
+      return normCurrent !== normOriginal;
+    });
+  }, [isEditing, costosGrouped, editedTotals]);
+
+  const isModified = (category: string) => {
+    const group = costosGrouped.find(g => g.category === category);
+    const original = group ? group.total_amount : 0;
+    const currentVal = editedTotals[category];
+    if (currentVal === undefined) return false;
+    const currentNum = parseFloat(currentVal);
+    const originalNum = parseFloat(String(original));
+    const normCurrent = isNaN(currentNum) ? 0 : currentNum;
+    const normOriginal = isNaN(originalNum) ? 0 : originalNum;
+    return normCurrent !== normOriginal;
+  };
+
+  const handlePrevCampaign = () => {
+    if (hasPrevCampaign && !hasUnsavedChanges) {
+      setCurrentCampaign(campaignYears[currentCampaignIndex - 1]);
+    }
+  };
+
+  const handleNextCampaign = () => {
+    if (hasNextCampaign && !hasUnsavedChanges) {
+      setCurrentCampaign(campaignYears[currentCampaignIndex + 1]);
+    }
+  };
+
+  const startEditing = () => {
+    const initial: Record<string, string> = {};
+    Object.keys(categoriaLabels).forEach(cat => {
+      const group = costosGrouped.find(g => g.category === cat);
+      initial[cat] = group ? String(group.total_amount) : "0";
+    });
+    setEditedTotals(initial);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditedTotals({});
+  };
+
+  const handleInputChange = (category: string, value: string) => {
+    setEditedTotals(prev => ({
+      ...prev,
+      [category]: value
+    }));
+  };
+
+  const handleSaveAll = async () => {
+    if (!currentProjectId || !currentCampaignObj) {
+      toast.error("Proyecto o campaña no seleccionados");
+      return;
+    }
+
+    try {
+      const changesToSave = Object.keys(categoriaLabels).filter(category => {
+        const group = costosGrouped.find(g => g.category === category);
+        const original = group ? group.total_amount : 0;
+        const currentVal = editedTotals[category];
+        if (currentVal === undefined) return false;
+        const currentNum = parseFloat(currentVal);
+        const originalNum = parseFloat(String(original));
+        const normCurrent = isNaN(currentNum) ? 0 : currentNum;
+        const normOriginal = isNaN(originalNum) ? 0 : originalNum;
+        return normCurrent !== normOriginal;
+      }).map(category => {
+        const group = costosGrouped.find(g => g.category === category);
+        return {
+          category,
+          costs: group ? group.costs : []
+        };
+      });
+
+      if (changesToSave.length === 0) {
+        toast.info("No hay cambios que guardar");
+        return;
+      }
+
+      const loadingToastId = toast.loading("Guardando costos de campaña...");
+
+      for (const change of changesToSave) {
+        const category = change.category;
+        const newTotal = parseFloat(editedTotals[category]) || 0;
+
+        if (change.costs && change.costs.length > 0) {
+          const firstCost = change.costs[0];
+
+          if (newTotal === 0) {
+            // Eliminar todos los registros de costo de esta categoría
+            for (const cost of change.costs) {
+              await deleteCost(cost.id);
+            }
+          } else {
+            await updateCost(firstCost.id, {
+              total_amount: newTotal,
+              details: {
+                quickMode: true,
+                total: newTotal
+              }
+            });
+
+            if (change.costs.length > 1) {
+              for (let i = 1; i < change.costs.length; i++) {
+                await deleteCost(change.costs[i].id);
+              }
+            }
+          }
+        } else {
+          if (newTotal !== 0) {
+            await addCost({
+              project_id: currentProjectId,
+              campaign_id: currentCampaignObj.id,
+              category: category,
+              total_amount: newTotal,
+              details: {
+                quickMode: true,
+                total: newTotal
+              }
+            });
+          }
+        }
+      }
+
+      toast.dismiss(loadingToastId);
+      toast.success("Costos de campaña actualizados correctamente");
+    } catch (error) {
+      toast.error("Error al guardar los costos");
+      console.error("Error saving all costs:", error);
+    }
+  };
 
   // Desglose de costos por categoría para la campaña seleccionada
   const categoriesBreakdown = useMemo(() => {
@@ -880,9 +1057,86 @@ const Costos = () => {
         </TabsList>
 
         <TabsContent value="resumen" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Panel de control de navegación */}
+          <div className="flex justify-between items-center gap-4 mb-6 border-b pb-4">
+            <Button
+              variant="ghost"
+              onClick={handlePrevCampaign}
+              disabled={!hasPrevCampaign || hasUnsavedChanges}
+              className="gap-2 text-xs md:text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Campaña anterior
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={handleNextCampaign}
+              disabled={!hasNextCampaign || hasUnsavedChanges}
+              className="gap-2 text-xs md:text-sm text-muted-foreground hover:text-foreground"
+            >
+              Siguiente campaña
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 justify-between">
+            {/* Card 1: Total Costos Operativos */}
+            <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-warning/10">
+                    <TrendingUp className="h-8 w-8 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Costos Operativos</p>
+                    <p className="text-3xl font-bold text-foreground">${totalCostos.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 2: Costo por Hectárea */}
+            <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-blue-500/10">
+                    <TrendingUp className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Costo Total por ha</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      ${costoPorHectarea.toLocaleString()}{" "}
+                      <span className="text-base font-normal text-muted-foreground">USD/Ha</span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 3: Costo por Kilo */}
+            <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-emerald-500/10">
+                    <Scale className="h-8 w-8 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Costo por Kilo</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      ${costoPorKilo.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                      <span className="text-base font-normal text-muted-foreground">USD/Kg</span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* LADO IZQUIERDO: Gráfico circular y barras de progreso */}
-            <Card className="lg:col-span-2 border-border/50 shadow-md bg-white">
+            <Card className=" border-border/50 shadow-md bg-white">
               <CardHeader>
                 <CardTitle className="text-foreground">Desglose de Costos {currentCampaign}</CardTitle>
               </CardHeader>
@@ -949,185 +1203,223 @@ const Costos = () => {
             </Card>
 
             {/* LADO DERECHO: Tarjetas apiladas verticalmente */}
-            <div className="flex flex-col gap-6 justify-between">
-              {/* Card 1: Total Costos Operativos */}
-              <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-warning/10">
-                      <TrendingUp className="h-8 w-8 text-warning" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Costos Operativos</p>
-                      <p className="text-3xl font-bold text-foreground">${totalCostos.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Card 2: Costo por Hectárea */}
-              <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-blue-500/10">
-                      <TrendingUp className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Costo Total por ha</p>
-                      <p className="text-3xl font-bold text-foreground">
-                        ${costoPorHectarea.toLocaleString()}{" "}
-                        <span className="text-base font-normal text-muted-foreground">USD/Ha</span>
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Card 3: Costo por Kilo */}
-              <Card className="border-border/50 shadow-md bg-white flex-1 flex flex-col justify-center min-h-[100px]">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-emerald-500/10">
-                      <Scale className="h-8 w-8 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Costo por Kilo</p>
-                      <p className="text-3xl font-bold text-foreground">
-                        ${costoPorKilo.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                        <span className="text-base font-normal text-muted-foreground">USD/Kg</span>
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Registro de costos (Debajo del grid) */}
-          <div className="flex flex-col lg:flex-row gap-6 items-start">
-            <Card className={cn("border-border/50 shadow-md transition-all w-full", selectedCostForDetail ? "lg:w-2/3" : "w-full")}>
-              <CardHeader>
-                <CardTitle className="text-foreground">Detalle de Costos campaña {currentCampaign}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {costosGrouped.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Rubro/Categoría</th>
-                          <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Total</th>
-                          <th className="text-center p-3 text-sm font-semibold text-muted-foreground">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {costosGrouped.map((group: any) => (
-                          <tr key={group.category} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                            <td className="p-3 text-sm">
-                              <div className="flex items-center gap-2.5">
-                                {(() => {
-                                  const IconComponent = categoryIcons[group.category] || MoreHorizontal;
-                                  return (
-                                    <IconComponent
-                                      className="h-5 w-5 shrink-0"
-                                      style={{ color: categoriaColors[group.category] || "#64748b" }}
-                                    />
-                                  );
-                                })()}
-                                <span className="font-semibold text-foreground">
-                                  {categoriaLabels[group.category] || group.category}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="p-3 text-sm text-right font-semibold text-foreground">
-                              ${Number(group.total_amount).toLocaleString()}
-                            </td>
-                            <td className="p-3 text-sm text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={cn(
-                                    "h-8 w-8 text-muted-foreground hover:text-primary",
-                                    selectedCostForDetail?.category === group.category && "text-primary bg-primary/10"
-                                  )}
-                                  onClick={() => {
-                                    if (selectedCostForDetail?.category === group.category) {
-                                      setSelectedCostForDetail(null);
-                                    } else {
-                                      setSelectedCostForDetail(group);
-                                    }
-                                  }}
-                                  title="Ver detalle"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                  onClick={() => handleEditCostoGroup(group)}
-                                  title="Editar costos de la categoría"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  onClick={() => handleDeleteCostoGroup(group)}
-                                  title="Eliminar costos de la categoría"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p>No hay costos registrados para la campaña {currentCampaign}.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {selectedCostForDetail && (
-              <Card className="border-border/50 shadow-md bg-white w-full lg:w-1/3 shrink-0 flex flex-col justify-between h-fit min-h-[300px]">
-                <div>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-border/50">
-                    <div className="flex flex-col">
-                      <CardTitle className="text-foreground text-base font-semibold">
-                        {categoriaLabels[selectedCostForDetail.category] || selectedCostForDetail.category} - Campaña {currentCampaign}
-                      </CardTitle>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full"
-                      onClick={() => setSelectedCostForDetail(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    {renderCostDetail(selectedCostForDetail)}
-                  </CardContent>
-                </div>
-                <div className="p-6 pt-4 mt-auto border-t border-border bg-slate-50/50 rounded-b-xl">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-muted-foreground">Monto Total:</span>
-                    <span className="text-2xl font-bold text-foreground">
-                      ${Number(selectedCostForDetail.total_amount).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </Card>
+            {/* Overlay oscuro para enfocar la edición de la tabla */}
+            {isEditing && (
+              <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[90] pointer-events-auto transition-opacity" />
             )}
+
+            {/* Registro de costos (Debajo del grid) */}
+            <div className="flex flex-col lg:flex-row gap-6 items-start">
+              <Card className={cn(
+                "border-border/50 shadow-md transition-all w-full bg-white",
+                isEditing ? "relative z-[100] ring-4 ring-primary/20 shadow-2xl scale-[1.01]" : "",
+                selectedCostForDetail ? "lg:w-2/3" : "w-full"
+              )}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+
+                  <CardTitle className="text-foreground text-lg font-semibold">
+                    Detalle de Costos campaña {currentCampaign}
+                  </CardTitle>
+
+                  {/* Boton de registro de costos */}
+                  <div className="flex items-center gap-2">
+                    {!isEditing ? (
+                      costosGrouped.length === 0 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={startEditing}
+                          className="gap-2 text-xs md:text-sm font-semibold border-primary/20 hover:border-primary/40 text-primary hover:bg-primary/5 bg-white"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Agregar costos
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={startEditing}
+                          className="gap-2 text-xs md:text-sm font-semibold border-border hover:bg-slate-50 bg-white"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Editar costos
+                        </Button>
+                      )
+                    ) : (
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={handleSaveAll}
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-xs md:text-sm font-semibold"
+                        >
+                          <Save className="h-4 w-4" />
+                          Guardar costos de campaña
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={cancelEditing}
+                          className="text-xs md:text-sm text-muted-foreground hover:text-foreground"
+                        >
+                          Cancelar
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                </CardHeader>
+                <CardContent className="pt-6">
+
+
+                  {costosGrouped.length > 0 || isEditing ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Rubro/Categoría</th>
+                            <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Total</th>
+                            {!isEditing && <th className="text-center p-3 text-sm font-semibold text-muted-foreground">Acciones</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(isEditing
+                            ? Object.keys(categoriaLabels).map(cat => {
+                              const group = costosGrouped.find(g => g.category === cat);
+                              return {
+                                category: cat,
+                                total_amount: group ? group.total_amount : 0,
+                                costs: group ? group.costs : []
+                              };
+                            })
+                            : costosGrouped
+                          ).map((group: any) => (
+                            <tr key={group.category} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
+                              <td className="p-3 text-sm">
+                                <div className="flex items-center gap-2.5">
+                                  {(() => {
+                                    const IconComponent = categoryIcons[group.category] || MoreHorizontal;
+                                    return (
+                                      <IconComponent
+                                        className="h-5 w-5 shrink-0"
+                                        style={{ color: categoriaColors[group.category] || "#64748b" }}
+                                      />
+                                    );
+                                  })()}
+                                  <span className="font-semibold text-foreground">
+                                    {categoriaLabels[group.category] || group.category}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="p-3 text-sm text-right font-semibold text-foreground">
+                                {isEditing ? (
+                                  <div className="flex justify-end">
+                                    <Input
+                                      type="number"
+                                      value={editedTotals[group.category] ?? ""}
+                                      onChange={(e) => handleInputChange(group.category, e.target.value)}
+                                      className={cn(
+                                        "w-36 text-right font-semibold h-8 bg-white",
+                                        isModified(group.category) && "border-red-500 text-red-500 focus-visible:ring-red-500"
+                                      )}
+                                    />
+                                  </div>
+                                ) : (
+                                  `$${Number(group.total_amount).toLocaleString()}`
+                                )}
+                              </td>
+                              {!isEditing && (
+                                <td className="p-3 text-sm text-center">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className={cn(
+                                        "h-8 w-8 text-muted-foreground hover:text-primary",
+                                        selectedCostForDetail?.category === group.category && "text-primary bg-primary/10"
+                                      )}
+                                      onClick={() => {
+                                        if (selectedCostForDetail?.category === group.category) {
+                                          setSelectedCostForDetail(null);
+                                        } else {
+                                          setSelectedCostForDetail(group);
+                                        }
+                                      }}
+                                      title="Ver detalle"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                      onClick={() => handleEditCostoGroup(group)}
+                                      title="Editar costos de la categoría"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                      onClick={() => handleDeleteCostoGroup(group)}
+                                      title="Eliminar costos de la categoría"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p>No hay costos registrados para la campaña {currentCampaign}.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {selectedCostForDetail && (
+                <Card className="border-border/50 shadow-md bg-white w-full lg:w-1/3 shrink-0 flex flex-col justify-between h-fit min-h-[300px]">
+                  <div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-border/50">
+                      <div className="flex flex-col">
+                        <CardTitle className="text-foreground text-base font-semibold">
+                          {categoriaLabels[selectedCostForDetail.category] || selectedCostForDetail.category} - Campaña {currentCampaign}
+                        </CardTitle>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full"
+                        onClick={() => setSelectedCostForDetail(null)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      {renderCostDetail(selectedCostForDetail)}
+                    </CardContent>
+                  </div>
+                  <div className="p-6 pt-4 mt-auto border-t border-border bg-slate-50/50 rounded-b-xl">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-muted-foreground">Monto Total:</span>
+                      <span className="text-2xl font-bold text-foreground">
+                        ${Number(selectedCostForDetail.total_amount).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </div>
+
           </div>
+
+
         </TabsContent>
 
         <TabsContent value="historica" className="space-y-6">
