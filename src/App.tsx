@@ -14,6 +14,7 @@ import Costos from "./pages/Costos";
 import Config from "./pages/Config";
 import Onboarding from "./pages/Onboarding";
 import Projects from "./pages/Projects";
+import AnalisisEstadistico from "./pages/AnalisisEstadistico";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ function AppRouter() {
       <Route path="/costos" element={<Layout><Costos /></Layout>} />
       <Route path="/config" element={<Layout><Config /></Layout>} />
       <Route path="/projects" element={<Layout><Projects /></Layout>} />
+      <Route path="/analisis-estadistico" element={<Layout><AnalisisEstadistico /></Layout>} />
       <Route path="/onboarding" element={<Navigate to="/projects" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
