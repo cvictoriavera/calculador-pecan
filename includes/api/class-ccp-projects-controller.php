@@ -103,6 +103,18 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 
 		register_rest_route(
 			$this->namespace,
+			'/' . $this->rest_base . '/benchmarking/export',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_benchmarking_export_data' ),
+					'permission_callback' => array( $this, 'get_benchmarking_permissions_check' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
 				array(
@@ -643,5 +655,93 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		}
 
 		return rest_ensure_response( $items );
+	}
+
+	/**
+	 * Retrieve full benchmarking export data for all projects with allow_benchmarking = 1 across 7 tables.
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_benchmarking_export_data( $request ) {
+		global $wpdb;
+
+		$t_projects     = $wpdb->prefix . 'pecan_projects';
+		$t_campaigns    = $wpdb->prefix . 'pecan_campaigns';
+		$t_montes       = $wpdb->prefix . 'pecan_montes';
+		$t_costs        = $wpdb->prefix . 'pecan_costs';
+		$t_productions  = $wpdb->prefix . 'pecan_productions';
+		$t_investments  = $wpdb->prefix . 'pecan_investments';
+		$t_yield_models = $wpdb->prefix . 'pecan_yield_models';
+
+		// Get all project IDs with allow_benchmarking = 1
+		$raw_ids = $wpdb->get_col( "SELECT id FROM {$t_projects} WHERE allow_benchmarking = 1 ORDER BY id ASC" );
+		$project_ids = array_map( 'intval', (array) $raw_ids );
+
+		if ( empty( $project_ids ) ) {
+			return rest_ensure_response( array(
+				'projects'     => array(),
+				'campaigns'    => array(),
+				'montes'       => array(),
+				'costs'        => array(),
+				'productions'  => array(),
+				'investments'  => array(),
+				'yield_models' => array(),
+			) );
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $project_ids ), '%d' ) );
+
+		// 1. projects
+		$projects = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$t_projects} WHERE id IN ($placeholders) ORDER BY id ASC",
+			$project_ids
+		) );
+
+		// 2. campaigns
+		$campaigns = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$t_campaigns} WHERE project_id IN ($placeholders) ORDER BY id ASC",
+			$project_ids
+		) );
+
+		// 3. montes
+		$montes = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$t_montes} WHERE project_id IN ($placeholders) ORDER BY id ASC",
+			$project_ids
+		) );
+
+		// 4. costs
+		$costs = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$t_costs} WHERE project_id IN ($placeholders) ORDER BY id ASC",
+			$project_ids
+		) );
+
+		// 5. productions
+		$productions = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$t_productions} WHERE project_id IN ($placeholders) ORDER BY id ASC",
+			$project_ids
+		) );
+
+		// 6. investments
+		$investments = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$t_investments} WHERE project_id IN ($placeholders) ORDER BY id ASC",
+			$project_ids
+		) );
+
+		// 7. yield_models
+		$yield_models = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$t_yield_models} WHERE project_id IN ($placeholders) ORDER BY id ASC",
+			$project_ids
+		) );
+
+		return rest_ensure_response( array(
+			'projects'     => $projects ? $projects : array(),
+			'campaigns'    => $campaigns ? $campaigns : array(),
+			'montes'       => $montes ? $montes : array(),
+			'costs'        => $costs ? $costs : array(),
+			'productions'  => $productions ? $productions : array(),
+			'investments'  => $investments ? $investments : array(),
+			'yield_models' => $yield_models ? $yield_models : array(),
+		) );
 	}
 }

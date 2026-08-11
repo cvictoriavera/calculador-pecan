@@ -88,6 +88,15 @@ export interface BenchmarkingProject {
 declare module '@/services/projectService' {
   export function getProjects(): Promise<Project[]>;
   export function getBenchmarkingProjects(): Promise<BenchmarkingProject[]>;
+  export function exportBenchmarkingData(): Promise<{
+    projects: any[];
+    campaigns: any[];
+    montes: any[];
+    costs: any[];
+    productions: any[];
+    investments: any[];
+    yield_models: any[];
+  }>;
   export function getProjectById(projectId: number): Promise<Project>;
   export function createProject(projectData: ProjectData): Promise<Project>;
   export function updateProject(projectId: number, projectData: UpdateProjectData): Promise<Project>;

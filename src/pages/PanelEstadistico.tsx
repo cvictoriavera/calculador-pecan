@@ -1,12 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
-import { getBenchmarkingProjects } from "@/services/projectService";
+import { getBenchmarkingProjects, exportBenchmarkingData } from "@/services/projectService";
 import type { BenchmarkingProject } from "@/services/projectService";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, BarChart3, Building2, User, MapPin, DollarSign, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Loader2, Search, BarChart3, Building2, User, MapPin, DollarSign, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown, Download } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 
 type SortField = 'user_name' | 'project_name' | 'pais' | 'provincia' | 'localidad' | 'total_costos_op' | 'costo_por_ha' | 'costo_por_kg';
 type SortDirection = 'asc' | 'desc';
@@ -14,6 +15,7 @@ type SortDirection = 'asc' | 'desc';
 const PanelEstadistico = () => {
   const [projects, setProjects] = useState<BenchmarkingProject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"resumen">("resumen");
@@ -37,6 +39,39 @@ const PanelEstadistico = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleDownloadExcel = async () => {
+    setDownloading(true);
+    try {
+      const data = await exportBenchmarkingData();
+      const wb = XLSX.utils.book_new();
+
+      const sheetNames: (keyof typeof data)[] = [
+        'projects',
+        'campaigns',
+        'montes',
+        'costs',
+        'productions',
+        'investments',
+        'yield_models',
+      ];
+
+      sheetNames.forEach((sheetName) => {
+        const rows = Array.isArray(data[sheetName]) ? data[sheetName] : [];
+        const ws = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      });
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `calculador_pecan_db_${dateStr}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (err: any) {
+      console.error("Error al descargar Excel:", err);
+      alert("Ocurrió un error al descargar el archivo Excel.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -113,9 +148,8 @@ const PanelEstadistico = () => {
     const isSorted = sortField === field;
     return (
       <th
-        className={`p-3 font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors group ${
-          alignRight ? "text-right" : "text-left"
-        }`}
+        className={`p-3 font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors group ${alignRight ? "text-right" : "text-left"
+          }`}
         onClick={() => handleSort(field)}
       >
         <div className={`flex items-center gap-1.5 ${alignRight ? "justify-end" : "justify-start"}`}>
@@ -145,20 +179,37 @@ const PanelEstadistico = () => {
             <h1 className="text-3xl font-bold text-foreground">Panel estadístico</h1>
           </div>
           <p className="text-muted-foreground text-sm mt-1">
-            Análisis comparativo de proyectos con benchmarking activo
+            Panel para análisis comparativos de productores del cultivo de pecán.
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={loadData}
-          disabled={loading}
-          className="flex items-center gap-2 self-start md:self-auto"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Actualizar datos
-        </Button>
+        <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDownloadExcel}
+            disabled={downloading || loading}
+            className="flex items-center gap-2"
+          >
+            {downloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {downloading ? "Descargando..." : "Descargar datos"}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadData}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Actualizar datos
+          </Button>
+        </div>
       </div>
 
       {/* Sub-header / Tabs Navigation */}
@@ -166,11 +217,10 @@ const PanelEstadistico = () => {
         <button
           type="button"
           onClick={() => setActiveTab("resumen")}
-          className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-            activeTab === "resumen"
-              ? "border-primary text-primary font-semibold"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
+          className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === "resumen"
+            ? "border-primary text-primary font-semibold"
+            : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
         >
           <Building2 className="h-4 w-4" />
           Resumen ejecutivo
@@ -200,7 +250,7 @@ const PanelEstadistico = () => {
                 </Badge>
               </CardTitle>
               <CardDescription className="mt-1">
-                Proyectos con benchmarking permitido. KPIs calculadas para la campaña del año vigente ({currentYear}).
+                Los datos que muestra la tabla corresponden a la campaña del año vigente ({currentYear}).
               </CardDescription>
             </div>
 
@@ -235,8 +285,8 @@ const PanelEstadistico = () => {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/40">
-                      {renderSortHeader('user_name', 'Usuario', <User className="h-4 w-4" />)}
-                      {renderSortHeader('project_name', 'Título', <Building2 className="h-4 w-4" />)}
+                      {renderSortHeader('user_name', 'Productor', <User className="h-4 w-4" />)}
+                      {renderSortHeader('project_name', 'Finca', <Building2 className="h-4 w-4" />)}
                       {renderSortHeader('pais', 'País', <MapPin className="h-4 w-4" />)}
                       {renderSortHeader('provincia', 'Provincia')}
                       {renderSortHeader('localidad', 'Localidad')}

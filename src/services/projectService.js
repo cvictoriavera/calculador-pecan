@@ -57,6 +57,28 @@ export const getBenchmarkingProjects = () => {
 };
 
 /**
+ * Fetches all benchmarking tables data for Excel export.
+ *
+ * @returns {Promise<object>} Object containing arrays for projects, campaigns, montes, costs, productions, investments, yield_models.
+ */
+export const exportBenchmarkingData = () => {
+	if (isTrialMode()) {
+		const projects = JSON.parse(localStorage.getItem(TRIAL_PROJECTS_KEY) || '[]');
+		const campaigns = JSON.parse(localStorage.getItem(TRIAL_CAMPAIGNS_KEY) || '[]');
+		return Promise.resolve({
+			projects,
+			campaigns,
+			montes: [],
+			costs: [],
+			productions: [],
+			investments: [],
+			yield_models: [],
+		});
+	}
+	return apiRequest(`${BASE_ENDPOINT}/benchmarking/export`);
+};
+
+/**
  * Fetches a single project by its ID.
  *
  * @param {number} projectId - The ID of the project.
