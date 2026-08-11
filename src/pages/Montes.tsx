@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { isTrialMode } from '@/lib/trialMode';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Calendar, Info, Pencil, MoreVertical, Trash2 } from "lucide-react";
+import { MapPin, Calendar, Pencil, MoreVertical, Trash2 } from "lucide-react";
+import { InfoCard } from "@/components/InfoCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,19 +88,12 @@ const Montes = () => {
       </div>
 
       {/* Educational Card */}
-      <Card className="bg-amber-50 border-amber-200 mb-6">
-        <CardContent className="flex items-start gap-4 p-4">
-          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <p className="font-medium font-semibold text-amber-900">
-              ¿Qué consideramos un "Monte" o un "Lote"? 
-            </p>
-            <p className="text-sm text-amber-800/90 leading-relaxed">
-              Definimos como un <strong>Monte individual</strong> a un sector de tierra con una densidad especifica y donde los árboles tienen el mismo año de plantación.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <InfoCard
+        storageKey="hide_info_montes"
+        title='¿Qué consideramos un "Monte" o un "Lote"?'
+      >
+        Definimos como un <strong>Monte individual</strong> a un sector de tierra con una densidad especifica y donde los árboles tienen el mismo año de plantación.
+      </InfoCard>
 
       {/* Summary Cards */}
       {montesWithAge.length > 0 && (

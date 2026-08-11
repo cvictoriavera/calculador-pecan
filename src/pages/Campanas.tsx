@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, TrendingUp, Loader2, Pencil, X, Info } from "lucide-react";
+import { Plus, Calendar, TrendingUp, Loader2, Pencil, X } from "lucide-react";
+import { InfoCard } from "@/components/InfoCard";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useApp } from "@/contexts/AppContext";
@@ -505,21 +506,14 @@ const Campanas = () => {
       </div>
 
       {/* Educational Card */}
-      <Card className="bg-amber-50 border-amber-200 mb-6">
-        <CardContent className="flex items-start gap-4 p-4">
-          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <p className="font-medium font-semibold text-amber-900">
-              ¿Cómo funcionan los ciclos de Campaña?
-            </p>
-            <p className="text-sm text-amber-800/90 leading-relaxed">
-              Cada campaña representa un <strong>ciclo productivo completo de 12 meses</strong> (ej: de Julio a Junio del año siguiente).
-              Para que el sistema calcule correctamente la rentabilidad, asegúrate de que todos los registros de
-              <strong> producción, costos e inversiones</strong> correspondan estrictamente al período de fechas indicado en la tarjeta de la campaña.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <InfoCard
+        storageKey="hide_info_campanas"
+        title="¿Cómo funcionan los ciclos de Campaña?"
+      >
+        Cada campaña representa un <strong>ciclo productivo completo de 12 meses</strong> (ej: de Julio a Junio del año siguiente).
+        Para que el sistema calcule correctamente la rentabilidad, asegúrate de que todos los registros de
+        <strong> producción, costos e inversiones</strong> correspondan estrictamente al período de fechas indicado en la tarjeta de la campaña.
+      </InfoCard>
 
       {!currentProjectId ? (
         <Card className="border-border/50 shadow-md">

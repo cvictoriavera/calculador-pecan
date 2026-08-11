@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, Pencil, Trash2, Info, Scale } from "lucide-react";
+import { Plus, TrendingUp, Pencil, Trash2, Scale } from "lucide-react";
+import { InfoCard } from "@/components/InfoCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -299,22 +300,14 @@ const Costos = () => {
         </Button>
       </div>
 
-      <Card className="bg-amber-50 border-amber-200 mb-6">
-        <CardContent className="flex items-start gap-4 p-4">
-          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <p className="font-medium font-semibold text-amber-900">
-              Al registrar tus costos recuerda:
-            </p>
-            <p className="text-sm text-amber-800/90 leading-relaxed">
-              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses
-              que duro la campaña en cada uno de los rubros.
-              <br />
-              <span className="italic mt-1 block">Nota: Si compraste maquinaria, instalaste riego o realizaste mejoras permanentes, se registran en la sección de <strong>Inversiones</strong>.</span>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <InfoCard
+        storageKey="hide_info_costos"
+        title="Al registrar tus costos recuerda:"
+      >
+        Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros.
+        <br />
+        <span className="italic mt-1 block">Nota: Si compraste maquinaria, instalaste riego o realizaste mejoras permanentes, se registran en la sección de <strong>Inversiones</strong>.</span>
+      </InfoCard>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">

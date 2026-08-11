@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 // ScrollArea eliminado en la tabla de evolución, pero mantenido por si se usa en otros lados, 
 // aunque aquí usamos div nativo para el sticky.
-import { Plus, DollarSign, Pencil, Trash2, Info } from "lucide-react";
+import { Plus, DollarSign, Pencil, Trash2 } from "lucide-react";
+import { InfoCard } from "@/components/InfoCard";
 import { Badge } from "@/components/ui/badge";
 import { ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import {
@@ -251,20 +252,12 @@ const Inversiones = () => {
         </Button>
       </div>
 
-      <Card className="bg-amber-50 border-amber-200 mb-6">
-        <CardContent className="flex items-start gap-4 p-4">
-          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <p className="font-medium font-semibold text-amber-900">
-              Al registrar tus inversiones recuerda:
-            </p>
-            <p className="text-sm text-amber-800/90 leading-relaxed">
-              Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros.
-              <br />
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <InfoCard
+        storageKey="hide_info_inversiones"
+        title="Al registrar tus inversiones recuerda:"
+      >
+        Los datos que ingreses deben ser <strong>montos anuales</strong> que tuviste en los meses que duro la campaña en cada uno de los rubros.
+      </InfoCard>
 
       {/* Summary Card */}
       <Card className="border-border/50 shadow-md bg-white from-card to-secondary/30">

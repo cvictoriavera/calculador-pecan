@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2, Info, Loader2 } from "lucide-react";
+import { Plus, TrendingUp, Package, DollarSign, Edit, Trash2, Loader2 } from "lucide-react";
+import { InfoCard } from "@/components/InfoCard";
 import { useApp } from "@/contexts/AppContext";
 import { RegistrarProduccionForm } from "@/components/produccion/forms/RegistrarProduccionForm";
 import { EditarProduccionForm } from "@/components/produccion/forms/EditarProduccionForm";
@@ -459,19 +460,12 @@ const Produccion = () => {
         )}
       </div>
 
-      <Card className="bg-amber-50 border-amber-200 mb-6">
-        <CardContent className="flex items-start gap-4 p-4">
-          <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <p className="font-semibold text-amber-900">
-              Registrar una Producción
-            </p>
-            <p className="text-sm text-amber-800/90 leading-relaxed">
-              Al registrar tu <strong>cosecha anual</strong> puedes cargar los kilos por monte o los kilos totales.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <InfoCard
+        storageKey="hide_info_produccion"
+        title="Registrar una Producción"
+      >
+        Al registrar tu <strong>cosecha anual</strong> puedes cargar los kilos por monte o los kilos totales.
+      </InfoCard>
 
       {/* KPI Cards */}
       {isLoadingData ? (
