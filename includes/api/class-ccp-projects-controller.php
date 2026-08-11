@@ -91,6 +91,18 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 
 		register_rest_route(
 			$this->namespace,
+			'/' . $this->rest_base . '/benchmarking',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_benchmarking_items' ),
+					'permission_callback' => array( $this, 'get_benchmarking_permissions_check' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
 				array(
@@ -502,5 +514,134 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 			$wpdb->query('ROLLBACK');
 			return new WP_Error('create-failed', esc_html__('Could not create project.', 'calculador-pecan'), array('status' => 500));
 		}
+	}
+
+	/**
+	 * Check if request has admin access for benchmarking.
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return bool|WP_Error
+	 */
+	public function get_benchmarking_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_forbidden', esc_html__( 'Usted debe estar autenticado para acceder al panel estadístico.', 'calculador-pecan' ), array( 'status' => 401 ) );
+		}
+
+		$user = wp_get_current_user();
+		$is_admin = current_user_can( 'administrator' ) || current_user_can( 'manage_options' ) || ( isset( $user->roles ) && in_array( 'administrator', (array) $user->roles, true ) );
+
+		if ( ! $is_admin ) {
+			return new WP_Error( 'rest_forbidden', esc_html__( 'Acceso restringido a administradores.', 'calculador-pecan' ), array( 'status' => 403 ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Retrieve all benchmarking projects with KPIs for the current campaign year.
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_benchmarking_items( $request ) {
+		global $wpdb;
+
+		$t_projects    = $wpdb->prefix . 'pecan_projects';
+		$t_users       = $wpdb->prefix . 'users';
+		$t_campaigns   = $wpdb->prefix . 'pecan_campaigns';
+		$t_costs       = $wpdb->prefix . 'pecan_costs';
+		$t_montes      = $wpdb->prefix . 'pecan_montes';
+		$t_productions = $wpdb->prefix . 'pecan_productions';
+
+		$sql = "SELECT p.*, u.display_name AS user_name, u.user_email
+				FROM {$t_projects} p
+				LEFT JOIN {$t_users} u ON p.user_id = u.ID
+				WHERE p.allow_benchmarking = 1
+				ORDER BY p.created_at DESC";
+
+		$projects = $wpdb->get_results( $sql );
+
+		if ( empty( $projects ) ) {
+			return rest_ensure_response( array() );
+		}
+
+		$current_year = intval( date( 'Y' ) );
+		$items = array();
+
+		foreach ( $projects as $proj ) {
+			$project_id = intval( $proj->id );
+
+			// 1. Calculate active hectares
+			$ha_query = $wpdb->prepare(
+				"SELECT SUM(area_hectareas) FROM {$t_montes} WHERE project_id = %d AND status = 'active'",
+				$project_id
+			);
+			$total_ha = floatval( $wpdb->get_var( $ha_query ) );
+
+			// 2. Find campaign matching current calendar year strictly (year = date('Y'))
+			$camp_query = $wpdb->prepare(
+				"SELECT * FROM {$t_campaigns} WHERE project_id = %d AND year = %d LIMIT 1",
+				$project_id,
+				$current_year
+			);
+			$campaign = $wpdb->get_row( $camp_query );
+
+			$total_costos_op = 0.0;
+			$total_prod_kg   = 0.0;
+			$campaign_year   = $current_year;
+
+			if ( $campaign ) {
+				$campaign_id   = intval( $campaign->id );
+				$campaign_year = intval( $campaign->year );
+
+				// Sum operational costs for current campaign
+				$costs_query = $wpdb->prepare(
+					"SELECT SUM(total_amount) FROM {$t_costs} WHERE project_id = %d AND campaign_id = %d",
+					$project_id,
+					$campaign_id
+				);
+				$total_costos_op = floatval( $wpdb->get_var( $costs_query ) );
+
+				// Sum production in kg
+				$prod_query = $wpdb->prepare(
+					"SELECT SUM(quantity_kg) FROM {$t_productions} WHERE project_id = %d AND campaign_id = %d",
+					$project_id,
+					$campaign_id
+				);
+				$sum_prod = $wpdb->get_var( $prod_query );
+				if ( null !== $sum_prod && floatval( $sum_prod ) > 0 ) {
+					$total_prod_kg = floatval( $sum_prod );
+				} elseif ( isset( $campaign->total_production ) ) {
+					$total_prod_kg = floatval( $campaign->total_production );
+				}
+			}
+
+			$costo_por_ha = $total_ha > 0 ? ( $total_costos_op / $total_ha ) : 0.0;
+			$costo_por_kg = $total_prod_kg > 0 ? ( $total_costos_op / $total_prod_kg ) : 0.0;
+
+			// Format locality string (municipio / departamento)
+			$localidad = ! empty( $proj->municipio ) ? $proj->municipio : ( ! empty( $proj->departamento ) ? $proj->departamento : '' );
+
+			$items[] = array(
+				'id'                   => $project_id,
+				'user_id'              => intval( $proj->user_id ),
+				'user_name'            => ! empty( $proj->user_name ) ? $proj->user_name : ( ! empty( $proj->user_email ) ? $proj->user_email : 'Usuario #' . $proj->user_id ),
+				'project_name'         => $proj->project_name,
+				'pais'                 => ! empty( $proj->pais ) ? $proj->pais : '-',
+				'provincia'            => ! empty( $proj->provincia ) ? $proj->provincia : '-',
+				'departamento'         => ! empty( $proj->departamento ) ? $proj->departamento : '-',
+				'municipio'            => ! empty( $proj->municipio ) ? $proj->municipio : '-',
+				'localidad'            => ! empty( $localidad ) ? $localidad : '-',
+				'allow_benchmarking'   => intval( $proj->allow_benchmarking ),
+				'total_ha'             => $total_ha,
+				'campaign_year'        => $campaign_year,
+				'total_costos_op'      => $total_costos_op,
+				'costo_por_ha'         => $costo_por_ha,
+				'costo_por_kg'         => $costo_por_kg,
+				'total_production_kg'  => $total_prod_kg,
+			);
+		}
+
+		return rest_ensure_response( $items );
 	}
 }

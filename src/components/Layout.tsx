@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const isProjectsPage = location.pathname === '/projects';
+  const isProjectsPage = location.pathname === '/projects' || location.pathname === '/panel-estadistico';
 
   const handleLogout = () => {
     logout();

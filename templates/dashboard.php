@@ -50,13 +50,16 @@ if (file_exists($manifest_path)) {
             }
         }
 
+        // Version basada en fecha de modificación del manifest para invalidar caché automáticamente
+        $asset_version = filemtime($manifest_path);
+
         // 3. Cargar el script principal (dependiendo de los vendors si existen)
         $js_file = $entry['file'];
         wp_enqueue_script(
             'calculador-pecan-js', 
             plugin_dir_url(__FILE__) . '../dist/' . $js_file, 
             $dependencies, // Aquí pasamos las dependencias
-            '1.0.0', 
+            $asset_version, 
             true
         );
 
@@ -67,7 +70,7 @@ if (file_exists($manifest_path)) {
                     'calculador-pecan-css-' . basename($css_file), 
                     plugin_dir_url(__FILE__) . '../dist/' . $css_file, 
                     [], 
-                    '1.0.0'
+                    $asset_version
                 );
             }
         }

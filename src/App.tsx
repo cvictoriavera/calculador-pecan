@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -14,6 +14,7 @@ import Costos from "./pages/Costos";
 import Config from "./pages/Config";
 import Onboarding from "./pages/Onboarding";
 import Projects from "./pages/Projects";
+import PanelEstadistico from "./pages/PanelEstadistico";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,28 @@ const FallbackLoader = () => (
       <p className="text-muted-foreground">Cargando...</p>
     </div>
   </div>
+);
+
+const AdminRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, isLoading } = useApp();
+
+  if (isLoading) return <FallbackLoader />;
+
+  const isAdmin = Boolean(
+    user?.roles?.includes('administrator') || user?.roles?.includes('admin')
+  );
+
+  if (!isAdmin) {
+    return <Navigate to="/projects" replace />;
+  }
+
+  return children;
+};
+
+const LayoutRoute = () => (
+  <Layout>
+    <Outlet />
+  </Layout>
 );
 
 function AppRouter() {
@@ -44,14 +67,18 @@ function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/projects" replace />} />
-      <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-      <Route path="/montes" element={<Layout><Montes /></Layout>} />
-      <Route path="/campanas" element={<Layout><Campanas /></Layout>} />
-      <Route path="/produccion" element={<Layout><Produccion /></Layout>} />
-      <Route path="/inversiones" element={<Layout><Inversiones /></Layout>} />
-      <Route path="/costos" element={<Layout><Costos /></Layout>} />
-      <Route path="/config" element={<Layout><Config /></Layout>} />
-      <Route path="/projects" element={<Layout><Projects /></Layout>} />
+      <Route element={<LayoutRoute />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/montes" element={<Montes />} />
+        <Route path="/campanas" element={<Campanas />} />
+        <Route path="/produccion" element={<Produccion />} />
+        <Route path="/inversiones" element={<Inversiones />} />
+        <Route path="/costos" element={<Costos />} />
+        <Route path="/config" element={<Config />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/panel-estadistico" element={<AdminRoute><PanelEstadistico /></AdminRoute>} />
+      </Route>
+      <Route path="/calculador-pecan/panel-estadistico" element={<Navigate to="/panel-estadistico" replace />} />
       <Route path="/onboarding" element={<Navigate to="/projects" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

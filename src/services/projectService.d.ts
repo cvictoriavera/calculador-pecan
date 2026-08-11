@@ -66,8 +66,28 @@ export interface ImportResult {
   message: string;
 }
 
+export interface BenchmarkingProject {
+  id: number;
+  user_id: number;
+  user_name: string;
+  project_name: string;
+  pais?: string;
+  provincia?: string;
+  departamento?: string;
+  municipio?: string;
+  localidad?: string;
+  allow_benchmarking: number;
+  total_ha: number;
+  campaign_year: number;
+  total_costos_op: number;
+  costo_por_ha: number;
+  costo_por_kg: number;
+  total_production_kg: number;
+}
+
 declare module '@/services/projectService' {
   export function getProjects(): Promise<Project[]>;
+  export function getBenchmarkingProjects(): Promise<BenchmarkingProject[]>;
   export function getProjectById(projectId: number): Promise<Project>;
   export function createProject(projectData: ProjectData): Promise<Project>;
   export function updateProject(projectId: number, projectData: UpdateProjectData): Promise<Project>;

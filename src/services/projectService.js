@@ -24,6 +24,39 @@ export const getProjects = () => {
 };
 
 /**
+ * Fetches all benchmarking projects for admin users.
+ *
+ * @returns {Promise<Array>} A promise that resolves to an array of benchmarking project objects.
+ */
+export const getBenchmarkingProjects = () => {
+	if (isTrialMode()) {
+		const projects = JSON.parse(localStorage.getItem(TRIAL_PROJECTS_KEY) || '[]');
+		const benchmarkingProjects = projects
+			.filter(p => p.allow_benchmarking === 1 || p.allow_benchmarking === true)
+			.map(p => ({
+				id: p.id,
+				user_id: p.user_id || 1,
+				user_name: 'Usuario Trial',
+				project_name: p.project_name,
+				pais: p.pais || 'Argentina',
+				provincia: p.provincia || '-',
+				departamento: p.departamento || '-',
+				municipio: p.municipio || '-',
+				localidad: p.municipio || p.departamento || '-',
+				allow_benchmarking: 1,
+				total_ha: 10,
+				campaign_year: new Date().getFullYear(),
+				total_costos_op: 0,
+				costo_por_ha: 0,
+				costo_por_kg: 0,
+				total_production_kg: 0
+			}));
+		return Promise.resolve(benchmarkingProjects);
+	}
+	return apiRequest(`${BASE_ENDPOINT}/benchmarking`);
+};
+
+/**
  * Fetches a single project by its ID.
  *
  * @param {number} projectId - The ID of the project.

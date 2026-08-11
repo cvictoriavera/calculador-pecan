@@ -1,4 +1,4 @@
-import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft, HelpCircle } from "lucide-react";
+import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft, HelpCircle, BarChart3 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -12,6 +12,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useLocation } from "react-router-dom";
+import { useApp } from "@/contexts/AppContext";
 
 const projectMenuItems = [
   { title: "Inicio", url: "/dashboard", icon: Home },
@@ -23,15 +24,16 @@ const projectMenuItems = [
   { title: "Configuración", url: "/config", icon: Settings },
 ];
 
-const projectsMenuItems = [
-  { title: "Mis Proyectos", url: "/projects", icon: Package },
-];
-
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
-  const isProjectsPage = location.pathname === '/projects';
-  const menuItems = isProjectsPage ? projectsMenuItems : projectMenuItems;
+  const { user } = useApp();
+
+  const isAdmin = Boolean(
+    user?.roles?.includes('administrator') || user?.roles?.includes('admin')
+  );
+
+  const isProjectsPage = location.pathname === '/projects' || location.pathname === '/panel-estadistico';
 
   return (
     <Sidebar collapsible="icon">
@@ -49,28 +51,74 @@ export function AppSidebar() {
           {!open && <Sprout className="h-6 w-6 text-sidebar-primary mx-auto" />}
         </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70">Menú Principal</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/dashboard"}
-                      className="hover:bg-sidebar-accent transition-colors no-underline"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {open && <span className="ml-3">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {isProjectsPage ? (
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-sidebar-foreground/70">Menú Principal</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/projects"
+                        className="hover:bg-sidebar-accent transition-colors no-underline"
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
+                      >
+                        <Package className="h-5 w-5" />
+                        {open && <span className="ml-3">Mis Proyectos</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {isAdmin && (
+              <SidebarGroup>
+                <SidebarGroupLabel className="text-sidebar-foreground/70">Panel Estadístico</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <NavLink
+                          to="/panel-estadistico"
+                          className="hover:bg-sidebar-accent transition-colors no-underline"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
+                        >
+                          <BarChart3 className="h-5 w-5" />
+                          {open && <span className="ml-3">Resumen ejecutivo</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+          </>
+        ) : (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/70">Menú Principal</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {projectMenuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/dashboard"}
+                        className="hover:bg-sidebar-accent transition-colors no-underline"
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {open && <span className="ml-3">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <div className="mt-auto p-3 border-t border-sidebar-border">
           <SidebarMenu>
