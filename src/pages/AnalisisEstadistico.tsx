@@ -1,6 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSearchParams, Navigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
+import { 
+  getRegionalStats, 
+  getResumenStats, 
+  type RegionalStat, 
+  type ResumenKPIs, 
+  type ResumenTendenciaData, 
+  type CostRankingItem 
+} from "@/services/statsService";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -32,41 +40,12 @@ import {
   Pie
 } from "recharts";
 
-// Mock Data for charts
-const resumenData = [
-  { name: "Campaña 2021", produccion: 680, precio: 3.10 },
-  { name: "Campaña 2022", produccion: 820, precio: 3.45 },
-  { name: "Campaña 2023", produccion: 950, precio: 3.20 },
-  { name: "Campaña 2024", produccion: 1110, precio: 3.60 },
-  { name: "Campaña 2025", produccion: 1245, precio: 3.85 },
-];
-
-const rankingCostos = [
-  { rank: 1, name: "Cosecha", porcentaje: 42.0, color: "bg-[#f2794a]" },
-  { rank: 2, name: "Insumos", porcentaje: 18.5, color: "bg-[#16af92]" },
-  { rank: 3, name: "Mano de Obra", porcentaje: 12.0, color: "bg-[#ba995c]" },
-  { rank: 4, name: "Mantenimientos", porcentaje: 8.5, color: "bg-[#cb2030]" },
-  { rank: 5, name: "Combustible", porcentaje: 6.0, color: "bg-[#22469c]" },
-  { rank: 6, name: "Administración", porcentaje: 4.5, color: "bg-[#762c4d]" },
-  { rank: 7, name: "Energía", porcentaje: 3.5, color: "bg-[#f2c02b]" },
-  { rank: 8, name: "Oportunidad", porcentaje: 3.0, color: "bg-[#bc5930]" },
-  { rank: 9, name: "Otros", porcentaje: 2.0, color: "bg-[#64748b]" },
-];
-
 const variedadesData = [
   { name: "Pawnee", value: 42, color: "#10b981" },
   { name: "Stuart", value: 28, color: "#f59e0b" },
   { name: "Mahan", value: 15, color: "#3b82f6" },
   { name: "Desirable", value: 10, color: "#8b5cf6" },
   { name: "Otras", value: 5, color: "#6b7280" },
-];
-
-const regionesData = [
-  { region: "Entre Ríos", hectareas: 2450, productores: 74, rendimiento: 1980 },
-  { region: "Corrientes", hectareas: 980, productores: 28, rendimiento: 1750 },
-  { region: "Buenos Aires", hectareas: 820, productores: 22, rendimiento: 1820 },
-  { region: "Santa Fe", hectareas: 540, productores: 14, rendimiento: 1690 },
-  { region: "Otras Regiones", hectareas: 310, productores: 10, rendimiento: 1550 },
 ];
 
 const benchmarkData = [
@@ -93,9 +72,49 @@ export default function AnalisisEstadistico() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || "resumen";
 
+  const [regionesData, setRegionesData] = useState<RegionalStat[]>([]);
+  const [isLoadingRegiones, setIsLoadingRegiones] = useState<boolean>(true);
+
+  const [resumenKPIs, setResumenKPIs] = useState<ResumenKPIs | null>(null);
+  const [resumenData, setResumenData] = useState<ResumenTendenciaData[]>([]);
+  const [rankingCostos, setRankingCostos] = useState<CostRankingItem[]>([]);
+  const [isLoadingResumen, setIsLoadingResumen] = useState<boolean>(true);
+
   const isAdmin = useMemo(() => {
     return user?.roles?.includes("administrator") || false;
   }, [user]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      setIsLoadingRegiones(true);
+      getRegionalStats()
+        .then((data) => {
+          setRegionesData(data || []);
+        })
+        .catch((err) => {
+          console.error("Error al obtener estadísticas regionales:", err);
+          toast.error("No se pudieron cargar las estadísticas regionales.");
+        })
+        .finally(() => {
+          setIsLoadingRegiones(false);
+        });
+
+      setIsLoadingResumen(true);
+      getResumenStats()
+        .then((res) => {
+          setResumenKPIs(res.kpis);
+          setResumenData(res.resumenData || []);
+          setRankingCostos(res.rankingCostos || []);
+        })
+        .catch((err) => {
+          console.error("Error al obtener resumen ejecutivo:", err);
+          toast.error("No se pudieron cargar las estadísticas del resumen ejecutivo.");
+        })
+        .finally(() => {
+          setIsLoadingResumen(false);
+        });
+    }
+  }, [isAdmin]);
 
   const handleExport = () => {
     toast.success("Generando reporte estadístico. Se descargará automáticamente en unos segundos...");
@@ -157,32 +176,53 @@ export default function AnalisisEstadistico() {
         {/* Tab CONTENT: Resumen Ejecutivo */}
         <TabsContent value="resumen" className="space-y-6 outline-none">
           {/* KPI Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-border/50 shadow hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Rubro de mayor peso 2026</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Rubro de mayor peso</CardTitle>
                 <Trees className="h-5 w-5 text-emerald-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">Cosecha</div>
-                <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1 font-medium">
-                  <TrendingUp className="h-3 w-3" />
-                  +42% del costo total
-                </p>
+                {isLoadingResumen ? (
+                  <div className="flex items-center gap-2 py-2 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" /> Cargando...
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">
+                      {resumenKPIs?.rubroMayorPeso?.name || "N/A"}
+                    </div>
+                    <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1 font-medium">
+                      <TrendingUp className="h-3 w-3" />
+                      {resumenKPIs?.rubroMayorPeso?.porcentaje
+                        ? `${resumenKPIs.rubroMayorPeso.porcentaje}% del costo total`
+                        : "Sin costos registrados"}
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
             <Card className="border-border/50 shadow hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Costo productivo Promedio </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Costo productivo Promedio</CardTitle>
                 <DollarSign className="h-5 w-5 text-sky-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">U$S 1.85 / kg</div>
-                <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1 font-medium">
-                  <TrendingUp className="h-3 w-3" />
-                  +6.9% vs. promedio histórico
-                </p>
+                {isLoadingResumen ? (
+                  <div className="flex items-center gap-2 py-2 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" /> Cargando...
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">
+                      U$S {resumenKPIs?.costoProductivoPromedio ? resumenKPIs.costoProductivoPromedio.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"} / kg
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 font-medium">
+                      Promedio general de proyectos activos
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -192,10 +232,20 @@ export default function AnalisisEstadistico() {
                 <Activity className="h-5 w-5 text-amber-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">U$S 1,850 / ha</div>
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                  Estable en montes maduros ({">"}10 años)
-                </p>
+                {isLoadingResumen ? (
+                  <div className="flex items-center gap-2 py-2 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" /> Cargando...
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">
+                      U$S {resumenKPIs?.costoPorHaPromedio ? resumenKPIs.costoPorHaPromedio.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"} / ha
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 font-medium">
+                      Promedio en montes registrados
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -205,11 +255,20 @@ export default function AnalisisEstadistico() {
                 <Users className="h-5 w-5 text-indigo-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">148 Socios</div>
-                <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1 font-medium">
-                  <TrendingUp className="h-3 w-3" />
-                  9 nuevos registrados
-                </p>
+                {isLoadingResumen ? (
+                  <div className="flex items-center gap-2 py-2 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" /> Cargando...
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">
+                      {resumenKPIs?.productoresActivos ?? 0} Productores
+                    </div>
+                    <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1 font-medium">
+                      Registrados en la plataforma
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -219,29 +278,39 @@ export default function AnalisisEstadistico() {
             <Card className="lg:col-span-2 border-border/50 shadow">
               <CardHeader>
                 <CardTitle className="text-lg font-medium">Tendencia de Producción y Precios FOB</CardTitle>
-                <CardDescription>Comparativa de volumen estimado nacional vs. cotización promedio del pecán.</CardDescription>
+                <CardDescription>Comparativa de volumen estimado nacional vs. cotización promedio del pecán por campaña.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[320px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={resumenData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorProd" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-                      <XAxis dataKey="name" tickLine={false} axisLine={false} />
-                      <YAxis yAxisId="left" tickLine={false} axisLine={false} label={{ value: 'Volumen (Toneladas)', angle: -90, position: 'insideLeft', style: { fill: 'gray', fontSize: 12 } }} />
-                      <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} label={{ value: 'FOB Promedio (U$S/kg)', angle: 90, position: 'insideRight', style: { fill: 'gray', fontSize: 12 } }} />
-                      <Tooltip contentStyle={{ background: '#fff', border: '1px solid #ccc', borderRadius: 8 }} />
-                      <Legend verticalAlign="top" height={36} iconType="circle" />
-                      <Area yAxisId="left" type="monotone" dataKey="produccion" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorProd)" name="Producción (Ton)" strokeWidth={2} />
-                      <Line yAxisId="right" type="monotone" dataKey="precio" stroke="#38bdf8" strokeWidth={3} name="FOB Promedio (U$S/kg)" dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+                {isLoadingResumen ? (
+                  <div className="h-[320px] flex items-center justify-center text-muted-foreground text-sm">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" /> Cargando tendencia...
+                  </div>
+                ) : resumenData.length === 0 ? (
+                  <div className="h-[320px] flex items-center justify-center text-muted-foreground text-sm">
+                    No hay campañas ni datos de producción registrados en la base de datos.
+                  </div>
+                ) : (
+                  <div className="h-[320px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={resumenData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorProd" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
+                        <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                        <YAxis yAxisId="left" tickLine={false} axisLine={false} label={{ value: 'Volumen (kg/Ton)', angle: -90, position: 'insideLeft', style: { fill: 'gray', fontSize: 12 } }} />
+                        <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} label={{ value: 'FOB Promedio (U$S/kg)', angle: 90, position: 'insideRight', style: { fill: 'gray', fontSize: 12 } }} />
+                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid #ccc', borderRadius: 8 }} />
+                        <Legend verticalAlign="top" height={36} iconType="circle" />
+                        <Area yAxisId="left" type="monotone" dataKey="produccion" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorProd)" name="Producción Acumulada" strokeWidth={2} />
+                        <Line yAxisId="right" type="monotone" dataKey="precio" stroke="#38bdf8" strokeWidth={3} name="FOB Promedio (U$S/kg)" dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -253,72 +322,82 @@ export default function AnalisisEstadistico() {
                   Ranking de Costos por Rubro
                 </CardTitle>
                 <CardDescription>
-                  Distribución porcentual de los costos operativos totales (Campaña 2026).
+                  Distribución porcentual de los costos operativos totales acumulados.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 flex-1">
-                <div className="space-y-1.5">
-                  {rankingCostos.map((item) => (
-                    <div
-                      key={item.rank}
-                      className={`flex flex-col px-3 py-1.5 rounded-lg border transition-all ${
-                        item.rank === 1
-                          ? "bg-amber-500/5 border-amber-500/30 shadow-sm"
-                          : item.rank === 2
-                          ? "bg-slate-500/5 border-slate-500/30 shadow-sm"
-                          : "bg-transparent border-transparent"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
+                {isLoadingResumen ? (
+                  <div className="h-full min-h-[200px] flex items-center justify-center text-muted-foreground text-sm">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" /> Cargando ranking...
+                  </div>
+                ) : rankingCostos.length === 0 ? (
+                  <div className="h-full min-h-[200px] flex items-center justify-center text-muted-foreground text-sm text-center">
+                    No hay costos registrados en la base de datos.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {rankingCostos.map((item) => (
+                      <div
+                        key={item.rank}
+                        className={`flex flex-col px-3 py-1.5 rounded-lg border transition-all ${
+                          item.rank === 1
+                            ? "bg-amber-500/5 border-amber-500/30 shadow-sm"
+                            : item.rank === 2
+                            ? "bg-slate-500/5 border-slate-500/30 shadow-sm"
+                            : "bg-transparent border-transparent"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full ${
+                                item.rank === 1
+                                  ? "bg-amber-500 text-white"
+                                  : item.rank === 2
+                                  ? "bg-slate-400 text-white"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {item.rank}
+                            </span>
+                            <span
+                              className={`text-xs ${
+                                item.rank <= 2 ? "font-bold text-foreground" : "text-muted-foreground font-medium"
+                              }`}
+                            >
+                              {item.name}
+                            </span>
+                          </div>
                           <span
-                            className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full ${
+                            className={`text-xs font-semibold ${
                               item.rank === 1
-                                ? "bg-amber-500 text-white"
+                                ? "text-amber-600 font-bold"
                                 : item.rank === 2
-                                ? "bg-slate-400 text-white"
-                                : "bg-muted text-muted-foreground"
+                                ? "text-slate-600 font-bold"
+                                : "text-foreground"
                             }`}
                           >
-                            {item.rank}
-                          </span>
-                          <span
-                            className={`text-xs ${
-                              item.rank <= 2 ? "font-bold text-foreground" : "text-muted-foreground font-medium"
-                            }`}
-                          >
-                            {item.name}
+                            {item.porcentaje.toFixed(1)}%
                           </span>
                         </div>
-                        <span
-                          className={`text-xs font-semibold ${
-                            item.rank === 1
-                              ? "text-amber-600 font-bold"
-                              : item.rank === 2
-                              ? "text-slate-600 font-bold"
-                              : "text-foreground"
-                          }`}
-                        >
-                          {item.porcentaje.toFixed(1)}%
-                        </span>
+                        
+                        {/* Progress Bar */}
+                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              item.rank === 1
+                                ? "bg-amber-500"
+                                : item.rank === 2
+                                ? "bg-slate-400"
+                                : item.color || "bg-primary/65"
+                            }`}
+                            style={{ width: `${item.porcentaje}%` }}
+                          />
+                        </div>
                       </div>
-                      
-                      {/* Progress Bar */}
-                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            item.rank === 1
-                              ? "bg-amber-500"
-                              : item.rank === 2
-                              ? "bg-slate-400"
-                              : item.color || "bg-primary/65"
-                          }`}
-                          style={{ width: `${item.porcentaje}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -391,26 +470,41 @@ export default function AnalisisEstadistico() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40">
-                      {regionesData.map((row, idx) => {
-                        const totalHa = regionesData.reduce((sum, r) => sum + r.hectareas, 0);
-                        const share = ((row.hectareas / totalHa) * 100).toFixed(1);
-                        return (
-                          <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                            <td className="py-3 font-medium text-foreground flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-primary" />
-                              {row.region}
-                            </td>
-                            <td className="py-3 text-right font-mono">{row.hectareas.toLocaleString()} ha</td>
-                            <td className="py-3 text-right font-mono">{row.productores}</td>
-                            <td className="py-3 text-right font-mono">{row.rendimiento.toLocaleString()} kg</td>
-                            <td className="py-3 text-right">
-                              <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-semibold">
-                                {share}%
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {isLoadingRegiones ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                            <Loader2 className="h-5 w-5 animate-spin inline-block mr-2 text-primary" />
+                            Cargando datos regionales desde la base de datos...
+                          </td>
+                        </tr>
+                      ) : regionesData.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                            No hay proyectos ni datos regionales registrados en la base de datos.
+                          </td>
+                        </tr>
+                      ) : (
+                        regionesData.map((row, idx) => {
+                          const totalHa = regionesData.reduce((sum, r) => sum + r.hectareas, 0);
+                          const share = totalHa > 0 ? ((row.hectareas / totalHa) * 100).toFixed(1) : "0.0";
+                          return (
+                            <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                              <td className="py-3 font-medium text-foreground flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-primary" />
+                                {row.region}
+                              </td>
+                              <td className="py-3 text-right font-mono">{row.hectareas.toLocaleString()} ha</td>
+                              <td className="py-3 text-right font-mono">{row.productores}</td>
+                              <td className="py-3 text-right font-mono">{row.rendimiento.toLocaleString()} kg</td>
+                              <td className="py-3 text-right">
+                                <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-semibold">
+                                  {share}%
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>

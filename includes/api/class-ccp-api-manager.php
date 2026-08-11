@@ -41,6 +41,7 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-database-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-export-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-import-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-stats-controller.php';
 
 		// Instantiate controllers and register routes
 		$projects_controller = new CCP_Projects_Controller();
@@ -78,5 +79,8 @@ class CCP_API_Manager {
 
 		$import_controller = new CCP_Import_Controller();
 		$import_controller->register_routes();
+
+		$stats_controller = new CCP_Stats_Controller();
+		$stats_controller->register_routes();
 	}
 }

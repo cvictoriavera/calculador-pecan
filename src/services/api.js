@@ -29,7 +29,9 @@ const apiNonce = settings?.nonce ?? '';
  */
 
 export const apiRequest = async (endpoint, options = {}) => {
-    const url = `${apiRoot}${endpoint}`;
+    const cleanRoot = apiRoot.endsWith('/') ? apiRoot : `${apiRoot}/`;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const url = `${cleanRoot}${cleanEndpoint}`;
 
 
     const defaultHeaders = {
