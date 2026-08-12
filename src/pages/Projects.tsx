@@ -126,8 +126,8 @@ const Projects = () => {
           <h1 className="text-3xl ">Mis Proyectos</h1>
           <p className="text-muted-foreground">Selecciona un proyecto para continuar</p>
         </div>
-        <Button className="hidden" onClick={() => setCreateProjectModalOpen(true)}>
-          Nuevo Proyecto
+        <Button onClick={() => setCreateProjectModalOpen(true)}>
+          Crear proyecto
         </Button>
       </div>
 
@@ -214,9 +214,9 @@ const Projects = () => {
       {projectsHealth.length === 0 && (
         <div className="text-center py-12">
           <Sprout className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium mb-2">No tienes proyectos</h3>
+          <h3 className="text-lg font-medium mb-2">No tienes un proyecto</h3>
           <p className="text-muted-foreground mb-4">Crea tu primer proyecto para comenzar</p>
-          <Button>Crear Proyecto</Button>
+          <Button onClick={() => setCreateProjectModalOpen(true)}>Crear proyecto</Button>
         </div>
       )}
 

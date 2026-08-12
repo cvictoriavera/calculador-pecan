@@ -51,11 +51,15 @@ const LayoutRoute = () => (
 );
 
 function AppRouter() {
-  const { isOnboardingComplete, isLoading, isLoggingOut, isChangingProject } = useApp();
+  const { user, isOnboardingComplete, isLoading, isLoggingOut, isChangingProject } = useApp();
 
   if (isLoading || isLoggingOut || isChangingProject) return <FallbackLoader />;
 
-  if (!isOnboardingComplete) {
+  const isAdmin = Boolean(
+    user?.roles?.includes('administrator') || user?.roles?.includes('admin')
+  );
+
+  if (!isAdmin && !isOnboardingComplete) {
     return (
       <Routes>
         <Route path="/onboarding" element={<Layout><Onboarding /></Layout>} />
@@ -64,9 +68,11 @@ function AppRouter() {
     );
   }
 
+  const defaultRoute = isAdmin ? "/panel-estadistico" : "/projects";
+
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/projects" replace />} />
+      <Route path="/" element={<Navigate to={defaultRoute} replace />} />
       <Route element={<LayoutRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/montes" element={<Montes />} />
@@ -79,7 +85,7 @@ function AppRouter() {
         <Route path="/panel-estadistico" element={<AdminRoute><PanelEstadistico /></AdminRoute>} />
       </Route>
       <Route path="/calculador-pecan/panel-estadistico" element={<Navigate to="/panel-estadistico" replace />} />
-      <Route path="/onboarding" element={<Navigate to="/projects" replace />} />
+      <Route path="/onboarding" element={<Navigate to={defaultRoute} replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

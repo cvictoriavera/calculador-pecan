@@ -49,6 +49,7 @@ interface Project {
   provincia?: string;
   departamento?: string;
   municipio?: string;
+  allow_benchmarking?: number;
   status: string;
   created_at: string;
   updated_at: string;

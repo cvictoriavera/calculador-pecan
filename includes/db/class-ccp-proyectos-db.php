@@ -53,7 +53,15 @@ class CCP_Proyectos_DB {
 			absint( $user_id )
 		);
 
-		return $this->wpdb->get_results( $query );
+		$results = $this->wpdb->get_results( $query );
+		if ( ! empty( $results ) ) {
+			foreach ( $results as &$proj ) {
+				$proj->id = (int) $proj->id;
+				$proj->user_id = (int) $proj->user_id;
+				$proj->allow_benchmarking = (int) $proj->allow_benchmarking;
+			}
+		}
+		return $results;
 	}
 
 	/**
@@ -63,18 +71,31 @@ class CCP_Proyectos_DB {
 	 * @param int $user_id    The ID of the user to verify ownership.
 	 * @return object|null A project object or null if not found or not owned by the user.
 	 */
-	public function get_by_id( $project_id, $user_id ) {
-		if ( ! is_numeric( $project_id ) || ! is_numeric( $user_id ) ) {
+	public function get_by_id( $project_id, $user_id = null ) {
+		if ( ! is_numeric( $project_id ) ) {
 			return null;
 		}
 
-		$query = $this->wpdb->prepare(
-			"SELECT * FROM {$this->table_name} WHERE id = %d AND user_id = %d",
-			absint( $project_id ),
-			absint( $user_id )
-		);
+		if ( null !== $user_id && is_numeric( $user_id ) && ! current_user_can( 'manage_options' ) && ! current_user_can( 'administrator' ) ) {
+			$query = $this->wpdb->prepare(
+				"SELECT * FROM {$this->table_name} WHERE id = %d AND user_id = %d",
+				absint( $project_id ),
+				absint( $user_id )
+			);
+		} else {
+			$query = $this->wpdb->prepare(
+				"SELECT * FROM {$this->table_name} WHERE id = %d",
+				absint( $project_id )
+			);
+		}
 
-		return $this->wpdb->get_row( $query );
+		$row = $this->wpdb->get_row( $query );
+		if ( $row ) {
+			$row->id = (int) $row->id;
+			$row->user_id = (int) $row->user_id;
+			$row->allow_benchmarking = (int) $row->allow_benchmarking;
+		}
+		return $row;
 	}
 
 	/**
@@ -187,6 +208,10 @@ class CCP_Proyectos_DB {
 			$update_data['zona'] = sanitize_text_field( $data['zona'] );
 			$format[] = '%s';
 		}
+		if ( isset( $data['allow_benchmarking'] ) ) {
+			$update_data['allow_benchmarking'] = intval( $data['allow_benchmarking'] );
+			$format[] = '%d';
+		}
 		if ( isset( $data['status'] ) ) {
 			$update_data['status'] = sanitize_text_field( $data['status'] );
 			$format[] = '%s';
@@ -200,11 +225,18 @@ class CCP_Proyectos_DB {
 		$update_data['updated_at'] = current_time( 'mysql', 1 );
 		$format[] = '%s';
 
-		$where = array(
-			'id'      => absint( $project_id ),
-			'user_id' => absint( $user_id ),
-		);
-		$where_format = array( '%d', '%d' );
+		if ( current_user_can( 'manage_options' ) || current_user_can( 'administrator' ) ) {
+			$where = array(
+				'id' => absint( $project_id ),
+			);
+			$where_format = array( '%d' );
+		} else {
+			$where = array(
+				'id'      => absint( $project_id ),
+				'user_id' => absint( $user_id ),
+			);
+			$where_format = array( '%d', '%d' );
+		}
 
 		$result = $this->wpdb->update(
 			$this->table_name,
