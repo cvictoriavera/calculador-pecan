@@ -692,9 +692,14 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 
 		$placeholders = implode( ',', array_fill( 0, count( $project_ids ), '%d' ) );
 
+		$t_users = $wpdb->prefix . 'users';
+
 		// 1. projects
 		$projects = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$t_projects} WHERE id IN ($placeholders) ORDER BY id ASC",
+			"SELECT p.*, u.display_name AS user_name, u.user_email 
+			 FROM {$t_projects} p 
+			 LEFT JOIN {$t_users} u ON p.user_id = u.ID 
+			 WHERE p.id IN ($placeholders) ORDER BY p.id ASC",
 			$project_ids
 		) );
 

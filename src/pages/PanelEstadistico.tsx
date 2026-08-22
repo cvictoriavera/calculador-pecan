@@ -43,28 +43,125 @@ const PanelEstadistico = () => {
   const handleDownloadExcel = async () => {
     setDownloading(true);
     try {
-      const data = await exportBenchmarkingData();
-      const wb = XLSX.utils.book_new();
+      const rawData = await exportBenchmarkingData();
 
-      const sheetNames: (keyof typeof data)[] = [
-        'projects',
-        'campaigns',
-        'montes',
-        'costs',
-        'productions',
-        'investments',
-        'yield_models',
+      const projectsList = rawData.projects || [];
+      const campaignsList = rawData.campaigns || [];
+      const montesList = rawData.montes || [];
+      const costsList = rawData.costs || [];
+      const productionsList = rawData.productions || [];
+      const investmentsList = rawData.investments || [];
+
+      // Calculate 11 campaign years: from 10 years ago up to current calendar year (e.g. 2016 to 2026)
+      const currentYear = new Date().getFullYear();
+      const recentYears = Array.from({ length: 11 }, (_, i) => currentYear - 10 + i);
+
+      // Helper map for active hectares by project_id
+      const haByProject: Record<number, number> = {};
+      montesList.forEach((m: any) => {
+        const pId = Number(m.project_id);
+        const area = Number(m.area_hectareas) || 0;
+        const status = m.status || 'active';
+        if (status === 'active') {
+          haByProject[pId] = (haByProject[pId] || 0) + area;
+        }
+      });
+
+      // Helper map to find campaign_ids for a given project_id and year
+      const getCampaignIds = (projectId: number, year: number): number[] => {
+        return campaignsList
+          .filter((c: any) => Number(c.project_id) === Number(projectId) && Number(c.year) === Number(year))
+          .map((c: any) => Number(c.id));
+      };
+
+      // Tabs definition
+      const tabsConfig = [
+        { sheetName: "Producción", type: "production" },
+        { sheetName: "Costos 1 - Insumos", type: "cost", category: "insumos" },
+        { sheetName: "Costos 2 - Combustible", type: "cost", category: "combustible" },
+        { sheetName: "Costos 3 - Mano de obra", type: "cost", category: "mano-obra" },
+        { sheetName: "Costos 4 - Energía", type: "cost", category: "energia" },
+        { sheetName: "Costos 5 - Cosecha", type: "cost", category: "cosecha" },
+        { sheetName: "Costos 6 - Gastos admin", type: "cost", category: "gastos-admin" },
+        { sheetName: "Costos 7 - Mantenimientos", type: "cost", category: "mantenimientos" },
+        { sheetName: "Costos 8 - Costos oportunidad", type: "cost", category: "costos-oportunidad" },
+        { sheetName: "Costos 9 - Otros", type: "cost", category: "otros" },
+        { sheetName: "Inversiones", type: "investment" },
       ];
 
-      sheetNames.forEach((sheetName) => {
-        const rows = Array.isArray(data[sheetName]) ? data[sheetName] : [];
-        const ws = XLSX.utils.json_to_sheet(rows);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      const wb = XLSX.utils.book_new();
+
+      tabsConfig.forEach((cfg) => {
+        const sheetData = projectsList.map((p: any) => {
+          const pId = Number(p.id);
+          const productor = p.user_name || p.user_email || `Usuario #${p.user_id}`;
+          const finca = p.project_name || '';
+          const provincia = p.provincia || '-';
+          const localidad = p.localidad || p.municipio || p.departamento || '-';
+          const areaTotalPlantada = haByProject[pId] || 0;
+
+          const row: Record<string, any> = {
+            "Productor": productor,
+            "Finca": finca,
+            "Provincia": provincia,
+            "Localidad": localidad,
+            "Área total plantada (ha)": areaTotalPlantada,
+          };
+
+          // For each of the 11 campaign years, calculate the total value
+          recentYears.forEach((yr) => {
+            const cIds = getCampaignIds(pId, yr);
+            let totalValue = 0;
+
+            if (cIds.length > 0) {
+              if (cfg.type === "production") {
+                // Sum production kg
+                const prodSum = productionsList
+                  .filter((prod: any) => cIds.includes(Number(prod.campaign_id)))
+                  .reduce((acc: number, item: any) => acc + (Number(item.quantity_kg) || 0), 0);
+                
+                if (prodSum > 0) {
+                  totalValue = prodSum;
+                } else {
+                  // Fallback to campaign's total_production field
+                  const campSum = campaignsList
+                    .filter((c: any) => cIds.includes(Number(c.id)))
+                    .reduce((acc: number, item: any) => acc + (Number(item.total_production) || 0), 0);
+                  totalValue = campSum;
+                }
+              } else if (cfg.type === "cost" && cfg.category) {
+                // Sum costs for specific category
+                totalValue = costsList
+                  .filter((cost: any) => cIds.includes(Number(cost.campaign_id)) && cost.category === cfg.category)
+                  .reduce((acc: number, item: any) => acc + (Number(item.total_amount) || 0), 0);
+              } else if (cfg.type === "investment") {
+                // Sum investments
+                totalValue = investmentsList
+                  .filter((inv: any) => cIds.includes(Number(inv.campaign_id)))
+                  .reduce((acc: number, item: any) => acc + (Number(item.total_value || item.amount) || 0), 0);
+              }
+            }
+
+            if (cfg.type === "production") {
+              const colHeader = `Campaña ${yr} (kg totales)`;
+              row[colHeader] = totalValue;
+            } else {
+              const colHeader = `Campaña ${yr} ($ USD)`;
+              row[colHeader] = formatCurrency(totalValue, false);
+            }
+          });
+
+          return row;
+        });
+
+        const ws = XLSX.utils.json_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(wb, ws, cfg.sheetName);
       });
 
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `calculador_pecan_db_${dateStr}.xlsx`;
       XLSX.writeFile(wb, filename);
+
     } catch (err: any) {
       console.error("Error al descargar Excel:", err);
       alert("Ocurrió un error al descargar el archivo Excel.");
