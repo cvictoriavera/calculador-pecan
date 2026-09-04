@@ -92,73 +92,202 @@ const PanelEstadistico = () => {
       const wb = XLSX.utils.book_new();
 
       tabsConfig.forEach((cfg) => {
-        const sheetData = projectsList.map((p: any) => {
+        const isProduction = cfg.type === "production";
+        const aoaData: any[][] = [];
+        const merges: XLSX.Range[] = [];
+        const colWidths: { wch: number }[] = [
+          { wch: 20 }, // Productor
+          { wch: 20 }, // Finca
+          { wch: 15 }, // Provincia
+          { wch: 15 }, // Localidad
+          { wch: 22 }, // Área total plantada (ha)
+        ];
+
+        // Row 0: Level 1 Header ("DATOS DEL PRODUCTOR" & "CAMPAÑA YYYY")
+        const row0: string[] = ["DATOS DEL PRODUCTOR", "", "", "", ""];
+        merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
+
+        // Row 1: Level 2 Header ("Productor", "Finca", ..., "Kg cosechados", "Edad", ...)
+        const row1: string[] = [
+          "Productor",
+          "Finca",
+          "Provincia",
+          "Localidad",
+          "Área total plantada (ha)",
+        ];
+
+        recentYears.forEach((yr, i) => {
+          row0.push(`CAMPAÑA ${yr}`);
+          if (isProduction) {
+            row0.push(""); // empty cell for merge
+            const cStart = 5 + i * 2;
+            merges.push({ s: { r: 0, c: cStart }, e: { r: 0, c: cStart + 1 } });
+
+            row1.push("Kg cosechados");
+            row1.push("Edades de montes contribuyentes");
+
+            colWidths.push({ wch: 15 });
+            colWidths.push({ wch: 32 });
+          } else {
+            row1.push("Monto ($ USD)");
+            colWidths.push({ wch: 18 });
+          }
+        });
+
+        aoaData.push(row0);
+        aoaData.push(row1);
+
+        // Data Rows
+        projectsList.forEach((p: any) => {
           const pId = Number(p.id);
           const productor = p.user_name || p.user_email || `Usuario #${p.user_id}`;
-          const finca = p.project_name || '';
-          const provincia = p.provincia || '-';
-          const localidad = p.localidad || p.municipio || p.departamento || '-';
+          const finca = p.project_name || "";
+          const provincia = p.provincia || "-";
+          const localidad = p.localidad || p.municipio || p.departamento || "-";
           const areaTotalPlantada = haByProject[pId] || 0;
 
-          const row: Record<string, any> = {
-            "Productor": productor,
-            "Finca": finca,
-            "Provincia": provincia,
-            "Localidad": localidad,
-            "Área total plantada (ha)": areaTotalPlantada,
-          };
+          const dataRow: any[] = [
+            productor,
+            finca,
+            provincia,
+            localidad,
+            areaTotalPlantada,
+          ];
 
-          // For each of the 11 campaign years, calculate the total value
           recentYears.forEach((yr) => {
             const cIds = getCampaignIds(pId, yr);
-            let totalValue = 0;
 
-            if (cIds.length > 0) {
-              if (cfg.type === "production") {
-                // Sum production kg
-                const prodSum = productionsList
-                  .filter((prod: any) => cIds.includes(Number(prod.campaign_id)))
-                  .reduce((acc: number, item: any) => acc + (Number(item.quantity_kg) || 0), 0);
-                
-                if (prodSum > 0) {
-                  totalValue = prodSum;
+            if (isProduction) {
+              let prodSum = 0;
+              let contributingMonteIds: number[] = [];
+
+              if (cIds.length > 0) {
+                const prodsForCampaign = productionsList.filter((prod: any) =>
+                  cIds.includes(Number(prod.campaign_id))
+                );
+                const prodsWithKg = prodsForCampaign.filter(
+                  (prod: any) => Number(prod.quantity_kg) > 0
+                );
+
+                if (prodsWithKg.length > 0) {
+                  prodSum = prodsWithKg.reduce(
+                    (acc: number, item: any) => acc + (Number(item.quantity_kg) || 0),
+                    0
+                  );
+                  contributingMonteIds = prodsWithKg.map((item: any) =>
+                    Number(item.monte_id)
+                  );
                 } else {
-                  // Fallback to campaign's total_production field
                   const campSum = campaignsList
                     .filter((c: any) => cIds.includes(Number(c.id)))
-                    .reduce((acc: number, item: any) => acc + (Number(item.total_production) || 0), 0);
-                  totalValue = campSum;
-                }
-              } else if (cfg.type === "cost" && cfg.category) {
-                // Sum costs for specific category
-                totalValue = costsList
-                  .filter((cost: any) => cIds.includes(Number(cost.campaign_id)) && cost.category === cfg.category)
-                  .reduce((acc: number, item: any) => acc + (Number(item.total_amount) || 0), 0);
-              } else if (cfg.type === "investment") {
-                // Sum investments
-                totalValue = investmentsList
-                  .filter((inv: any) => cIds.includes(Number(inv.campaign_id)))
-                  .reduce((acc: number, item: any) => acc + (Number(item.total_value || item.amount) || 0), 0);
-              }
-            }
+                    .reduce(
+                      (acc: number, item: any) =>
+                        acc + (Number(item.total_production) || 0),
+                      0
+                    );
+                  prodSum = campSum;
 
-            if (cfg.type === "production") {
-              const colHeader = `Campaña ${yr} (kg totales)`;
-              row[colHeader] = totalValue;
+                  if (prodSum > 0) {
+                    campaignsList
+                      .filter((c: any) => cIds.includes(Number(c.id)))
+                      .forEach((c: any) => {
+                        if (c.montes_contribuyentes) {
+                          try {
+                            const parsed =
+                              typeof c.montes_contribuyentes === "string"
+                                ? JSON.parse(c.montes_contribuyentes)
+                                : c.montes_contribuyentes;
+                            if (Array.isArray(parsed)) {
+                              parsed.forEach((id: any) =>
+                                contributingMonteIds.push(Number(id))
+                              );
+                            }
+                          } catch (e) {}
+                        }
+                        if (c.montes_production) {
+                          try {
+                            const parsed =
+                              typeof c.montes_production === "string"
+                                ? JSON.parse(c.montes_production)
+                                : c.montes_production;
+                            if (Array.isArray(parsed)) {
+                              parsed.forEach((item: any) => {
+                                const mId = Number(item.monteId || item.monte_id);
+                                if (mId) contributingMonteIds.push(mId);
+                              });
+                            }
+                          } catch (e) {}
+                        }
+                      });
+
+                    if (contributingMonteIds.length === 0) {
+                      montesList
+                        .filter((m: any) => {
+                          if (Number(m.project_id) !== pId) return false;
+                          const status = m.status || "active";
+                          if (status !== "active") return false;
+                          const plantDate = m.fecha_plantacion || m.fechaPlantacion;
+                          if (!plantDate) return true;
+                          const pYear = parseInt(String(plantDate).substring(0, 4));
+                          return isNaN(pYear) || yr >= pYear;
+                        })
+                        .forEach((m: any) => contributingMonteIds.push(Number(m.id)));
+                    }
+                  }
+                }
+              }
+
+              let ages: number[] = [];
+              if (prodSum > 0 && contributingMonteIds.length > 0) {
+                const uniqueMonteIds = [...new Set(contributingMonteIds)];
+                const contributingMontes = montesList.filter(
+                  (m: any) =>
+                    Number(m.project_id) === pId && uniqueMonteIds.includes(Number(m.id))
+                );
+
+                ages = contributingMontes
+                  .map((m: any) => {
+                    const plantDate = m.fecha_plantacion || m.fechaPlantacion;
+                    if (!plantDate) return null;
+                    const plantYear = parseInt(String(plantDate).substring(0, 4));
+                    if (isNaN(plantYear) || yr < plantYear) return null;
+                    return yr - plantYear;
+                  })
+                  .filter((age): age is number => age !== null);
+              }
+
+              const uniqueAges = [...new Set(ages)].sort((a, b) => a - b);
+              const edadesStr = prodSum > 0 && uniqueAges.length > 0 ? uniqueAges.join(", ") : "-";
+
+              dataRow.push(prodSum);
+              dataRow.push(edadesStr);
             } else {
-              const colHeader = `Campaña ${yr} ($ USD)`;
-              row[colHeader] = formatCurrency(totalValue, false);
+              let totalValue = 0;
+              if (cIds.length > 0) {
+                if (cfg.type === "cost" && cfg.category) {
+                  totalValue = costsList
+                    .filter((cost: any) => cIds.includes(Number(cost.campaign_id)) && cost.category === cfg.category)
+                    .reduce((acc: number, item: any) => acc + (Number(item.total_amount) || 0), 0);
+                } else if (cfg.type === "investment") {
+                  totalValue = investmentsList
+                    .filter((inv: any) => cIds.includes(Number(inv.campaign_id)))
+                    .reduce((acc: number, item: any) => acc + (Number(item.total_value || item.amount) || 0), 0);
+                }
+              }
+              dataRow.push(formatCurrency(totalValue, false));
             }
           });
 
-          return row;
+          aoaData.push(dataRow);
         });
 
-        const ws = XLSX.utils.json_to_sheet(sheetData);
+        const ws = XLSX.utils.aoa_to_sheet(aoaData);
+        ws["!merges"] = merges;
+        ws["!cols"] = colWidths;
         XLSX.utils.book_append_sheet(wb, ws, cfg.sheetName);
       });
 
-      const dateStr = new Date().toISOString().split('T')[0];
+      const dateStr = new Date().toISOString().split("T")[0];
       const filename = `calculador_pecan_db_${dateStr}.xlsx`;
       XLSX.writeFile(wb, filename);
 
