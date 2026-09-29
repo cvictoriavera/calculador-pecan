@@ -36,6 +36,26 @@ class CCP_Database_Controller {
             'callback' => [$this, 'migrate_production_data'],
             'permission_callback' => [$this, 'check_admin_permissions'],
         ]);
+
+        register_rest_route('ccp/v1', '/database/seed-territories', [
+            'methods' => 'POST',
+            'callback' => [$this, 'seed_territories'],
+            'permission_callback' => [$this, 'check_admin_permissions'],
+        ]);
+    }
+
+    /**
+     * Re-ejecuta el sembrado de datos geográficos desde archivos JSON.
+     *
+     * @return WP_REST_Response
+     */
+    public function seed_territories() {
+        require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-geographic-seeder.php';
+        CCP_Geographic_Seeder::seed();
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => 'Territorios geográficos sembrados correctamente desde los archivos JSON.'
+        ], 200);
     }
 
     /**

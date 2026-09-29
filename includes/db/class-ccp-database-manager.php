@@ -13,10 +13,10 @@ class CCP_Database_Manager {
 
     /**
      * Versión de la base de datos.
-     * Incrementada para forzar actualización en esta limpieza.
+     * Incrementada a 1.6.0 para incluir tablas de gestión geográfica y zonas.
      * @var string
      */
-    private static $db_version = '1.5.4'; 
+    private static $db_version = '1.6.0'; 
 
     private static $db_version_key = 'ccp_db_version';
 
@@ -36,6 +36,7 @@ class CCP_Database_Manager {
         $installed_version = get_option(self::$db_version_key);
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-geographic-seeder.php';
         
         // Forzamos InnoDB para asegurar integridad referencial
         $charset_collate = $wpdb->get_charset_collate();
@@ -53,21 +54,99 @@ class CCP_Database_Manager {
         $table_name_costs = $wpdb->prefix . 'pecan_costs';
         $table_name_yield_models = $wpdb->prefix . 'pecan_yield_models';
 
+        // Nuevas tablas geográficas
+        $table_name_countries = $wpdb->prefix . 'pecan_countries';
+        $table_name_territories = $wpdb->prefix . 'pecan_geographic_territories';
+        $table_name_zones = $wpdb->prefix . 'pecan_geographic_zones';
+        $table_name_zone_territories = $wpdb->prefix . 'pecan_geographic_zone_territories';
+
         $tables_created = [];
 
-        // 1. Tabla de Proyectos (Actualizada con columnas geo y bench)
+        // 0.1 Tabla de Países
+        $sql_countries = "CREATE TABLE $table_name_countries (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(150) NOT NULL,
+            iso_code_2 CHAR(2) NOT NULL,
+            iso_code_3 CHAR(3) NULL,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_iso_code_2 (iso_code_2),
+            UNIQUE KEY unique_iso_code_3 (iso_code_3),
+            INDEX idx_active (is_active)
+        ) $charset_collate;";
+        dbDelta($sql_countries);
+
+        // 0.2 Tabla de Territorios Jerárquicos
+        $sql_territories = "CREATE TABLE $table_name_territories (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            country_id BIGINT UNSIGNED NOT NULL,
+            parent_id BIGINT UNSIGNED NULL,
+            name VARCHAR(255) NOT NULL,
+            normalized_name VARCHAR(255) NOT NULL,
+            territory_type VARCHAR(50) NOT NULL,
+            level_number TINYINT UNSIGNED NOT NULL,
+            external_source VARCHAR(100) NULL,
+            external_id VARCHAR(255) NULL,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_country (country_id),
+            INDEX idx_parent (parent_id),
+            INDEX idx_country_parent (country_id, parent_id),
+            INDEX idx_territory_type (territory_type),
+            INDEX idx_level_number (level_number),
+            INDEX idx_external (external_source, external_id),
+            INDEX idx_active (is_active)
+        ) $charset_collate;";
+        dbDelta($sql_territories);
+
+        // 0.3 Tabla de Zonas Geográficas Estadísticas
+        $sql_zones = "CREATE TABLE $table_name_zones (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            country_id BIGINT UNSIGNED NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            description TEXT NULL,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_by BIGINT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_country (country_id),
+            INDEX idx_active (is_active)
+        ) $charset_collate;";
+        dbDelta($sql_zones);
+
+        // 0.4 Tabla Pivote Zonas - Territorios
+        $sql_zone_territories = "CREATE TABLE $table_name_zone_territories (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            geographic_zone_id BIGINT UNSIGNED NOT NULL,
+            geographic_territory_id BIGINT UNSIGNED NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_zone_territory (geographic_zone_id, geographic_territory_id),
+            INDEX idx_zone (geographic_zone_id),
+            INDEX idx_territory (geographic_territory_id)
+        ) $charset_collate;";
+        dbDelta($sql_zone_territories);
+
+        // 1. Tabla de Proyectos (Actualizada con relaciones geográficas por IDs)
         $sql_projects = "CREATE TABLE $table_name_projects (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             user_id BIGINT UNSIGNED NOT NULL,
             project_name VARCHAR(255) NOT NULL,
             description TEXT NULL,
             
-            -- Nuevas columnas integradas directamente
+            -- Columnas de texto legacy
             pais VARCHAR(100) NULL,
             provincia VARCHAR(255) NULL,
             departamento VARCHAR(255) NULL,
             municipio VARCHAR(255) NULL,
             zona VARCHAR(255) NULL,
+
+            -- Nuevas columnas con IDs normalizados
+            country_id BIGINT UNSIGNED NULL,
+            geographic_territory_id BIGINT UNSIGNED NULL,
+            geographic_zone_id BIGINT UNSIGNED NULL,
+
             allow_benchmarking TINYINT(1) NOT NULL DEFAULT 0,
 
             status ENUM('active', 'archived') DEFAULT 'active',
@@ -76,6 +155,9 @@ class CCP_Database_Manager {
             last_sync DATETIME NULL,
             INDEX idx_user_id (user_id),
             INDEX idx_user_status (user_id, status),
+            INDEX idx_country_id (country_id),
+            INDEX idx_geographic_territory (geographic_territory_id),
+            INDEX idx_geographic_zone (geographic_zone_id),
             FOREIGN KEY (user_id) REFERENCES {$wpdb->prefix}users(ID) ON DELETE CASCADE
         ) $charset_collate;";
         dbDelta($sql_projects);
@@ -248,6 +330,9 @@ class CCP_Database_Manager {
         // --- IMPORTANTE: FORZAR CLAVES FORÁNEAS MANUALMENTE ---
         // dbDelta suele borrar los ON DELETE CASCADE, así que los reaplicamos siempre
         self::enforce_foreign_keys();
+
+        // Ejecutar sembrado inicial de datos geográficos
+        CCP_Geographic_Seeder::seed();
 
         // Actualizar versión
         update_option(self::$db_version_key, self::$db_version);

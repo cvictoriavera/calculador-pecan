@@ -79,8 +79,7 @@ export const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalPro
       } else {
         setStep(2);
       }
-    } else if (step === 2 && formData.pais && formData.provincia &&
-               (formData.pais !== "Argentina" || (formData.departamento && formData.municipio))) {
+    } else if (step === 2 && formData.provincia) {
       setStep(3);
     } else if (step === 3) {
       setStep(4);
@@ -99,8 +98,7 @@ export const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalPro
 
   const handleCreate = async () => {
     if (!formData.initialYear ||
-        (isTrialMode() ? false : (!formData.pais || !formData.provincia ||
-         (formData.pais === "Argentina" && (!formData.departamento || !formData.municipio)))) ||
+        (isTrialMode() ? false : !formData.provincia) ||
         !formData.allowBenchmarking) {
       toast.error("Por favor complete todos los campos requeridos");
       return;
@@ -119,6 +117,7 @@ export const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalPro
         provincia: formData.provincia,
         departamento: formData.departamento,
         municipio: formData.municipio,
+        geographic_territory_id: formData.geographic_territory_id,
         allow_benchmarking: formData.allowBenchmarking ? 1 : 0,
         campaigns: buildCampaignsFromInitialYear(initialYear),
       };
@@ -271,8 +270,7 @@ export const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalPro
           onClick={handleNext}
           disabled={
             (step === 1 && (!formData.projectName || !formData.initialYear)) ||
-            (step === 2 && (!formData.pais || !formData.provincia ||
-              (formData.pais === "Argentina" && (!formData.departamento || !formData.municipio))))
+            (step === 2 && !formData.provincia)
           }
           className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
         >

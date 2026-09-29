@@ -9,7 +9,9 @@ Este documento especifica todos los endpoints REST expuestos en el namespace `/c
 * **Namespace Base:** `/wp-json/calculador-pecan/v1`
 * **Cabecera de Autenticación:** Cookie de sesión WordPress o Nonce en cabecera `X-WP-Nonce`.
 * **Endpoints Públicos/Lectura:** Accesibles para cualquier usuario autenticado (`current_user_can('read')`).
-* **Endpoints Administrativos:** Restringidos a usuarios con rol `administrator` / `manage_options`.
+* **Endpoints Administrativos:**
+  * **`administrator` (Super Admin):** Acceso ilimitado para gestionar zonas y territorios de todos los países.
+  * **`admin_country` (Admin de Cámara):** Acceso restringido **únicamente a su país asignado**. El país asignado se consulta desde el campo personalizado de ACF `pais` del usuario. Si un `admin_country` intenta crear, editar o eliminar zonas de otro país, el servidor responde con `403 Forbidden`.
 
 ---
 
@@ -18,19 +20,19 @@ Este documento especifica todos los endpoints REST expuestos en el namespace `/c
 ### 2.1 Países y Territorios
 | Método | Endpoint | Permisos | Descripción |
 |---|---|---|---|
-| `GET` | `/countries` | Autenticado | Listar países soportados (`wp_pecan_countries`) |
+| `GET` | `/countries` | Autenticado | Listar países soportados (`wp_pecan_countries`). Para `admin_country`, solo lista/destaca su país asignado. |
 | `GET` | `/territories` | Autenticado | Listar divisiones territoriales filtradas por `country_id`, `parent_id` o `level_number` |
 | `GET` | `/territories/tree` | Autenticado | Obtener árbol jerárquico de un país con estados de disponibilidad |
 
 ### 2.2 Zonas Geográficas
 | Método | Endpoint | Permisos | Descripción |
 |---|---|---|---|
-| `GET` | `/zones` | Autenticado | Listar zonas geográficas (filtro por `country_id`, `is_active`) |
+| `GET` | `/zones` | Autenticado | Listar zonas geográficas (Para `admin_country`, se filtra automáticamente por su `country_id`) |
 | `GET` | `/zones/{id}` | Autenticado | Obtener detalle de una zona y sus `geographic_territory_id` vinculados |
-| `POST` | `/zones` | Admin | Crear nueva zona geográfica asociando territorios |
-| `PUT` | `/zones/{id}` | Admin | Modificar zona existente y sus territorios |
-| `DELETE` | `/zones/{id}` | Admin | Desactivar / Eliminar (baja lógica `is_active = 0`) |
-| `POST` | `/zones/check-conflicts` | Admin | Validar en tiempo real si una selección genera superposición |
+| `POST` | `/zones` | Admin / Admin Country | Crear nueva zona geográfica (validando que `country_id` coincida con su ACF `pais`) |
+| `PUT` | `/zones/{id}` | Admin / Admin Country | Modificar zona existente (validando que pertenezca a su país asignado) |
+| `DELETE` | `/zones/{id}` | Admin / Admin Country | Desactivar / Eliminar (baja lógica `is_active = 0`, validado por país) |
+| `POST` | `/zones/check-conflicts` | Admin / Admin Country | Validar en tiempo real si una selección genera superposición en su país |
 | `POST` | `/zones/resolve-project` | Autenticado | Resolver y actualizar la zona de un proyecto por su `geographic_territory_id` |
 | `POST` | `/zones/recalculate-all` | Admin | Disparar recálculo masivo de zonas para todos los proyectos |
 
@@ -156,7 +158,6 @@ Retorna las zonas geográficas creadas filtradas por país.
       "id": 1,
       "country_id": 1,
       "country_name": "Argentina",
-      "code": "1",
       "name": "NOA",
       "description": "Noroeste Argentino (Tucumán, Salta, Catamarca)",
       "is_active": true,
@@ -180,7 +181,6 @@ Crea una zona asociando uno o más territorios (`geographic_territory_id`).
 ```json
 {
   "country_id": 1,
-  "code": "6",
   "name": "ER-Ctes Costa del Paraná",
   "description": "Zona transprovincial en la costa del Paraná",
   "is_active": true,

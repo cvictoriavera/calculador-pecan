@@ -32,6 +32,27 @@ export enum GeographicZoneStatus {
 
 ---
 
+### 1.3 `UserRole` y Contexto de Permisos
+
+```typescript
+export enum UserRole {
+  ADMINISTRATOR = 'administrator', // Super Administrador con acceso global
+  ADMIN_COUNTRY = 'admin_country', // Administrador de Cámara por País
+  PRODUCTOR = 'productor'          // Productor
+}
+
+export interface UserContext {
+  id: number;
+  email: string;
+  name: string;
+  roles: string[];
+  pais?: string | null;           // Campo personalizado ACF 'pais' (ej: 'Argentina', 'Brasil', 'Uruguay')
+  country_id?: number | null;     // ID del país resuelto correspondiente al campo ACF 'pais'
+}
+```
+
+---
+
 ## 2. Interfaces TypeScript (Frontend)
 
 ### 2.1 `Country`
@@ -80,7 +101,6 @@ export interface GeographicZone {
   id: number;
   country_id: number;
   country_name?: string;
-  code: string | null;
   name: string;
   description: string | null;
   is_active: boolean;
@@ -102,8 +122,7 @@ export interface GeographicZone {
 
 ```typescript
 export interface CreateGeographicZoneDTO {
-  country_id: number;
-  code?: string;
+  country_id?: number;
   name: string;
   description?: string;
   is_active?: boolean;
@@ -112,7 +131,6 @@ export interface CreateGeographicZoneDTO {
 
 export interface UpdateGeographicZoneDTO {
   country_id?: number;
-  code?: string;
   name?: string;
   description?: string;
   is_active?: boolean;
@@ -151,7 +169,6 @@ export interface ZoneResolutionResult {
   geographic_territory_id: number | null;
   geographic_zone_id: number | null;
   geographic_zone_name: string | null;
-  geographic_zone_code: string | null;
   resolution_status: 'ASSIGNED' | 'UNASSIGNED';
   resolved_at_level?: number | null; // Nivel jerárquico donde se encontró la coincidencia (1, 2 o 3)
 }
@@ -204,7 +221,6 @@ class CCP_Geographic_Territory_DTO {
 class CCP_Geographic_Zone_DTO {
     public int $id;
     public int $country_id;
-    public ?string $code;
     public string $name;
     public ?string $description;
     public bool $is_active;

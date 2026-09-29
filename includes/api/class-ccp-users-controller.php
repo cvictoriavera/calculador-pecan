@@ -32,17 +32,21 @@ class CCP_Users_Controller extends WP_REST_Controller {
 	 * Register the routes for the objects of the controller.
 	 */
 	public function register_routes() {
-		register_rest_route(
-			$this->namespace,
-			'/' . $this->rest_base . '/me',
-			array(
+		$namespaces = array( $this->namespace, 'calculador-pecan/v1' );
+
+		foreach ( $namespaces as $ns ) {
+			register_rest_route(
+				$ns,
+				'/' . $this->rest_base . '/me',
 				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_current_user' ),
-					'permission_callback' => array( $this, 'get_current_user_permissions_check' ),
-				),
-			)
-		);
+					array(
+						'methods'             => WP_REST_Server::READABLE,
+						'callback'            => array( $this, 'get_current_user' ),
+						'permission_callback' => array( $this, 'get_current_user_permissions_check' ),
+					),
+				)
+			);
+		}
 	}
 
 	/**
@@ -71,12 +75,27 @@ class CCP_Users_Controller extends WP_REST_Controller {
 			return new WP_Error( 'rest_user_not_found', __( 'User not found.', 'calculador-pecan' ), array( 'status' => 404 ) );
 		}
 
+		$pais_val = null;
+		if ( function_exists( 'get_field' ) ) {
+			$pais_val = get_field( 'pais', 'user_' . $current_user->ID );
+		}
+		if ( empty( $pais_val ) ) {
+			$pais_val = get_user_meta( $current_user->ID, 'pais', true );
+		}
+		if ( empty( $pais_val ) ) {
+			$pais_val = 'Argentina';
+		}
+
+		$country_id = CCP_Geographic_Hierarchy_Service::get_user_assigned_country_id( $current_user->ID );
+
 		$user_data = array(
-			'id'       => $current_user->ID,
-			'name'     => $current_user->display_name,
-			'email'    => $current_user->user_email,
-			'username' => $current_user->user_login,
-			'roles'    => $current_user->roles,
+			'id'         => $current_user->ID,
+			'name'       => $current_user->display_name,
+			'email'      => $current_user->user_email,
+			'username'   => $current_user->user_login,
+			'roles'      => $current_user->roles,
+			'pais'       => $pais_val,
+			'country_id' => $country_id,
 		);
 
 		$response = rest_ensure_response( $user_data );

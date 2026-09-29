@@ -61,15 +61,17 @@ Encargado de la carga inicial y eventuales actualizaciones de divisiones adminis
 Provee métodos para consultar la estructura territorial interna sin depender de servicios externos.
 
 #### Responsabilidades:
+- Cargar las divisiones territoriales iniciales (Provincia, Departamento/Municipio, Localidad) dinámicamente desde el archivo `public/geo-argentina.json` mediante `CCP_Geographic_Seeder` durante la activación del plugin.
 - Obtener países activos (`wp_pecan_countries`).
 - Construir árboles territoriales dinámicos según `country_id` y `parent_id`.
+- Propagar recursivamente los estados de disponibilidad y bloqueo (`availability_state = 'BLOCKED'` y `assigned_zone_name`) hacia todas las divisiones y localidades descendientes cuando un territorio padre pertenece a una zona activa.
 - Reconstruir la ruta completa de ancestros de un territorio dado (ej: `El Chañar` -> `Burruyacú` -> `Tucumán` -> `Argentina`).
 
 #### Métodos Clave:
 * `get_countries(bool $active_only = true): array`
 * `get_territory_by_id(int $territory_id): ?CCP_Geographic_Territory_DTO`
 * `get_territory_ancestors(int $territory_id): array`: Devuelve la lista ordenada de ancestros desde el territorio específico hasta el nivel 1 (Provincia/Estado).
-* `get_territory_tree(int $country_id, ?int $exclude_zone_id = null): array`: Devuelve el árbol con los estados de disponibilidad inyectados.
+* `get_territory_tree(int $country_id, ?int $exclude_zone_id = null): array`: Devuelve el árbol con los estados de disponibilidad y bloqueo heredado inyectados.
 
 ---
 
@@ -126,3 +128,24 @@ Maneja el CRUD de `wp_pecan_geographic_zones` y la sincronización con `wp_pecan
 * `update_zone(int $zone_id, array $data, int $user_id): CCP_Geographic_Zone_DTO`
 * `delete_zone(int $zone_id): bool`
 * `recalculate_projects_for_zone(int $zone_id): int`
+
+---
+
+### 2.6 Control de Permisos para `admin_country` (Integración ACF)
+
+Servicio/helper encargado de validar que un usuario con el rol `admin_country` solo gestione información de su país asignado.
+
+#### Lógica de Resolución del País del Usuario:
+1. Obtener roles del usuario actual via `wp_get_current_user()`.
+2. Si posee el rol `administrator` (Super Admin), no aplica restricciones de país (`country_id = null`, acceso total).
+3. Si posee el rol `admin_country`:
+   - Consultar el campo personalizado ACF `pais` del usuario: `get_field('pais', 'user_' . $user_id)` o `get_user_meta($user_id, 'pais', true)`.
+   - Mapear el valor retornado por ACF (ej. `"Argentina"`, `"AR"` o ID) contra la tabla `wp_pecan_countries`.
+   - Retornar el `country_id` asignado.
+4. En las operaciones de escritura (Crear, Editar, Activar/Desactivar, Eliminar Zonas), se verifica:
+   - `IF user_role == 'admin_country' AND target_zone.country_id != user_assigned_country_id THEN RETURN 403 Forbidden`.
+
+#### Métodos Clave:
+* `get_user_assigned_country_id(int $user_id): ?int`
+* `can_user_manage_country_zone(int $user_id, int $country_id): bool`
+* `filter_zones_query_for_user(array $args, int $user_id): array`

@@ -5,6 +5,7 @@ export interface ProjectFormData {
   provincia: string;
   departamento: string;
   municipio: string;
+  geographic_territory_id?: number;
   descripcion: string;
   allowBenchmarking: boolean;
 }

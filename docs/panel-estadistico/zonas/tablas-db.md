@@ -609,8 +609,6 @@ CREATE TABLE wp_pecan_geographic_zones (
 
     country_id BIGINT UNSIGNED NOT NULL,
 
-    code VARCHAR(50) NULL,
-
     name VARCHAR(255) NOT NULL,
 
     description TEXT NULL,
@@ -639,7 +637,6 @@ CREATE TABLE wp_pecan_geographic_zones (
 |---|---|
 | id | Identificador de la zona |
 | country_id | País al que pertenece |
-| code | Código interno opcional |
 | name | Nombre de la zona |
 | description | Descripción opcional |
 | is_active | Estado de la zona |

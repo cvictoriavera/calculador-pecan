@@ -18,7 +18,7 @@ class CCP_API_Manager {
 	 * Register all the REST API routes.
 	 */
 	public function register_rest_routes() {
-		// Include base classes
+		// Include base DB classes
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-proyectos-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-montes-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-campaigns-db.php';
@@ -27,6 +27,15 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-investments-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-costs-db.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-yield-models-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-geographic-territories-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-geographic-zones-db.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/db/class-ccp-geographic-seeder.php';
+
+		// Include services
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/services/class-ccp-geographic-hierarchy-service.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/services/class-ccp-geographic-zone-validation-service.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/services/class-ccp-geographic-zone-resolver.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/services/class-ccp-geographic-zone-service.php';
 
 		// Include controller classes
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-projects-controller.php';
@@ -41,6 +50,9 @@ class CCP_API_Manager {
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-database-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-export-controller.php';
 		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-import-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-countries-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-territories-controller.php';
+		require_once CALCULADOR_PECAN_PLUGIN_DIR . 'includes/api/class-ccp-geographic-zones-controller.php';
 
 		// Instantiate controllers and register routes
 		$projects_controller = new CCP_Projects_Controller();
@@ -78,5 +90,14 @@ class CCP_API_Manager {
 
 		$import_controller = new CCP_Import_Controller();
 		$import_controller->register_routes();
+
+		$countries_controller = new CCP_Countries_Controller();
+		$countries_controller->register_routes();
+
+		$territories_controller = new CCP_Territories_Controller();
+		$territories_controller->register_routes();
+
+		$geographic_zones_controller = new CCP_Geographic_Zones_Controller();
+		$geographic_zones_controller->register_routes();
 	}
 }

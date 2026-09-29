@@ -18,7 +18,6 @@ const PanelEstadistico = () => {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<"resumen">("resumen");
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -75,24 +74,56 @@ const PanelEstadistico = () => {
       };
 
       // Tabs definition
-      const tabsConfig = [
+      interface TabConfig {
+        sheetName: string;
+        type: "production" | "cost" | "cost-insumo-subcat" | "cost-cosecha-subcat" | "cost-gastos-admin-subcat" | "investment";
+        category?: string;
+        insumoSubcatId?: string;
+        insumoSubcatLabel?: string;
+        cosechaSubcatKey?: string;
+        cosechaSubcatLabel?: string;
+        gastosAdminSubcatType?: string;
+        investmentCategory?: string;
+      }
+
+      const tabsConfig: TabConfig[] = [
         { sheetName: "Producción", type: "production" },
         { sheetName: "Costos 1 - Insumos", type: "cost", category: "insumos" },
+        { sheetName: "Costos 1.1 - Fertiliz. al suelo", type: "cost-insumo-subcat", category: "insumos", insumoSubcatId: "fertilizantes-suelo", insumoSubcatLabel: "Fertilizantes al suelo" },
+        { sheetName: "Costos 1.2 - Fertiliz. foliares", type: "cost-insumo-subcat", category: "insumos", insumoSubcatId: "fertilizantes-foliares", insumoSubcatLabel: "Fertilizantes foliares" },
+        { sheetName: "Costos 1.3 - Fungicidas", type: "cost-insumo-subcat", category: "insumos", insumoSubcatId: "fungicidas", insumoSubcatLabel: "Fungicidas" },
+        { sheetName: "Costos 1.4 - Herbicidas", type: "cost-insumo-subcat", category: "insumos", insumoSubcatId: "herbicidas", insumoSubcatLabel: "Herbicidas" },
+        { sheetName: "Costos 1.5 - Insecticidas", type: "cost-insumo-subcat", category: "insumos", insumoSubcatId: "insecticidas", insumoSubcatLabel: "Insecticidas" },
+        { sheetName: "Costos 1.6 - Otros", type: "cost-insumo-subcat", category: "insumos", insumoSubcatId: "otros", insumoSubcatLabel: "Otros" },
         { sheetName: "Costos 2 - Combustible", type: "cost", category: "combustible" },
         { sheetName: "Costos 3 - Mano de obra", type: "cost", category: "mano-obra" },
         { sheetName: "Costos 4 - Energía", type: "cost", category: "energia" },
         { sheetName: "Costos 5 - Cosecha", type: "cost", category: "cosecha" },
+        { sheetName: "Costos 5.1 - Cosecha maquin.", type: "cost-cosecha-subcat", category: "cosecha", cosechaSubcatKey: "cosecha_maquinaria", cosechaSubcatLabel: "Cosecha maquinaria" },
+        { sheetName: "Costos 5.2 - Cosecha mano obra", type: "cost-cosecha-subcat", category: "cosecha", cosechaSubcatKey: "cosecha_mano_obra", cosechaSubcatLabel: "Cosecha mano de obra" },
+        { sheetName: "Costos 5.3 - Limpieza maquin.", type: "cost-cosecha-subcat", category: "cosecha", cosechaSubcatKey: "limpieza_maquinaria", cosechaSubcatLabel: "Limpieza maquinaria" },
+        { sheetName: "Costos 5.4 - Limpieza mano obra", type: "cost-cosecha-subcat", category: "cosecha", cosechaSubcatKey: "limpieza_mano_obra", cosechaSubcatLabel: "Limpieza mano de obra" },
+        { sheetName: "Costos 5.5 - Cosecha terceriz.", type: "cost-cosecha-subcat", category: "cosecha", cosechaSubcatKey: "cosecha_tercerizada", cosechaSubcatLabel: "Cosecha tercerizada" },
+        { sheetName: "Costos 5.6 - Secado y almacén", type: "cost-cosecha-subcat", category: "cosecha", cosechaSubcatKey: "secado_clasificacion", cosechaSubcatLabel: "Secado, clasificación y almacén" },
+        { sheetName: "Costos 5.7 - Transporte", type: "cost-cosecha-subcat", category: "cosecha", cosechaSubcatKey: "transporte", cosechaSubcatLabel: "Transporte nacional e internacional" },
         { sheetName: "Costos 6 - Gastos admin", type: "cost", category: "gastos-admin" },
+        { sheetName: "Costos 6.1 - Gastos generales", type: "cost-gastos-admin-subcat", category: "gastos-admin", gastosAdminSubcatType: "Gastos Generales" },
+        { sheetName: "Costos 6.2 - Staff admin.", type: "cost-gastos-admin-subcat", category: "gastos-admin", gastosAdminSubcatType: "Staff Administrativo" },
         { sheetName: "Costos 7 - Mantenimientos", type: "cost", category: "mantenimientos" },
         { sheetName: "Costos 8 - Costos oportunidad", type: "cost", category: "costos-oportunidad" },
         { sheetName: "Costos 9 - Otros", type: "cost", category: "otros" },
-        { sheetName: "Inversiones", type: "investment" },
+        { sheetName: "Inversiones 1 - Tierra", type: "investment", investmentCategory: "tierra" },
+        { sheetName: "Inversiones 2 - Mejoras", type: "investment", investmentCategory: "mejoras" },
+        { sheetName: "Inversiones 3 - Implantación", type: "investment", investmentCategory: "implantacion" },
+        { sheetName: "Inversiones 4 - Riego", type: "investment", investmentCategory: "riego" },
+        { sheetName: "Inversiones 5 - Maquinaria", type: "investment", investmentCategory: "maquinaria" },
       ];
 
       const wb = XLSX.utils.book_new();
 
       tabsConfig.forEach((cfg) => {
         const isProduction = cfg.type === "production";
+        const isSubdetail = cfg.type === "cost-insumo-subcat" || cfg.type === "cost-cosecha-subcat" || cfg.type === "cost-gastos-admin-subcat";
         const aoaData: any[][] = [];
         const merges: XLSX.Range[] = [];
         const colWidths: { wch: number }[] = [
@@ -107,7 +138,7 @@ const PanelEstadistico = () => {
         const row0: string[] = ["DATOS DEL PRODUCTOR", "", "", "", ""];
         merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
 
-        // Row 1: Level 2 Header ("Productor", "Finca", ..., "Kg cosechados", "Edad", ...)
+        // Row 1: Level 2 Header ("Productor", "Finca", ..., "Kg cosechados", "Edades...", ...)
         const row1: string[] = [
           "Productor",
           "Finca",
@@ -119,18 +150,23 @@ const PanelEstadistico = () => {
         recentYears.forEach((yr, i) => {
           row0.push(`CAMPAÑA ${yr}`);
           if (isProduction) {
-            row0.push(""); // empty cell for merge
-            const cStart = 5 + i * 2;
-            merges.push({ s: { r: 0, c: cStart }, e: { r: 0, c: cStart + 1 } });
+            row0.push("", ""); // 2 empty cells for 3-column merge
+            const cStart = 5 + i * 3;
+            merges.push({ s: { r: 0, c: cStart }, e: { r: 0, c: cStart + 2 } });
 
+            row1.push("Precio de venta ($ USD/kg)");
             row1.push("Kg cosechados");
             row1.push("Edades de montes contribuyentes");
 
+            colWidths.push({ wch: 24 });
             colWidths.push({ wch: 15 });
             colWidths.push({ wch: 32 });
+          } else if (isSubdetail) {
+            row1.push("Sub total ($ USD)");
+            colWidths.push({ wch: 22 });
           } else {
-            row1.push("Monto ($ USD)");
-            colWidths.push({ wch: 18 });
+            row1.push("Monto Total ($ USD)");
+            colWidths.push({ wch: 22 });
           }
         });
 
@@ -160,8 +196,14 @@ const PanelEstadistico = () => {
             if (isProduction) {
               let prodSum = 0;
               let contributingMonteIds: number[] = [];
+              let avgPrice = 0;
 
               if (cIds.length > 0) {
+                const campaignObj = campaignsList.find((c: any) => cIds.includes(Number(c.id)));
+                if (campaignObj && campaignObj.average_price) {
+                  avgPrice = Number(campaignObj.average_price) || 0;
+                }
+
                 const prodsForCampaign = productionsList.filter((prod: any) =>
                   cIds.includes(Number(prod.campaign_id))
                 );
@@ -259,8 +301,109 @@ const PanelEstadistico = () => {
               const uniqueAges = [...new Set(ages)].sort((a, b) => a - b);
               const edadesStr = prodSum > 0 && uniqueAges.length > 0 ? uniqueAges.join(", ") : "-";
 
-              dataRow.push(prodSum);
+              dataRow.push(avgPrice > 0 ? formatCurrency(avgPrice, false) : "-");
+              dataRow.push(prodSum > 0 ? prodSum : "-");
               dataRow.push(edadesStr);
+            } else if (cfg.type === "cost-insumo-subcat") {
+              let subtotal = 0;
+              if (cIds.length > 0) {
+                const insumoCosts = costsList.filter(
+                  (cost: any) => cIds.includes(Number(cost.campaign_id)) && cost.category === "insumos"
+                );
+
+                insumoCosts.forEach((cost: any) => {
+                  let detailsObj: any = null;
+                  try {
+                    if (cost.details) {
+                      detailsObj = typeof cost.details === "string" ? JSON.parse(cost.details) : cost.details;
+                    } else if (cost.cost_data) {
+                      detailsObj = typeof cost.cost_data === "string" ? JSON.parse(cost.cost_data) : cost.cost_data;
+                    }
+                  } catch (e) {
+                    detailsObj = null;
+                  }
+
+                  if (detailsObj) {
+                    if (detailsObj.quickMode && detailsObj.subtotals) {
+                      const subMap = detailsObj.subtotals;
+                      const val =
+                        subMap[cfg.insumoSubcatId!] ??
+                        subMap[cfg.insumoSubcatLabel!] ??
+                        0;
+                      subtotal += Number(val) || 0;
+                    } else if (detailsObj.type || detailsObj.selectedType) {
+                      const typeName = String(detailsObj.type || detailsObj.selectedType).toLowerCase().trim();
+                      const targetLabel = String(cfg.insumoSubcatLabel).toLowerCase().trim();
+                      const targetId = String(cfg.insumoSubcatId).toLowerCase().trim();
+
+                      if (typeName === targetLabel || typeName === targetId) {
+                        subtotal += Number(cost.total_amount || 0);
+                      }
+                    }
+                  }
+                });
+              }
+
+              dataRow.push(subtotal > 0 ? formatCurrency(subtotal, false) : "-");
+            } else if (cfg.type === "cost-cosecha-subcat") {
+              let subtotal = 0;
+              if (cIds.length > 0) {
+                const cosechaCosts = costsList.filter(
+                  (cost: any) => cIds.includes(Number(cost.campaign_id)) && cost.category === "cosecha"
+                );
+
+                cosechaCosts.forEach((cost: any) => {
+                  let detailsObj: any = null;
+                  try {
+                    if (cost.details) {
+                      detailsObj = typeof cost.details === "string" ? JSON.parse(cost.details) : cost.details;
+                    } else if (cost.cost_data) {
+                      detailsObj = typeof cost.cost_data === "string" ? JSON.parse(cost.cost_data) : cost.cost_data;
+                    }
+                  } catch (e) {
+                    detailsObj = null;
+                  }
+
+                  if (detailsObj) {
+                    const valores = detailsObj.data?.valores || detailsObj.valores || {};
+                    const val = valores[cfg.cosechaSubcatKey!] || 0;
+                    subtotal += Number(val) || 0;
+                  }
+                });
+              }
+
+              dataRow.push(subtotal > 0 ? formatCurrency(subtotal, false) : "-");
+            } else if (cfg.type === "cost-gastos-admin-subcat") {
+              let subtotal = 0;
+              if (cIds.length > 0) {
+                const adminCosts = costsList.filter(
+                  (cost: any) => cIds.includes(Number(cost.campaign_id)) && cost.category === "gastos-admin"
+                );
+
+                adminCosts.forEach((cost: any) => {
+                  let detailsObj: any = null;
+                  try {
+                    if (cost.details) {
+                      detailsObj = typeof cost.details === "string" ? JSON.parse(cost.details) : cost.details;
+                    } else if (cost.cost_data) {
+                      detailsObj = typeof cost.cost_data === "string" ? JSON.parse(cost.cost_data) : cost.cost_data;
+                    }
+                  } catch (e) {
+                    detailsObj = null;
+                  }
+
+                  if (detailsObj && !detailsObj.quickMode) {
+                    const typeName = String(detailsObj.type || detailsObj.selectedType || "").toLowerCase().trim();
+                    const targetType = String(cfg.gastosAdminSubcatType).toLowerCase().trim();
+
+                    if (typeName === targetType || typeName.includes(targetType) || targetType.includes(typeName)) {
+                      subtotal += Number(cost.total_amount || 0);
+                    }
+                  }
+                });
+              }
+
+              dataRow.push(subtotal > 0 ? formatCurrency(subtotal, false) : "-");
             } else {
               let totalValue = 0;
               if (cIds.length > 0) {
@@ -269,12 +412,18 @@ const PanelEstadistico = () => {
                     .filter((cost: any) => cIds.includes(Number(cost.campaign_id)) && cost.category === cfg.category)
                     .reduce((acc: number, item: any) => acc + (Number(item.total_amount) || 0), 0);
                 } else if (cfg.type === "investment") {
+                  const targetCat = String(cfg.investmentCategory || "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                   totalValue = investmentsList
-                    .filter((inv: any) => cIds.includes(Number(inv.campaign_id)))
+                    .filter((inv: any) => {
+                      if (!cIds.includes(Number(inv.campaign_id))) return false;
+                      const cat = String(inv.category || "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                      return cat === targetCat;
+                    })
                     .reduce((acc: number, item: any) => acc + (Number(item.total_value || item.amount) || 0), 0);
                 }
               }
-              dataRow.push(formatCurrency(totalValue, false));
+
+              dataRow.push(totalValue > 0 ? formatCurrency(totalValue, false) : "-");
             }
           });
 
@@ -436,21 +585,6 @@ const PanelEstadistico = () => {
             Actualizar datos
           </Button>
         </div>
-      </div>
-
-      {/* Sub-header / Tabs Navigation */}
-      <div className="border-b border-border flex gap-4">
-        <button
-          type="button"
-          onClick={() => setActiveTab("resumen")}
-          className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === "resumen"
-            ? "border-primary text-primary font-semibold"
-            : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-        >
-          <Building2 className="h-4 w-4" />
-          Resumen ejecutivo
-        </button>
       </div>
 
       {/* Main Content */}

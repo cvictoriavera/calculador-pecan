@@ -1,4 +1,4 @@
-# Gestión de Zonas Geográficas
+# Gestor de Zonas Geográficas
 
 ## Especificación funcional y técnica
 
@@ -83,44 +83,25 @@ Una zona puede contener cualquier combinación válida de territorios.
 Conceptualmente:
 
 ```text
-Zona
-=
-Conjunto de territorios administrativos
+Zona = Conjunto de territorios administrativos
 ```
 
 Ejemplo:
 
 ```text
-Zona NOA
-
-=
-Tucumán
-∪
-Salta
-∪
-Catamarca
+Zona NOA = Tucumán ∪ Salta ∪ Catamarca
 ```
 
 O bien:
 
 ```text
-Zona BA Delta
-
-=
-Tigre
-∪
-San Fernando
+Zona BA Delta = Tigre ∪ San Fernando 
 ```
 
 O:
 
 ```text
-Zona ER-Ctes Costa del Paraná
-
-=
-Fragmentos de Entre Ríos
-∪
-Fragmentos de Corrientes
+Zona ER-Ctes Costa del Paraná = Fragmentos de Entre Ríos ∪ Fragmentos de Corrientes
 ```
 
 Las zonas no están obligadas a respetar límites provinciales.
@@ -152,9 +133,7 @@ El administrador selecciona:
 El sistema interpreta:
 
 ```text
-Zona 10 - Córdoba
-=
-Todos los territorios descendientes de Córdoba
+Zona 10 - Córdoba = Todos los territorios descendientes de Córdoba
 ```
 
 No es necesario seleccionar individualmente departamentos, municipios o localidades.
@@ -172,7 +151,7 @@ Una zona puede estar formada por múltiples provincias completas.
 ### Caso real
 
 ```text
-9 - NOA
+Zona 9 - NOA
 ```
 
 Incluye:
@@ -211,11 +190,7 @@ El administrador selecciona múltiples provincias:
 La zona queda definida como:
 
 ```text
-NOA
-=
-Tucumán
-∪ Salta
-∪ Catamarca
+Zona 9 -NOA = Tucumán ∪ Salta ∪ Catamarca
 ```
 
 Todos los proyectos pertenecientes a cualquiera de estas provincias serán asignados automáticamente a la zona.
@@ -267,11 +242,7 @@ Y selecciona:
 La zona queda definida como:
 
 ```text
-BA Delta
-=
-Tigre
-∪
-San Fernando
+BA Delta = Tigre ∪ San Fernando
 ```
 
 La provincia de Buenos Aires pasa a tener estado:
@@ -466,7 +437,6 @@ GeographicZone {
     chamber_id
     country_id
 
-    code
     name
     description
 
@@ -481,8 +451,6 @@ Ejemplo:
 
 ```text
 id: 9
-
-code: 9
 
 name: NOA
 
@@ -794,17 +762,27 @@ También puede ocurrir que varias zonas cubran conjuntamente toda la provincia.
 
 # 15. Interfaz de Administración
 
-La creación y edición de zonas debe realizarse mediante un selector jerárquico de territorios.
+La gestión de zonas geográficas se ubica en la ruta dedicada `/zonas-geograficas` dentro del menú lateral bajo la sección **Panel Estadístico** (debajo de Resumen Ejecutivo).
 
-## Componente recomendado
+## Header y Estructura de Vista
+- **Header:** Utiliza la misma cabecera estandarizada que Resumen Ejecutivo y Proyectos, la cual incluye únicamente el botón para alternar el menú lateral y el icono del perfil de usuario.
+- **Formulario Integrado:** La creación y edición de zonas se realiza mediante una tarjeta integrada (`ZoneFormCard.tsx`) ubicada directamente sobre la tabla de "Zonas Registradas", eliminando el uso de ventanas modales.
+- **Buscador de Territorios:** Incluye un campo de búsqueda en tiempo real arriba del árbol de selección (`Filtrar provincia, departamento o localidad...`) para encontrar rápidamente cualquier unidad territorial.
+- **Caja de Capsulas de Selección:** Arriba del selector jerárquico se presenta una caja contenedora ("Territorios seleccionados") que muestra cápsulas con los nombres de los territorios elegidos.
+  - Si se selecciona una provincia completa, solo aparece la cápsula con el nombre de la provincia.
+  - Si se seleccionan todos los departamentos/localidades de un departamento, se condensa en la cápsula del departamento.
+  - Cada cápsula incluye un botón `x` para desmarcar el territorio individualmente.
+  - Al editar una zona existente, las cápsulas se cargan automáticamente y se permite quitar territorios asignados previamente.
+
+## Componente de Selección Jerárquica
 
 ```text
-Tree Multi Select
-```
+Buscador: [ Buscar territorio... ]
 
-Ejemplo:
+Territorios Seleccionados:
+[ Tucumán ✖ ] [ Salta ✖ ] [ Tigre (BA) ✖ ]
 
-```text
+Árbol Jerárquico:
 Argentina
 │
 ├── ☑ Tucumán
@@ -813,11 +791,9 @@ Argentina
 │
 ├── ☐ Buenos Aires [PARCIAL]
 │   │
-│   ├── 🔒 Tigre
-│   │     Asignado a BA Delta
+│   ├── 🔒 Tigre (En esta zona) / (En otra zona)
 │   │
 │   ├── 🔒 San Fernando
-│   │     Asignado a BA Delta
 │   │
 │   ├── ☐ Bahía Blanca
 │   │
@@ -858,7 +834,7 @@ Entre Ríos
 Corrientes
 ├── ☑ Localidad X
 ├── ☑ Localidad Y
-└── ☐ Localidad Z
+└── ☑ Localidad Z
 ```
 
 Todas estas selecciones deben formar parte de una única zona.
@@ -1536,6 +1512,30 @@ Las zonas deben pertenecer a una cámara u organización específica.
 
 ---
 
+## RN-ZONE-18
+
+El rol de usuario `admin_country` representa al administrador de la cámara sectorial de un país específico.
+
+---
+
+## RN-ZONE-19
+
+La vinculación del usuario (`productor` o `admin_country`) con su país de gestión/pertenencia se realiza mediante el campo personalizado de ACF `pais`. Este campo es **inmutable desde la aplicación frontend** (ver [`reglas de negocio usuarios.md`](file:///c:/Users/cvict/Local%20Sites/testcappecan/app/public/wp-content/plugins/calculador-pecan/docs/usuarios/reglas%20de%20negocio%20usuarios.md)).
+
+---
+
+## RN-ZONE-20
+
+El usuario con rol `admin_country` solo posee permisos para listar, crear, editar, activar/desactivar y eliminar zonas geográficas asociadas exclusivamente a su país asignado. No puede modificar ni crear zonas pertenecientes a otros países.
+
+---
+
+## RN-ZONE-21
+
+El rol `administrator` (Super Administrador global) mantiene permisos ilimitados para gestionar zonas geográficas de cualquier país en la plataforma.
+
+---
+
 # 34. Requisitos Funcionales
 
 ## RF-ZONE-01
@@ -1600,58 +1600,64 @@ El sistema debe mantener auditoría de cambios administrativos.
 
 ## UI-ZONE-01
 
-Debe existir una pantalla de administración de zonas.
+Debe existir una pantalla dedicada de administración de zonas en la ruta `/zonas-geograficas`, accesible desde el menú lateral bajo Panel Estadístico.
 
 ## UI-ZONE-02
 
-Debe existir un listado de zonas existentes.
+Debe existir un listado de zonas existentes en una tabla de zonas registradas.
 
 El listado debe mostrar:
 
-- Código.
 - Nombre.
 - País.
-- Estado.
+- Estado (Activa / Inactiva).
 - Cantidad de territorios.
 - Cantidad de proyectos.
 - Cantidad de productores.
 - Hectáreas representadas.
+- Acciones (Editar / Activar / Eliminar).
 
 ---
 
 ## UI-ZONE-03
 
-La creación de zonas debe utilizar un árbol territorial.
+La creación y edición de zonas debe utilizar un formulario integrado (`ZoneFormCard.tsx`) arriba de la tabla con un árbol jerárquico territorial.
 
 ---
 
 ## UI-ZONE-04
 
-El árbol debe permitir selección múltiple.
+El árbol debe permitir selección múltiple en cascada (al seleccionar una provincia, sus departamentos y localidades se seleccionan automáticamente).
 
 ---
 
 ## UI-ZONE-05
 
-El árbol debe permitir navegar entre provincias sin perder las selecciones realizadas.
+Debe existir un buscador de texto en tiempo real sobre el árbol para filtrar provincias, departamentos y localidades rápidamente.
 
 ---
 
 ## UI-ZONE-06
 
-Los territorios parcialmente asignados deben tener una representación visual diferente.
+Debe existir una caja de resumen con cápsulas que muestre los territorios seleccionados de manera condensada (provincia completa, departamento completo o localidades) con botones para remover selecciones.
 
 ---
 
 ## UI-ZONE-07
 
-Los territorios completamente asignados deben mostrarse como no disponibles para nuevas zonas.
+Los territorios parcialmente asignados deben mostrarse con indicadores visuales diferenciados y estado indeterminado en la casilla de verificación.
 
 ---
 
 ## UI-ZONE-08
 
-Los conflictos deben mostrarse antes de guardar.
+Los territorios pertenecientes a otras zonas deben mostrarse bloqueados con un icono de candado y deshabilitados para selección.
+
+---
+
+## UI-ZONE-09
+
+Al editar una zona, el formulario debe cargar sus territorios asignados en la caja de cápsulas y en el árbol, permitiendo desmarcar o remover territorios previamente guardados.
 
 ---
 
@@ -2037,9 +2043,7 @@ Una provincia
         └── Zona D
 
 
-Fragmentos de Provincia A
-+
-Fragmentos de Provincia B
+Fragmentos de Provincia A + Fragmentos de Provincia B
         │
         ▼
 Una zona

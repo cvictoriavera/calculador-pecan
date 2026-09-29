@@ -7,26 +7,23 @@ Este documento especifica los componentes React, interfaces de usuario, estado g
 ## 1. Estructura de Componentes Frontend
 
 ```text
-PanelEstadistico.tsx
- └── Tabs (Resumen Ejecutivo | Zonas Geográficas | ...)
-      └── GeographicZonesManager.tsx
-           ├── CountrySelect.tsx (Selector de País: AR, BR, UY)
-           ├── ZoneMetricsHeader.tsx (Métricas agregadas por País)
-           ├── ZoneTable.tsx (Listado de zonas registradas)
-           │    └── ZoneRowActions.tsx (Acciones de edición y desactivación)
-           │
-           └── ZoneFormModal.tsx (Modal de Crear/Editar Zona)
-                ├── TerritoryTreeSelect.tsx (Selector Jerárquico Multiselección por parent_id)
-                │    └── TerritoryTreeNode.tsx (Nodo expandible con Badges de estado)
-                ├── ZoneConflictAlert.tsx (Alerta visual de superposición)
-                └── ZoneFormSummary.tsx (Resumen de Territorios Seleccionados)
+ZonasGeograficas.tsx (Página dedicada en /zonas-geograficas)
+ └── GeographicZonesManager.tsx
+      ├── Header superior (Filtro por País para Super Admin, Badge de País del usuario, botón Actualizar)
+      ├── ZoneFormCard.tsx (Formulario Inline de Creación / Edición de Zonas)
+      │    ├── TerritoryTreeSelect.tsx (Selector Jerárquico Multiselección)
+      │    │    ├── Resumen de Territorios Seleccionados (Caja de Cápsulas Badges con agrupación inteligente y botón X)
+      │    │    ├── Buscador en Tiempo Real (Filtro insensible a tildes con auto-expansión de ramas)
+      │    │    └── Árbol Interactivo (Nodos con selección en cascada y bloqueo heredado)
+      │    └── ZoneConflictAlert.tsx (Alerta visual de superposición)
+      └── Tabla de Zonas Registradas (ID, Nombre, Territorios, Proyectos, Productores, Hectáreas y Acciones)
 ```
 
 ### Componente de Selección para Productor:
 ```text
 ProjectForm / LocationSelector.tsx
- ├── CountrySelect (Selección de País)
  └── CascadingTerritorySelect (Selección en cascada: Provincia -> Dpto -> Localidad)
+      └── El país viene fijado e inmutable por el perfil del usuario (ACF `pais`)
       └── Guarda geographic_territory_id en el proyecto
 ```
 
@@ -34,24 +31,30 @@ ProjectForm / LocationSelector.tsx
 
 ## 2. Componentes Principales y Flujos
 
-### 2.1 `GeographicZonesManager.tsx`
-Contenedor principal en el Panel Estadístico para los administradores.
-* **Estado:** `countryId` (defecto: Argentina = 1), `zonesList`, `loading`, `isModalOpen`, `editingZone`.
-* **Funcionalidad:** Permite alternar entre países, muestra la lista de zonas filtrada por `country_id` y permite abrir el modal para crear o editar zonas.
+### 2.1 `GeographicZonesManager.tsx` y `ZoneFormCard.tsx`
+Sección administrativa accesible mediante la ruta `/zonas-geograficas` desde el menú lateral del Panel Estadístico.
+* **Estado:** `selectedCountryId`, `zones`, `loading`, `editingZone`.
+* **Formulario Inline:** La creación y edición de zonas se realiza mediante el componente `ZoneFormCard.tsx` renderizado **directamente en pantalla arriba de la tabla de zonas registradas** (sin ventanas modales ni botones desplegables).
+* **Comportamiento por Rol de Usuario:**
+  * **Super Administrador (`administrator`):** Puede alternar la vista entre países registrados mediante el selector del encabezado.
+  * **Admin de Cámara por País (`admin_country`):** No posee selector de país. Su país de gestión viene **fijado e inmutable** desde el campo ACF `pais` de su perfil.
+* **Funcionalidad de Edición:** Al hacer clic en el botón de edición (✏️) de una fila de la tabla, la página realiza un desplazamiento suave (*smooth scroll*) al formulario superior cargando los datos de la zona para su modificación o deselección individual de territorios, con opción de *"Cancelar edición"*.
 
 ---
 
-### 2.2 `TerritoryTreeSelect.tsx` (Tree Multi-Select)
+### 2.2 `TerritoryTreeSelect.tsx` (Selector Territorial con Búsqueda y Cápsulas)
 Selector jerárquico que renderiza las divisiones territoriales obtenidas de `/territories/tree`.
 
 #### Características:
-- Permite seleccionar provincias completas, departamentos o localidades específicas.
-- Muestra los estados visuales del territorio:
-  - 🟢 **Disponible (`AVAILABLE`):** Casilla desmarcada, totalmente libre.
-  - 🟡 **Parcialmente Asignado (`PARTIALLY_ASSIGNED`):** Badge de advertencia indicando que parte del territorio pertenece a otra zona.
-  - 🔒 **Bloqueado (`BLOCKED`):** Casilla deshabilitada con un ícono de candado y tooltip indicando la zona activa propietaria.
-  - 🔵 **Seleccionado (`SELECTED`):** Forma parte de la zona en configuración.
-- Soporta **Selección Transprovincial** (ej. seleccionar localidades de Entre Ríos y Corrientes simultáneamente).
+- **Resumen de Cápsulas (`selectedCapsules`):** Muestra una caja superior con cápsulas representantes de mayor jerarquía:
+  - Si se selecciona una **Provincia completa**, se muestra únicamente una cápsula con el nombre de la Provincia.
+  - Si se selecciona un **Departamento**, se muestra únicamente la cápsula del Departamento.
+  - Si se seleccionan **localidades individuales**, se muestran sus respectivas cápsulas con su botón `X` de deselección directa.
+- **Buscador en Tiempo Real:** Filtro de texto insensible a mayúsculas/minúsculas y tildes (normalización NFD en español) que expande automáticamente las ramas del árbol que contienen coincidencias.
+- **Selección en Cascada y Bloqueo Heredado:**
+  - Al marcar un nodo padre (Provincia / Departamento), se marcan automáticamente todos sus territorios descendientes disponibles.
+  - Si un territorio padre pertenece a otra zona activa, la propiedad `BLOCKED` se propaga recursivamente a todos sus departamentos y localidades descendientes, mostrando el badge 🔒 **Asignado a [Nombre de Zona]** y deshabilitando su selección.
+- **Resolución de Selección Implícita (`isNodeSelected`):** Permite desmarcar departamentos o localidades individuales en modo edición reduciendo la cobertura sin perder el resto de los territorios seleccionados.
 
 ---
 
@@ -59,13 +62,13 @@ Selector jerárquico que renderiza las divisiones territoriales obtenidas de `/t
 Componente utilizado en la creación/edición de proyectos (`Projects.tsx`).
 
 #### Flujo del Productor:
-1. El productor selecciona el **País** (`country_id`).
-2. El sistema despliega en cascada las divisiones según el nivel jerárquico (`level_number`):
+1. El **País** del proyecto se determina automáticamente a partir del campo inmutable ACF `pais` de la cuenta del usuario (no hay selector de país).
+2. El sistema despliega en cascada las divisiones territoriales internas de su país (`level_number`):
    - Nivel 1: Provincia / Estado.
    - Nivel 2: Departamento / Municipio.
    - Nivel 3: Localidad (Ubicación más específica).
 3. El proyecto guarda únicamente `country_id` y `geographic_territory_id`.
-4. El backend resuelve y asigna automáticamente `geographic_zone_id`.
+4. El backend resuelve y asigna automáticamente la `geographic_zone_id`.
 
 ---
 

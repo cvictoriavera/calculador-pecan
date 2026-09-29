@@ -1,4 +1,4 @@
-import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft, HelpCircle, BarChart3 } from "lucide-react";
+import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft, HelpCircle, BarChart3, MapPin } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -30,10 +30,12 @@ export function AppSidebar() {
   const { user } = useApp();
 
   const isAdmin = Boolean(
-    user?.roles?.includes('administrator') || user?.roles?.includes('admin')
+    user?.roles?.includes('administrator') ||
+    user?.roles?.includes('admin') ||
+    user?.roles?.includes('admin_country')
   );
 
-  const isProjectsPage = location.pathname === '/projects' || location.pathname === '/panel-estadistico';
+  const isProjectsPage = location.pathname === '/projects' || location.pathname === '/panel-estadistico' || location.pathname === '/zonas-geograficas';
 
   return (
     <Sidebar collapsible="icon">
@@ -87,6 +89,19 @@ export function AppSidebar() {
                         >
                           <BarChart3 className="h-5 w-5" />
                           {open && <span className="ml-3">Resumen ejecutivo</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <NavLink
+                          to="/zonas-geograficas"
+                          className="hover:bg-sidebar-accent transition-colors no-underline"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
+                        >
+                          <MapPin className="h-5 w-5" />
+                          {open && <span className="ml-3">Zonas Geográficas</span>}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

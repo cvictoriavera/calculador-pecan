@@ -533,14 +533,14 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
 	 * @return bool|WP_Error
-	 */
-	public function get_benchmarking_permissions_check( $request ) {
+	 */	public function get_benchmarking_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_forbidden', esc_html__( 'Usted debe estar autenticado para acceder al panel estadístico.', 'calculador-pecan' ), array( 'status' => 401 ) );
 		}
 
 		$user = wp_get_current_user();
-		$is_admin = current_user_can( 'administrator' ) || current_user_can( 'manage_options' ) || ( isset( $user->roles ) && in_array( 'administrator', (array) $user->roles, true ) );
+		$roles = (array) $user->roles;
+		$is_admin = current_user_can( 'administrator' ) || current_user_can( 'manage_options' ) || in_array( 'administrator', $roles, true ) || in_array( 'admin_country', $roles, true );
 
 		if ( ! $is_admin ) {
 			return new WP_Error( 'rest_forbidden', esc_html__( 'Acceso restringido a administradores.', 'calculador-pecan' ), array( 'status' => 403 ) );
@@ -565,11 +565,25 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		$t_montes      = $wpdb->prefix . 'pecan_montes';
 		$t_productions = $wpdb->prefix . 'pecan_productions';
 
+		$user_country_id = CCP_Geographic_Hierarchy_Service::get_user_assigned_country_id();
+		$where = ["p.allow_benchmarking = 1"];
+		$params = [];
+
+		if ($user_country_id !== null) {
+			$where[] = "(p.country_id = %d OR LOWER(p.pais) = (SELECT LOWER(name) FROM {$wpdb->prefix}pecan_countries WHERE id = %d LIMIT 1))";
+			$params[] = $user_country_id;
+			$params[] = $user_country_id;
+		}
+
 		$sql = "SELECT p.*, u.display_name AS user_name, u.user_email
 				FROM {$t_projects} p
 				LEFT JOIN {$t_users} u ON p.user_id = u.ID
-				WHERE p.allow_benchmarking = 1
+				WHERE " . implode(" AND ", $where) . "
 				ORDER BY p.created_at DESC";
+
+		if (!empty($params)) {
+			$sql = $wpdb->prepare($sql, $params);
+		}
 
 		$projects = $wpdb->get_results( $sql );
 
@@ -620,30 +634,22 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 					$project_id,
 					$campaign_id
 				);
-				$sum_prod = $wpdb->get_var( $prod_query );
-				if ( null !== $sum_prod && floatval( $sum_prod ) > 0 ) {
-					$total_prod_kg = floatval( $sum_prod );
-				} elseif ( isset( $campaign->total_production ) ) {
-					$total_prod_kg = floatval( $campaign->total_production );
-				}
+				$total_prod_kg = floatval( $wpdb->get_var( $prod_query ) );
 			}
 
 			$costo_por_ha = $total_ha > 0 ? ( $total_costos_op / $total_ha ) : 0.0;
 			$costo_por_kg = $total_prod_kg > 0 ? ( $total_costos_op / $total_prod_kg ) : 0.0;
 
-			// Format locality string (municipio / departamento)
-			$localidad = ! empty( $proj->municipio ) ? $proj->municipio : ( ! empty( $proj->departamento ) ? $proj->departamento : '' );
-
 			$items[] = array(
 				'id'                   => $project_id,
 				'user_id'              => intval( $proj->user_id ),
-				'user_name'            => ! empty( $proj->user_name ) ? $proj->user_name : ( ! empty( $proj->user_email ) ? $proj->user_email : 'Usuario #' . $proj->user_id ),
+				'user_name'            => $proj->user_name ? $proj->user_name : $proj->user_email,
 				'project_name'         => $proj->project_name,
-				'pais'                 => ! empty( $proj->pais ) ? $proj->pais : '-',
-				'provincia'            => ! empty( $proj->provincia ) ? $proj->provincia : '-',
-				'departamento'         => ! empty( $proj->departamento ) ? $proj->departamento : '-',
-				'municipio'            => ! empty( $proj->municipio ) ? $proj->municipio : '-',
-				'localidad'            => ! empty( $localidad ) ? $localidad : '-',
+				'pais'                 => $proj->pais,
+				'provincia'            => $proj->provincia,
+				'departamento'         => $proj->departamento,
+				'municipio'            => $proj->municipio,
+				'localidad'            => $proj->municipio ? $proj->municipio : ( $proj->departamento ? $proj->departamento : $proj->provincia ),
 				'allow_benchmarking'   => intval( $proj->allow_benchmarking ),
 				'total_ha'             => $total_ha,
 				'campaign_year'        => $campaign_year,
@@ -674,8 +680,23 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		$t_investments  = $wpdb->prefix . 'pecan_investments';
 		$t_yield_models = $wpdb->prefix . 'pecan_yield_models';
 
-		// Get all project IDs with allow_benchmarking = 1
-		$raw_ids = $wpdb->get_col( "SELECT id FROM {$t_projects} WHERE allow_benchmarking = 1 ORDER BY id ASC" );
+		$user_country_id = CCP_Geographic_Hierarchy_Service::get_user_assigned_country_id();
+		$where = ["allow_benchmarking = 1"];
+		$params = [];
+
+		if ($user_country_id !== null) {
+			$where[] = "(country_id = %d OR LOWER(pais) = (SELECT LOWER(name) FROM {$wpdb->prefix}pecan_countries WHERE id = %d LIMIT 1))";
+			$params[] = $user_country_id;
+			$params[] = $user_country_id;
+		}
+
+		$sql_ids = "SELECT id FROM {$t_projects} WHERE " . implode(" AND ", $where) . " ORDER BY id ASC";
+		if (!empty($params)) {
+			$sql_ids = $wpdb->prepare($sql_ids, $params);
+		}
+
+		// Get all project IDs with allow_benchmarking = 1 (filtered by country for admin_country)
+		$raw_ids = $wpdb->get_col( $sql_ids );
 		$project_ids = array_map( 'intval', (array) $raw_ids );
 
 		if ( empty( $project_ids ) ) {

@@ -3,32 +3,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { LocationSelector } from "@/components/projects/LocationSelector";
 import type { ProjectCreationFormProps } from "@/types/project";
 
 export const ProjectCreationForm = ({
   step,
   formData,
-  geoData,
   isTrialMode,
   onFormDataChange,
 }: Omit<ProjectCreationFormProps, 'isCreating'>) => {
   const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
     onFormDataChange({ [field]: value });
-  };
-
-  const handleProvinciaChange = (value: string) => {
-    onFormDataChange({
-      provincia: value,
-      departamento: "", // Clear dependent fields
-      municipio: "",
-    });
-  };
-
-  const handleDepartamentoChange = (value: string) => {
-    onFormDataChange({
-      departamento: value,
-      municipio: "", // Clear dependent field
-    });
   };
 
   // Step 1: Basic Information
@@ -81,100 +66,21 @@ export const ProjectCreationForm = ({
     );
   }
 
-  // Step 2: Location
+  // Step 2: Location (Fixed User Country + Cascade Territory Selection)
   if (step === 2) {
     return (
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="pais" className="text-base font-medium">
-            País
-          </Label>
-          <Select value={formData.pais} onValueChange={(value) => handleInputChange('pais', value)}>
-            <SelectTrigger className="text-lg py-6">
-              <SelectValue placeholder="Selecciona un país" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Argentina">Argentina</SelectItem>
-              <SelectItem value="Brasil">Brasil</SelectItem>
-              <SelectItem value="Uruguay">Uruguay</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {formData.pais === "Argentina" ? (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="provincia" className="text-base font-medium">
-                Provincia
-              </Label>
-              <Select
-                value={formData.provincia}
-                onValueChange={handleProvinciaChange}
-              >
-                <SelectTrigger className="text-lg py-6">
-                  <SelectValue placeholder="Selecciona una provincia" />
-                </SelectTrigger>
-                <SelectContent>
-                  {geoData.provinces.map((prov) => (
-                    <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="departamento" className="text-base font-medium">
-                Departamento
-              </Label>
-              <Select
-                value={formData.departamento}
-                onValueChange={handleDepartamentoChange}
-                disabled={!formData.provincia}
-              >
-                <SelectTrigger className="text-lg py-6">
-                  <SelectValue placeholder="Selecciona un departamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.provincia && geoData.departments[formData.provincia]?.map((dept) => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="municipio" className="text-base font-medium">
-                Municipio
-              </Label>
-              <Select
-                value={formData.municipio}
-                onValueChange={(value) => handleInputChange('municipio', value)}
-                disabled={!formData.departamento}
-              >
-                <SelectTrigger className="text-lg py-6">
-                  <SelectValue placeholder="Selecciona un municipio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.departamento && formData.provincia && geoData.municipalities[`${formData.provincia}-${formData.departamento}`]?.map((mun) => (
-                    <SelectItem key={mun} value={mun}>{mun}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </>
-        ) : (
-          <div className="space-y-2">
-            <Label htmlFor="provincia" className="text-base font-medium">
-              Provincia / Región
-            </Label>
-            <Input
-              id="provincia"
-              placeholder="Ej: São Paulo"
-              value={formData.provincia}
-              onChange={(e) => handleInputChange('provincia', e.target.value)}
-              className="text-lg py-6"
-            />
-          </div>
-        )}
+        <LocationSelector
+          selectedTerritoryId={formData.geographic_territory_id || null}
+          onChange={(territoryId, localityName, departmentName, provinceName) => {
+            onFormDataChange({
+              geographic_territory_id: territoryId || undefined,
+              provincia: provinceName || "",
+              departamento: departmentName || "",
+              municipio: localityName || "",
+            });
+          }}
+        />
       </CardContent>
     );
   }

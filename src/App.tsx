@@ -15,6 +15,7 @@ import Config from "./pages/Config";
 import Onboarding from "./pages/Onboarding";
 import Projects from "./pages/Projects";
 import PanelEstadistico from "./pages/PanelEstadistico";
+import ZonasGeograficas from "./pages/ZonasGeograficas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,7 +35,9 @@ const AdminRoute = ({ children }: { children: JSX.Element }) => {
   if (isLoading) return <FallbackLoader />;
 
   const isAdmin = Boolean(
-    user?.roles?.includes('administrator') || user?.roles?.includes('admin')
+    user?.roles?.includes('administrator') ||
+    user?.roles?.includes('admin') ||
+    user?.roles?.includes('admin_country')
   );
 
   if (!isAdmin) {
@@ -56,7 +59,9 @@ function AppRouter() {
   if (isLoading || isLoggingOut || isChangingProject) return <FallbackLoader />;
 
   const isAdmin = Boolean(
-    user?.roles?.includes('administrator') || user?.roles?.includes('admin')
+    user?.roles?.includes('administrator') ||
+    user?.roles?.includes('admin') ||
+    user?.roles?.includes('admin_country')
   );
 
   if (!isAdmin && !isOnboardingComplete) {
@@ -83,6 +88,7 @@ function AppRouter() {
         <Route path="/config" element={<Config />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/panel-estadistico" element={<AdminRoute><PanelEstadistico /></AdminRoute>} />
+        <Route path="/zonas-geograficas" element={<AdminRoute><ZonasGeograficas /></AdminRoute>} />
       </Route>
       <Route path="/calculador-pecan/panel-estadistico" element={<Navigate to="/panel-estadistico" replace />} />
       <Route path="/onboarding" element={<Navigate to={defaultRoute} replace />} />

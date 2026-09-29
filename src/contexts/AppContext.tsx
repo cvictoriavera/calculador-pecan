@@ -38,6 +38,8 @@ interface User {
   email?: string;
   username?: string;
   roles?: string[];
+  pais?: string;
+  country_id?: number;
 }
 
 interface Project {
