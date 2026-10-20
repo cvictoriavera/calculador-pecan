@@ -13,10 +13,10 @@ class CCP_Database_Manager {
 
     /**
      * Versión de la base de datos.
-     * Incrementada a 1.6.0 para incluir tablas de gestión geográfica y zonas.
+     * Incrementada a 1.5.5 para incluir tablas de gestión geográfica y zonas.
      * @var string
      */
-    private static $db_version = '1.6.0'; 
+    private static $db_version = '1.5.5'; 
 
     private static $db_version_key = 'ccp_db_version';
 
@@ -43,6 +43,9 @@ class CCP_Database_Manager {
         if (stripos($charset_collate, 'ENGINE') === false) {
             $charset_collate .= " ENGINE=InnoDB"; 
         }
+
+        // Ejecutar migración defensiva para tablas preexistentes (proyectos creados en versiones anteriores)
+        self::migrate_existing_tables();
 
         // Definir nombres de tablas
         $table_name_projects = $wpdb->prefix . 'pecan_projects';
@@ -142,14 +145,15 @@ class CCP_Database_Manager {
             municipio VARCHAR(255) NULL,
             zona VARCHAR(255) NULL,
 
-            -- Nuevas columnas con IDs normalizados
+            allow_benchmarking TINYINT(1) NOT NULL DEFAULT 0,
+
+            status ENUM('active', 'archived') DEFAULT 'active',
+
+            -- Nuevas columnas con IDs normalizados colocadas a continuación del campo status
             country_id BIGINT UNSIGNED NULL,
             geographic_territory_id BIGINT UNSIGNED NULL,
             geographic_zone_id BIGINT UNSIGNED NULL,
 
-            allow_benchmarking TINYINT(1) NOT NULL DEFAULT 0,
-
-            status ENUM('active', 'archived') DEFAULT 'active',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             last_sync DATETIME NULL,
@@ -377,6 +381,57 @@ class CCP_Database_Manager {
             $wpdb->suppress_errors(); // Evitar error si la key ya existe
             $wpdb->query($query);
             $wpdb->suppress_errors(false);
+        }
+    }
+
+    /**
+     * Asegura que las columnas geográficas e índices existan en wp_pecan_projects para tablas creadas en versiones previas.
+     */
+    public static function migrate_existing_tables() {
+        global $wpdb;
+        $table_projects = $wpdb->prefix . 'pecan_projects';
+
+        $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_projects));
+        if ($table_exists === $table_projects) {
+            // country_id colocado a continuación de status
+            $has_country = $wpdb->get_results("SHOW COLUMNS FROM `$table_projects` LIKE 'country_id'");
+            if (empty($has_country)) {
+                $wpdb->query("ALTER TABLE `$table_projects` ADD COLUMN country_id BIGINT UNSIGNED NULL AFTER status;");
+            } else {
+                $wpdb->query("ALTER TABLE `$table_projects` MODIFY COLUMN country_id BIGINT UNSIGNED NULL AFTER status;");
+            }
+
+            // geographic_territory_id a continuación de country_id
+            $has_territory = $wpdb->get_results("SHOW COLUMNS FROM `$table_projects` LIKE 'geographic_territory_id'");
+            if (empty($has_territory)) {
+                $wpdb->query("ALTER TABLE `$table_projects` ADD COLUMN geographic_territory_id BIGINT UNSIGNED NULL AFTER country_id;");
+            } else {
+                $wpdb->query("ALTER TABLE `$table_projects` MODIFY COLUMN geographic_territory_id BIGINT UNSIGNED NULL AFTER country_id;");
+            }
+
+            // geographic_zone_id a continuación de geographic_territory_id
+            $has_zone = $wpdb->get_results("SHOW COLUMNS FROM `$table_projects` LIKE 'geographic_zone_id'");
+            if (empty($has_zone)) {
+                $wpdb->query("ALTER TABLE `$table_projects` ADD COLUMN geographic_zone_id BIGINT UNSIGNED NULL AFTER geographic_territory_id;");
+            } else {
+                $wpdb->query("ALTER TABLE `$table_projects` MODIFY COLUMN geographic_zone_id BIGINT UNSIGNED NULL AFTER geographic_territory_id;");
+            }
+
+            // Índices
+            $has_idx_country = $wpdb->get_results("SHOW INDEX FROM `$table_projects` WHERE Key_name = 'idx_country_id'");
+            if (empty($has_idx_country)) {
+                $wpdb->query("ALTER TABLE `$table_projects` ADD INDEX idx_country_id (country_id);");
+            }
+
+            $has_idx_territory = $wpdb->get_results("SHOW INDEX FROM `$table_projects` WHERE Key_name = 'idx_geographic_territory'");
+            if (empty($has_idx_territory)) {
+                $wpdb->query("ALTER TABLE `$table_projects` ADD INDEX idx_geographic_territory (geographic_territory_id);");
+            }
+
+            $has_idx_zone = $wpdb->get_results("SHOW INDEX FROM `$table_projects` WHERE Key_name = 'idx_geographic_zone'");
+            if (empty($has_idx_zone)) {
+                $wpdb->query("ALTER TABLE `$table_projects` ADD INDEX idx_geographic_zone (geographic_zone_id);");
+            }
         }
     }
 }

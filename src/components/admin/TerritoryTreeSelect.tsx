@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronDown, Lock, AlertTriangle, CheckCircle, Search, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, Lock, AlertTriangle, Search, X } from 'lucide-react';
 
 interface TerritoryTreeSelectProps {
   tree: GeographicTerritory[];
@@ -280,12 +280,7 @@ export const TerritoryTreeSelect = ({
         );
       case TerritoryAvailabilityState.AVAILABLE:
       default:
-        return (
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-xs flex items-center gap-1">
-            <CheckCircle className="h-3 w-3" />
-            Disponible
-          </Badge>
-        );
+        return null;
     }
   };
 

@@ -117,20 +117,27 @@ class CCP_Proyectos_DB {
 		$departamento = isset( $data['departamento'] ) ? sanitize_text_field( $data['departamento'] ) : '';
 		$municipio    = isset( $data['municipio'] ) ? sanitize_text_field( $data['municipio'] ) : '';
 		$zona         = isset( $data['zona'] ) ? sanitize_text_field( $data['zona'] ) : '';
+		$country_id   = isset( $data['country_id'] ) && null !== $data['country_id'] ? absint( $data['country_id'] ) : null;
+		$geographic_territory_id = isset( $data['geographic_territory_id'] ) && null !== $data['geographic_territory_id'] ? absint( $data['geographic_territory_id'] ) : null;
+		$geographic_zone_id      = isset( $data['geographic_zone_id'] ) && null !== $data['geographic_zone_id'] ? absint( $data['geographic_zone_id'] ) : null;
 		$allow_benchmarking = isset( $data['allow_benchmarking'] ) ? intval( $data['allow_benchmarking'] ) : 0;
+
 		$insert_data = array(
-			'user_id'      => $user_id,
-			'project_name' => $project_name,
-			'description'  => $description,
-			'pais'         => $pais,
-			'provincia'    => $provincia,
-			'departamento' => $departamento,
-			'municipio'    => $municipio,
-			'zona'         => $zona,
-			'allow_benchmarking' => $allow_benchmarking,
-			'status'       => 'active',
-			'created_at'   => current_time( 'mysql', 1 ),
-			'updated_at'   => current_time( 'mysql', 1 ),
+			'user_id'                 => $user_id,
+			'project_name'            => $project_name,
+			'description'             => $description,
+			'pais'                    => $pais,
+			'provincia'               => $provincia,
+			'departamento'            => $departamento,
+			'municipio'               => $municipio,
+			'zona'                    => $zona,
+			'country_id'              => $country_id,
+			'geographic_territory_id' => $geographic_territory_id,
+			'geographic_zone_id'      => $geographic_zone_id,
+			'allow_benchmarking'      => $allow_benchmarking,
+			'status'                  => 'active',
+			'created_at'              => current_time( 'mysql', 1 ),
+			'updated_at'              => current_time( 'mysql', 1 ),
 		);
 		$result = $this->wpdb->insert(
 			$this->table_name,
@@ -144,6 +151,9 @@ class CCP_Proyectos_DB {
 				'%s', // departamento
 				'%s', // municipio
 				'%s', // zona
+				'%d', // country_id
+				'%d', // geographic_territory_id
+				'%d', // geographic_zone_id
 				'%d', // allow_benchmarking
 				'%s', // status
 				'%s', // created_at
@@ -207,6 +217,18 @@ class CCP_Proyectos_DB {
 		if ( isset( $data['zona'] ) ) {
 			$update_data['zona'] = sanitize_text_field( $data['zona'] );
 			$format[] = '%s';
+		}
+		if ( array_key_exists( 'country_id', $data ) ) {
+			$update_data['country_id'] = null !== $data['country_id'] ? absint( $data['country_id'] ) : null;
+			$format[] = '%d';
+		}
+		if ( array_key_exists( 'geographic_territory_id', $data ) ) {
+			$update_data['geographic_territory_id'] = null !== $data['geographic_territory_id'] ? absint( $data['geographic_territory_id'] ) : null;
+			$format[] = '%d';
+		}
+		if ( array_key_exists( 'geographic_zone_id', $data ) ) {
+			$update_data['geographic_zone_id'] = null !== $data['geographic_zone_id'] ? absint( $data['geographic_zone_id'] ) : null;
+			$format[] = '%d';
 		}
 		if ( isset( $data['allow_benchmarking'] ) ) {
 			$update_data['allow_benchmarking'] = intval( $data['allow_benchmarking'] );
