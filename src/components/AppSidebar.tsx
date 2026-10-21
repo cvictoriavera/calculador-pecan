@@ -1,4 +1,4 @@
-import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft, HelpCircle } from "lucide-react";
+import { Home, Sprout, CalendarRange, DollarSign, Settings, TrendingUp, Package, ArrowLeft, HelpCircle, BarChart3, Table2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -27,11 +27,16 @@ const projectsMenuItems = [
   { title: "Mis Proyectos", url: "/projects", icon: Package },
 ];
 
+const statisticalMenuItems = [
+  { title: "Resumen ejecutivo", url: "/resumen-ejecutivo", icon: BarChart3 },
+  { title: "Indicadores", url: "/indicadores", icon: Table2 },
+];
+
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
-  const isProjectsPage = location.pathname === '/projects';
-  const menuItems = isProjectsPage ? projectsMenuItems : projectMenuItems;
+  const isGlobalPage = ['/projects', '/resumen-ejecutivo', '/indicadores'].includes(location.pathname);
+  const menuItems = isGlobalPage ? projectsMenuItems : projectMenuItems;
 
   return (
     <Sidebar collapsible="icon">
@@ -49,6 +54,7 @@ export function AppSidebar() {
           {!open && <Sprout className="h-6 w-6 text-sidebar-primary mx-auto" />}
         </div>
 
+        {/* Menú Principal */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/70">Menú Principal</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -72,11 +78,35 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Panel Estadístico */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">Panel Estadístico</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {statisticalMenuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.url}
+                      className="hover:bg-sidebar-accent transition-colors no-underline"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold no-underline"
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {open && <span className="ml-3">{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Footer */}
         <div className="mt-auto p-3 border-t border-sidebar-border">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                {isProjectsPage ? (
+                {isGlobalPage ? (
                   <button
                     className="hover:bg-sidebar-accent transition-colors no-underline w-full text-left"
                   >

@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
   const { setCurrentCampaign: setStoreCurrentCampaign, setActiveCampaign } = useUiStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const isProjectsPage = location.pathname === '/projects';
+  const isGlobalPage = ['/projects', '/resumen-ejecutivo', '/indicadores'].includes(location.pathname);
 
   const handleLogout = () => {
     logout();
@@ -92,7 +92,7 @@ export function Layout({ children }: LayoutProps) {
               <SidebarTrigger className="text-foreground" />
               
               {/* Bloque de selectores */}
-              {!isProjectsPage && (
+              {!isGlobalPage && (
                 <>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Proyecto:</span>
@@ -121,10 +121,21 @@ export function Layout({ children }: LayoutProps) {
                   </div>
                 </>
               )}
+
+              {isGlobalPage && location.pathname !== '/projects' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground">
+                    Panel Estadístico
+                  </span>
+                  <span className="text-muted-foreground text-xs hidden sm:inline">
+                    / {location.pathname === '/indicadores' ? 'Indicadores' : 'Resumen Ejecutivo'}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4 text-sm">
-              {!isProjectsPage && (
+              {!isGlobalPage && (
                 <div className="text-right hidden sm:block">
                   <p className="text-muted-foreground m-0 text-xs">Área Total</p>
                   <p className="font-semibold text-foreground m-0">{totalArea.toFixed(1)} ha</p>
