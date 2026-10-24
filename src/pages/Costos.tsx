@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -27,12 +26,14 @@ import {
   Pie,
   Cell,
   ComposedChart,
+  BarChart,
   Bar,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
 } from "recharts";
 import {
   Plus,
@@ -58,6 +59,13 @@ import {
   Pill,
   Bug,
   ArrowRight,
+  Trees,
+  SlidersHorizontal,
+  ArrowUpRight,
+  ArrowDownRight,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import { useDataStore } from "@/stores";
@@ -213,6 +221,168 @@ const formatDecimal = (val: number, decimals = 2) => {
   });
 };
 
+// Perfiles de referencia de la media de productores (Cluster CAPPecan) segmentados por edad de monte
+export interface BenchmarkProfile {
+  label: string;
+  description: string;
+  kilosPorHa: number;
+  totalCostosHa: number;
+  totalCostosKg: number;
+  byCategoryHa: Record<string, number>;
+  byCategoryKg: Record<string, number>;
+}
+
+export const BENCHMARK_BY_AGE: Record<
+  "all" | "young" | "early" | "full" | "mature",
+  BenchmarkProfile
+> = {
+  all: {
+    label: "Media General (Todos los montes)",
+    description: "Promedio global del clúster de productores sin distinción de edad.",
+    kilosPorHa: 644,
+    totalCostosHa: 3421,
+    totalCostosKg: 5.31,
+    byCategoryHa: {
+      insumos: 637,
+      combustible: 188,
+      "mano-obra": 1273,
+      energia: 296,
+      cosecha: 359,
+      "gastos-admin": 572,
+      mantenimientos: 95,
+      "costos-oportunidad": 0,
+      otros: 1,
+    },
+    byCategoryKg: {
+      insumos: 0.99,
+      combustible: 0.29,
+      "mano-obra": 1.98,
+      energia: 0.46,
+      cosecha: 0.56,
+      "gastos-admin": 0.89,
+      mantenimientos: 0.15,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+  },
+  young: {
+    label: "Jóvenes en formación (1 a 5 años)",
+    description: "Montes en desarrollo vegetativo temprano, sin cosecha comercial aún.",
+    kilosPorHa: 0,
+    totalCostosHa: 1940,
+    totalCostosKg: 0,
+    byCategoryHa: {
+      insumos: 350,
+      combustible: 120,
+      "mano-obra": 850,
+      energia: 180,
+      cosecha: 0,
+      "gastos-admin": 380,
+      mantenimientos: 60,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+    byCategoryKg: {
+      insumos: 0,
+      combustible: 0,
+      "mano-obra": 0,
+      energia: 0,
+      cosecha: 0,
+      "gastos-admin": 0,
+      mantenimientos: 0,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+  },
+  early: {
+    label: "Entrada a producción (6 a 10 años)",
+    description: "Primeras cosechas comerciales y despegue de la curva de rendimiento.",
+    kilosPorHa: 480,
+    totalCostosHa: 2945,
+    totalCostosKg: 6.14,
+    byCategoryHa: {
+      insumos: 520,
+      combustible: 160,
+      "mano-obra": 1150,
+      energia: 260,
+      cosecha: 280,
+      "gastos-admin": 490,
+      mantenimientos: 85,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+    byCategoryKg: {
+      insumos: 1.08,
+      combustible: 0.33,
+      "mano-obra": 2.40,
+      energia: 0.54,
+      cosecha: 0.58,
+      "gastos-admin": 1.02,
+      mantenimientos: 0.18,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+  },
+  full: {
+    label: "Plena producción (11 a 15 años)",
+    description: "Cosechas consolidadas y alta eficiencia en costos de cosecha e insumos.",
+    kilosPorHa: 950,
+    totalCostosHa: 3900,
+    totalCostosKg: 4.11,
+    byCategoryHa: {
+      insumos: 720,
+      combustible: 210,
+      "mano-obra": 1420,
+      energia: 340,
+      cosecha: 480,
+      "gastos-admin": 620,
+      mantenimientos: 110,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+    byCategoryKg: {
+      insumos: 0.76,
+      combustible: 0.22,
+      "mano-obra": 1.49,
+      energia: 0.36,
+      cosecha: 0.51,
+      "gastos-admin": 0.65,
+      mantenimientos: 0.12,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+  },
+  mature: {
+    label: "Adultos consolidados (16+ años)",
+    description: "Máximo volumen cosechado por hectárea y máxima dilución del costo unitario.",
+    kilosPorHa: 1400,
+    totalCostosHa: 4440,
+    totalCostosKg: 3.17,
+    byCategoryHa: {
+      insumos: 850,
+      combustible: 230,
+      "mano-obra": 1550,
+      energia: 380,
+      cosecha: 650,
+      "gastos-admin": 660,
+      mantenimientos: 120,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+    byCategoryKg: {
+      insumos: 0.61,
+      combustible: 0.16,
+      "mano-obra": 1.11,
+      energia: 0.27,
+      cosecha: 0.46,
+      "gastos-admin": 0.47,
+      mantenimientos: 0.09,
+      "costos-oportunidad": 0,
+      otros: 0,
+    },
+  },
+};
+
 const Costos = () => {
   const { currentProjectId, campaigns, currentCampaign, setCurrentCampaign, costsLoading, montes, initialYear } = useApp();
   const costs = useDataStore((state) => state.costs);
@@ -245,6 +415,12 @@ const Costos = () => {
   const [selectedHistoricalRubro, setSelectedHistoricalRubro] = useState<string>("all");
   const [timeRangeFilter, setTimeRangeFilter] = useState<"all" | "last3" | "last5" | "custom">("all");
   const [mostrarCostoKg, setMostrarCostoKg] = useState<boolean>(true);
+
+  // Estados para Tab 3: Comparaciones
+  const [ageRangePreset, setAgeRangePreset] = useState<"all" | "young" | "early" | "full" | "mature" | "custom">("all");
+  const [customMinAge, setCustomMinAge] = useState<number>(1);
+  const [customMaxAge, setCustomMaxAge] = useState<number>(15);
+  const [comparisonMetric, setComparisonMetric] = useState<"ha" | "kg">("ha");
 
   // Modal intervalo de años (Screenshot 3)
   const [intervalModalOpen, setIntervalModalOpen] = useState(false);
@@ -781,6 +957,312 @@ const Costos = () => {
     return sorted;
   }, [campaigns, timeRangeFilter, customStartYear, customEndYear]);
 
+  // =========================================================
+  // TAB 3 (COMPARACIONES): ANÁLISIS HISTÓRICO TRANSVERSAL POR EDAD
+  // (Sin atarse a una campaña cronológica)
+  // =========================================================
+  const effectiveAgeRange = useMemo(() => {
+    switch (ageRangePreset) {
+      case "young":
+        return { min: 1, max: 5, label: "Jóvenes (1 a 5 años)" };
+      case "early":
+        return { min: 6, max: 10, label: "Entrada a producción (6 a 10 años)" };
+      case "full":
+        return { min: 11, max: 15, label: "Plena producción (11 a 15 años)" };
+      case "mature":
+        return { min: 16, max: 99, label: "Adultos consolidados (16+ años)" };
+      case "custom":
+        return {
+          min: Math.min(customMinAge, customMaxAge),
+          max: Math.max(customMinAge, customMaxAge),
+          label: `Rango personalizado (${Math.min(customMinAge, customMaxAge)} a ${Math.max(customMinAge, customMaxAge)} años)`,
+        };
+      case "all":
+      default:
+        return { min: 0, max: 99, label: "Todos los montes (toda la trayectoria)" };
+    }
+  }, [ageRangePreset, customMinAge, customMaxAge]);
+
+  // Cálculo agregado de todas las campañas donde algún monte tuvo la edad seleccionada
+  const cohortAnalysis = useMemo(() => {
+    let totalHaYears = 0;
+    let totalKilosInBracket = 0;
+    let totalCostsInBracket = 0;
+    const categoryCosts: Record<string, number> = {};
+    const occurrences: Array<{
+      monteId: string;
+      monteName: string;
+      hectareas: number;
+      age: number;
+      campaignYear: number;
+    }> = [];
+    const activeCampaignsSet = new Set<number>();
+    const activeMontesSet = new Set<string>();
+
+    campaigns.forEach((camp) => {
+      const cYear = Number(camp.year);
+      if (!cYear) return;
+
+      // Montes plantados en este año o antes
+      const plantedInYear = montes.filter((m) => m.añoPlantacion <= cYear);
+      const farmTotalAreaInYear = plantedInYear.reduce((s, m) => s + (Number(m.hectareas) || 0), 0);
+      if (farmTotalAreaInYear <= 0) return;
+
+      // Montes que en esta campaña cYear tenían una edad dentro del rango
+      const matchingInYear = plantedInYear.filter((m) => {
+        const age = Math.max(0, cYear - m.añoPlantacion);
+        return age >= effectiveAgeRange.min && age <= effectiveAgeRange.max;
+      });
+
+      if (matchingInYear.length === 0) return;
+
+      const matchingAreaInYear = matchingInYear.reduce((s, m) => s + (Number(m.hectareas) || 0), 0);
+      const areaRatio = matchingAreaInYear / farmTotalAreaInYear;
+
+      // Hectáreas-año
+      totalHaYears += matchingAreaInYear;
+      activeCampaignsSet.add(cYear);
+
+      matchingInYear.forEach((m) => {
+        const age = Math.max(0, cYear - m.añoPlantacion);
+        activeMontesSet.add(m.id);
+        occurrences.push({
+          monteId: m.id,
+          monteName: m.nombre,
+          hectareas: m.hectareas,
+          age,
+          campaignYear: cYear,
+        });
+      });
+
+      // Costos de la campaña c prorrateados para estos montes
+      const campCosts = costs.filter((cost) => Number(cost.campaign_id) === Number(camp.id));
+      campCosts.forEach((cost) => {
+        const cat = cost.category;
+        const attributed = (Number(cost.total_amount) || 0) * areaRatio;
+        categoryCosts[cat] = (categoryCosts[cat] || 0) + attributed;
+        totalCostsInBracket += attributed;
+      });
+
+      // Producción de la campaña c para estos montes
+      const campProds = productions.filter((p) => Number(p.campaign_id) === Number(camp.id));
+      const matchingIds = matchingInYear.map((m) => Number(m.id));
+      const assignedProds = campProds.filter((p) => matchingIds.includes(Number(p.monte_id)));
+      const assignedKg = assignedProds.reduce((s, p) => s + (Number(p.quantity_kg) || 0), 0);
+
+      if (assignedKg > 0) {
+        totalKilosInBracket += assignedKg;
+      } else {
+        const totalCampKg = campProds.reduce((s, p) => s + (Number(p.quantity_kg) || 0), 0);
+        totalKilosInBracket += totalCampKg * areaRatio;
+      }
+    });
+
+    // Agrupación de ocurrencias por monte para el resumen visual
+    const monteSummaryMap = new Map<
+      string,
+      {
+        monteId: string;
+        monteName: string;
+        hectareas: number;
+        minAge: number;
+        maxAge: number;
+        startYear: number;
+        endYear: number;
+        yearsCount: number;
+      }
+    >();
+
+    occurrences.forEach((occ) => {
+      const existing = monteSummaryMap.get(occ.monteId);
+      if (!existing) {
+        monteSummaryMap.set(occ.monteId, {
+          monteId: occ.monteId,
+          monteName: occ.monteName,
+          hectareas: occ.hectareas,
+          minAge: occ.age,
+          maxAge: occ.age,
+          startYear: occ.campaignYear,
+          endYear: occ.campaignYear,
+          yearsCount: 1,
+        });
+      } else {
+        existing.minAge = Math.min(existing.minAge, occ.age);
+        existing.maxAge = Math.max(existing.maxAge, occ.age);
+        existing.startYear = Math.min(existing.startYear, occ.campaignYear);
+        existing.endYear = Math.max(existing.endYear, occ.campaignYear);
+        existing.yearsCount += 1;
+      }
+    });
+
+    return {
+      totalHaYears,
+      totalKilosInBracket,
+      totalCostsInBracket,
+      categoryCosts,
+      occurrences,
+      activeCampaignsCount: activeCampaignsSet.size,
+      activeMontesCount: activeMontesSet.size,
+      monteSummaries: Array.from(monteSummaryMap.values()),
+    };
+  }, [campaigns, montes, costs, productions, effectiveAgeRange]);
+
+  // Benchmark de la media de otros productores según el rango etario
+  const benchmarkData = useMemo(() => {
+    if (ageRangePreset === "young") return BENCHMARK_BY_AGE.young;
+    if (ageRangePreset === "early") return BENCHMARK_BY_AGE.early;
+    if (ageRangePreset === "full") return BENCHMARK_BY_AGE.full;
+    if (ageRangePreset === "mature") return BENCHMARK_BY_AGE.mature;
+    if (ageRangePreset === "all") return BENCHMARK_BY_AGE.all;
+
+    // Custom
+    const avgAge = (effectiveAgeRange.min + effectiveAgeRange.max) / 2;
+    if (avgAge < 6) return BENCHMARK_BY_AGE.young;
+    if (avgAge <= 10) return BENCHMARK_BY_AGE.early;
+    if (avgAge <= 15) return BENCHMARK_BY_AGE.full;
+    return BENCHMARK_BY_AGE.mature;
+  }, [ageRangePreset, effectiveAgeRange]);
+
+  // Métricas medias anuales del productor en esta etapa etaria
+  const producerTotalCostHa = useMemo(() => {
+    return cohortAnalysis.totalHaYears > 0
+      ? cohortAnalysis.totalCostsInBracket / cohortAnalysis.totalHaYears
+      : 0;
+  }, [cohortAnalysis]);
+
+  const producerTotalCostKg = useMemo(() => {
+    return cohortAnalysis.totalKilosInBracket > 0
+      ? cohortAnalysis.totalCostsInBracket / cohortAnalysis.totalKilosInBracket
+      : 0;
+  }, [cohortAnalysis]);
+
+  const producerRendimiento = useMemo(() => {
+    return cohortAnalysis.totalHaYears > 0
+      ? cohortAnalysis.totalKilosInBracket / cohortAnalysis.totalHaYears
+      : 0;
+  }, [cohortAnalysis]);
+
+  const diffTotalHa = producerTotalCostHa - benchmarkData.totalCostosHa;
+  const diffTotalHaPercent =
+    benchmarkData.totalCostosHa > 0
+      ? ((producerTotalCostHa - benchmarkData.totalCostosHa) / benchmarkData.totalCostosHa) * 100
+      : null;
+
+  const diffTotalKg = producerTotalCostKg - benchmarkData.totalCostosKg;
+  const diffTotalKgPercent =
+    benchmarkData.totalCostosKg > 0 && producerTotalCostKg > 0
+      ? ((producerTotalCostKg - benchmarkData.totalCostosKg) / benchmarkData.totalCostosKg) * 100
+      : null;
+
+  const diffRendimiento = producerRendimiento - benchmarkData.kilosPorHa;
+  const diffRendimientoPercent =
+    benchmarkData.kilosPorHa > 0
+      ? ((producerRendimiento - benchmarkData.kilosPorHa) / benchmarkData.kilosPorHa) * 100
+      : null;
+
+  // Lista detallada comparativa por rubro
+  const comparisonList = useMemo(() => {
+    return Object.entries(CATEGORIES_CONFIG).map(([key, config]) => {
+      const rubroTotal = cohortAnalysis.categoryCosts[key] || 0;
+      const producerCostHa =
+        cohortAnalysis.totalHaYears > 0 ? rubroTotal / cohortAnalysis.totalHaYears : 0;
+      const producerCostKg =
+        cohortAnalysis.totalKilosInBracket > 0 ? rubroTotal / cohortAnalysis.totalKilosInBracket : 0;
+
+      const benchmarkCostHa = benchmarkData.byCategoryHa[key] || 0;
+      const benchmarkCostKg = benchmarkData.byCategoryKg[key] || 0;
+
+      const diffHa = producerCostHa - benchmarkCostHa;
+      const diffHaPercent =
+        benchmarkCostHa > 0 ? ((producerCostHa - benchmarkCostHa) / benchmarkCostHa) * 100 : null;
+
+      const diffKg = producerCostKg - benchmarkCostKg;
+      const diffKgPercent =
+        benchmarkCostKg > 0 && producerCostKg > 0
+          ? ((producerCostKg - benchmarkCostKg) / benchmarkCostKg) * 100
+          : null;
+
+      return {
+        key,
+        label: config.label,
+        color: config.color,
+        icon: config.icon,
+        producerCostHa,
+        benchmarkCostHa,
+        diffHa,
+        diffHaPercent,
+        producerCostKg,
+        benchmarkCostKg,
+        diffKg,
+        diffKgPercent,
+      };
+    });
+  }, [cohortAnalysis, benchmarkData]);
+
+  // Datos para el gráfico de barras agrupadas comparativo
+  const comparisonChartData = useMemo(() => {
+    return comparisonList
+      .filter((item) =>
+        comparisonMetric === "ha"
+          ? item.producerCostHa > 0 || item.benchmarkCostHa > 0
+          : item.producerCostKg > 0 || item.benchmarkCostKg > 0
+      )
+      .map((item) => ({
+        name: item.label,
+        "Mi Finca":
+          comparisonMetric === "ha"
+            ? Math.round(item.producerCostHa)
+            : Number(item.producerCostKg.toFixed(2)),
+        "Media Otros":
+          comparisonMetric === "ha"
+            ? Math.round(item.benchmarkCostHa)
+            : Number(item.benchmarkCostKg.toFixed(2)),
+      }));
+  }, [comparisonList, comparisonMetric]);
+
+  // Renderizador de badges comparativos semafóricos
+  const renderComparisonBadge = useCallback(
+    (diff: number, percentage: number | null, isHigherBetter: boolean = false) => {
+      if (percentage === null) {
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] md:text-[11px] font-semibold border bg-stone-50 text-stone-400 border-stone-200">
+            —
+          </span>
+        );
+      }
+      const isPositive = diff > 0;
+      const isNegative = diff < 0;
+
+      // Para costos: menor es mejor (isNegative = bueno). Para rendimiento: mayor es mejor.
+      const isGood = isHigherBetter ? isPositive : isNegative;
+      const isBad = isHigherBetter ? isNegative : isPositive;
+
+      return (
+        <span
+          className={cn(
+            "inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] md:text-[11px] font-semibold border shrink-0",
+            isGood
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
+              : isBad
+                ? "bg-rose-50 text-rose-700 border-rose-200/80"
+                : "bg-stone-50 text-stone-600 border-stone-200"
+          )}
+        >
+          {isPositive ? (
+            <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
+          ) : isNegative ? (
+            <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
+          ) : null}
+          <span>
+            {isPositive ? "+" : ""}
+            {formatDecimal(percentage, 1)}%
+          </span>
+        </span>
+      );
+    },
+    []
+  );
+
   // Handlers para editar y eliminar
   const handleEditCategory = (categoryKey: string) => {
     const existing = costosFiltered.find((c: any) => c.category === categoryKey);
@@ -938,7 +1420,7 @@ const Costos = () => {
             )}
             {activeTab === "comparaciones" && (
               <>
-                Compara la estructura de costos y métricas financieras entre distintas campañas para evaluar la eficiencia y el comportamiento del monte.
+                Compara tus costos totales y por rubro (USD/Ha y USD/Kg) de la campaña <span className="font-semibold text-primary">{currentCampaign}</span> frente a la media de otros productores según el rango de edad de los montes.
               </>
             )}
           </p>
@@ -1963,7 +2445,7 @@ const Costos = () => {
       {activeTab === "historico" && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
           {/* Card Gráfico de Barras con Filtros */}
-          <div className="bg-white rounded-2xl border border-stone-200/60 p-6 shadow-xs">
+          <div className="bg-white rounded-2xl border border-stone-200/60 p-6 shadow-md">
             {/* Toolbar superior del gráfico */}
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6">
               <h2 className="text-base md:text-lg font-bold text-primary">
@@ -2158,7 +2640,7 @@ const Costos = () => {
           {/* --- TABLA EVOLUCIÓN (TAL CUAL LA QUE YA ESTABA) --- */}
           <Card className="border-border/50 shadow-md">
             <CardHeader>
-              <CardTitle className="text-primary">Evolución de Costos</CardTitle>
+              <CardTitle className="text-base md:text-lg font-bold text-primary">Evolución de Costos</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1">
               <div className="relative w-full max-w-full overflow-x-auto border-none pb-1">
@@ -2193,38 +2675,44 @@ const Costos = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(categoriaLabels).map(([categoryKey, categoryName]) => (
-                      <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-                        <td className="sticky left-0 z-[5] bg-card p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
-                          <Badge
-                            style={{
-                              backgroundColor: categoriaColors[categoryKey] || "#cccccc",
-                              color: "white",
-                            }}
-                            className="whitespace-nowrap"
-                          >
-                            {categoryName}
-                          </Badge>
-                        </td>
-                        {displayedYears.map((year) => {
-                          const amount = getCostForCategoryAndYear(categoryKey, year);
-                          const isHistorical = year < currentYear;
+                    {Object.entries(categoriaLabels).map(([categoryKey, categoryName]) => {
+                      const categoryConfig = CATEGORIES_CONFIG[categoryKey];
+                      const IconComponent = categoryConfig?.icon || MoreHorizontal;
+                      const iconColor = categoryConfig?.color || categoriaColors[categoryKey] || "#64748b";
 
-                          return (
-                            <td
-                              key={year}
-                              className={cn(
-                                "text-center p-3",
-                                amount === 0 ? "text-muted-foreground/30" : "font-semibold text-foreground",
-                                isHistorical && "bg-slate-50/20"
-                              )}
-                            >
-                              ${amount.toLocaleString()}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                      return (
+                        <tr key={categoryKey} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                          <td className="sticky left-0 z-[5] bg-card p-3 shadow-[1px_0_0_0_hsl(var(--border))]">
+                            <div className="flex items-center gap-2">
+                              <IconComponent
+                                className="w-4 h-4 shrink-0"
+                                style={{ color: iconColor }}
+                              />
+                              <span className="font-medium text-primary text-sm whitespace-nowrap">
+                                {categoryName}
+                              </span>
+                            </div>
+                          </td>
+                          {displayedYears.map((year) => {
+                            const amount = getCostForCategoryAndYear(categoryKey, year);
+                            const isHistorical = year < currentYear;
+
+                            return (
+                              <td
+                                key={year}
+                                className={cn(
+                                  "text-center p-3",
+                                  amount === 0 ? "text-muted-foreground/30" : "font-semibold text-foreground",
+                                  isHistorical && "bg-slate-50/20"
+                                )}
+                              >
+                                ${amount.toLocaleString()}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-border bg-primary/5 font-medium">
@@ -2264,7 +2752,506 @@ const Costos = () => {
       {/* ========================================================= */}
       {activeTab === "comparaciones" && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
-          {/* Contenido de comparaciones (vacío por el momento) */}
+          {/* Header de la Pestaña Comparaciones (Análisis Histórico Transversal por Edad) */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-stone-200/60 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                  Análisis Multianual por Edad
+                </span>
+
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-primary tracking-tight mt-1">
+                Comparativa por Edad de Montes vs. Media de productores
+              </h2>
+            </div>
+            <div className="text-xs text-[#8f827a] bg-stone-50 px-3 py-1.5 rounded-xl border border-stone-200">
+              Trayectoria evaluada: <strong className="text-primary">{campaigns.length}</strong> campañas registradas
+            </div>
+          </div>
+
+          {/* Bloque 1: Card de Selección de Rango de Edad de Montes */}
+          <div className="bg-white rounded-2xl border border-stone-200/60 p-5 md:p-6 shadow-md space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <Trees className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-primary">
+                    Filtro por Edad de los Montes
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-[#8f827a] mt-1">
+                  Evalúa lo que te cuesta producir en montes de esta edad (en cualquier campaña en que tus árboles hayan transitado por esa etapa) frente a la media de otros productores en idéntica etapa etaria.
+                </p>
+              </div>
+
+              {/* Botón reset a todos */}
+              {ageRangePreset !== "all" && (
+                <button
+                  onClick={() => setAgeRangePreset("all")}
+                  className="text-xs font-semibold text-[#8c735d] hover:text-[#524135] underline underline-offset-2 self-start sm:self-auto cursor-pointer"
+                >
+                  Restablecer a toda la trayectoria
+                </button>
+              )}
+            </div>
+
+            {/* Presets de Rango de Edad */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { id: "all", label: "Toda la trayectoria", badge: "Sin filtro" },
+                { id: "young", label: "1 a 5 años", badge: "Formación" },
+                { id: "early", label: "6 a 10 años", badge: "Entrada producción" },
+                { id: "full", label: "11 a 15 años", badge: "Plena producción" },
+                { id: "mature", label: "16+ años", badge: "Consolidados" },
+                { id: "custom", label: "Personalizado...", badge: "Rango a medida" },
+              ].map((preset) => {
+                const isActive = ageRangePreset === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    onClick={() => setAgeRangePreset(preset.id as any)}
+                    className={cn(
+                      "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all border flex items-center gap-2 cursor-pointer shadow-2xs",
+                      isActive
+                        ? "bg-[#4a3e39] text-white border-[#4a3e39] shadow-xs"
+                        : "bg-white text-[#4a3e39] border-stone-200/80 hover:bg-stone-50 hover:border-stone-300"
+                    )}
+                  >
+                    <span className="font-semibold">{preset.label}</span>
+                    <span
+                      className={cn(
+                        "text-[10px] px-1.5 py-0.5 rounded-md font-normal",
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-stone-100 text-[#8f827a]"
+                      )}
+                    >
+                      {preset.badge}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selector de Rango Personalizado si se selecciona "custom" */}
+            {ageRangePreset === "custom" && (
+              <div className="pt-2 pb-1 border-t border-stone-100 flex flex-wrap items-center gap-4 animate-in fade-in-50 duration-150">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#4a3e39]">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-stone-500" />
+                  <span>Definir rango personalizado:</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <label className="text-[10px] text-[#8f827a] font-medium block mb-0.5">
+                      Edad Mínima (años)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={40}
+                      value={customMinAge}
+                      onChange={(e) => setCustomMinAge(Math.max(1, Number(e.target.value)))}
+                      className="w-24 px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+                    />
+                  </div>
+                  <span className="text-[#8f827a] text-sm self-end pb-2 font-bold">—</span>
+                  <div className="relative">
+                    <label className="text-[10px] text-[#8f827a] font-medium block mb-0.5">
+                      Edad Máxima (años)
+                    </label>
+                    <input
+                      type="number"
+                      min={customMinAge}
+                      max={40}
+                      value={customMaxAge}
+                      onChange={(e) => setCustomMaxAge(Math.max(customMinAge, Number(e.target.value)))}
+                      className="w-24 px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Banner de Montes Coincidentes a lo largo de las campañas */}
+            {cohortAnalysis.totalHaYears > 0 ? (
+              <div className="bg-[#f8f5ee] border border-[#e8dfcf] rounded-xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs sm:text-sm">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-primary flex items-center gap-1.5">
+                      <Trees className="w-4 h-4 text-emerald-700" />
+                      Lotes que alcanzaron esta edad ({cohortAnalysis.monteSummaries.length} de {montes.length} montes en {cohortAnalysis.activeCampaignsCount} campañas):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cohortAnalysis.monteSummaries.map((m) => (
+                        <span
+                          key={m.monteId}
+                          className="bg-white/90 border border-[#ded5c5] px-2 py-0.5 rounded-lg text-xs font-medium text-[#4a3e39] shadow-2xs"
+                        >
+                          {m.monteName}{" "}
+                          <span className="text-[#8f827a]">
+                            ({m.minAge === m.maxAge ? `${m.minAge} años` : `${m.minAge} a ${m.maxAge} años`} ·{" "}
+                            {m.startYear === m.endYear ? `Campaña ${m.startYear}` : `Campañas ${m.startYear}-${m.endYear}`} ·{" "}
+                            {formatDecimal(m.hectareas, 1)} ha)
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-xs font-medium text-[#5c4a3f] shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-[#e8dfcf]">
+                  <div>
+                    Muestra evaluada: <strong className="text-primary">{formatDecimal(cohortAnalysis.totalHaYears, 1)} ha-año</strong>
+                  </div>
+                  <div>
+                    Cosecha acumulada: <strong className="text-primary">{cohortAnalysis.totalKilosInBracket.toLocaleString("es-AR")} kg</strong>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 text-center">
+                <p className="text-xs sm:text-sm text-amber-900 font-medium">
+                  Aún no tienes registros de campañas donde tus montes hayan tenido entre {effectiveAgeRange.min} y {effectiveAgeRange.max} años de edad.
+                </p>
+                <button
+                  onClick={() => setAgeRangePreset("all")}
+                  className="mt-2 text-xs font-bold text-amber-900 hover:underline cursor-pointer"
+                >
+                  Hacer clic aquí para ver toda la trayectoria de tus montes
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Bloque 2: Fila de 4 Tarjetas KPI Comparativas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+            {/* Card 1: Costo / Ha Medio Anual */}
+            <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-md flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-xs font-medium text-[#8f827a]">
+                  <span>Costo / Ha Medio Anual</span>
+                  <span className="text-[11px] text-stone-400">USD / Ha / Año</span>
+                </div>
+                <div className="text-2xl sm:text-3xl font-bold text-primary mt-2">
+                  ${Math.round(producerTotalCostHa).toLocaleString("es-AR")}
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                <div className="text-xs text-[#8f827a]">
+                  Media otros: <span className="font-semibold text-[#4a3e39]">${Math.round(benchmarkData.totalCostosHa).toLocaleString("es-AR")}</span>
+                </div>
+                {renderComparisonBadge(diffTotalHa, diffTotalHaPercent, false)}
+              </div>
+            </div>
+
+            {/* Card 2: Costo / Kg Medio */}
+            <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-md flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-xs font-medium text-[#8f827a]">
+                  <span>Costo / Kg Medio</span>
+                  <span className="text-[11px] text-stone-400">USD / Kilo</span>
+                </div>
+                <div className="text-2xl sm:text-3xl font-bold text-primary mt-2">
+                  {cohortAnalysis.totalKilosInBracket > 0 ? (
+                    `$${formatDecimal(producerTotalCostKg, 2)}`
+                  ) : (
+                    <span className="text-lg text-stone-400 font-normal">Sin cosecha</span>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                <div className="text-xs text-[#8f827a]">
+                  Media otros: <span className="font-semibold text-[#4a3e39]">{benchmarkData.totalCostosKg > 0 ? `$${formatDecimal(benchmarkData.totalCostosKg, 2)}` : "—"}</span>
+                </div>
+                {cohortAnalysis.totalKilosInBracket > 0 && benchmarkData.totalCostosKg > 0 ? (
+                  renderComparisonBadge(diffTotalKg, diffTotalKgPercent, false)
+                ) : (
+                  <span className="text-[10px] text-stone-400 font-medium">N/A</span>
+                )}
+              </div>
+            </div>
+
+            {/* Card 3: Rendimiento Medio Anual */}
+            <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-md flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-xs font-medium text-[#8f827a]">
+                  <span>Rendimiento Medio Anual</span>
+                  <span className="text-[11px] text-stone-400">Kg / Ha / Año</span>
+                </div>
+                <div className="text-2xl sm:text-3xl font-bold text-primary mt-2">
+                  {Math.round(producerRendimiento).toLocaleString("es-AR")}{" "}
+                  <span className="text-sm font-medium text-[#8f827a]">kg/ha</span>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                <div className="text-xs text-[#8f827a]">
+                  Media otros: <span className="font-semibold text-[#4a3e39]">{benchmarkData.kilosPorHa.toLocaleString("es-AR")} kg/ha</span>
+                </div>
+                {renderComparisonBadge(diffRendimiento, diffRendimientoPercent, true)}
+              </div>
+            </div>
+
+            {/* Card 4: Diagnóstico de Competitividad */}
+            <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-md flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-xs font-medium text-[#8f827a]">
+                  <span>Índice en esta etapa</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                </div>
+                <div className="mt-2">
+                  {diffTotalHa <= 0 ? (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 text-sm font-bold border border-emerald-200">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Estructura Eficiente</span>
+                    </div>
+                  ) : diffTotalHaPercent !== null && diffTotalHaPercent <= 15 ? (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50 text-blue-800 text-sm font-bold border border-blue-200">
+                      <Scale className="w-4 h-4 text-blue-600" />
+                      <span>Alineado a la Media</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 text-sm font-bold border border-amber-200">
+                      <AlertCircle className="w-4 h-4 text-amber-600" />
+                      <span>Oportunidad de Ajuste</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-[#8f827a] leading-relaxed border-t border-stone-100 pt-2.5">
+                {diffTotalHa <= 0
+                  ? `Tus costos anuales en esta etapa etaria son un ${Math.abs(diffTotalHaPercent || 0).toFixed(1)}% más bajos que la media de otros productores.`
+                  : `Tus costos anuales en esta etapa etaria se sitúan un ${(diffTotalHaPercent || 0).toFixed(1)}% por encima de la media de otros productores.`}
+              </p>
+            </div>
+          </div>
+
+          {/* Bloque 3: Gráfico Comparativo de Barras Agrupadas */}
+          <div className="bg-white rounded-2xl border border-stone-200/60 p-6 shadow-md">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-primary">
+                  Comparativa de Rubros (Costo Medio Anual en esta Etapa)
+                </h3>
+                <p className="text-xs text-[#8f827a] mt-0.5">
+                  Estrato: <span className="font-semibold text-primary">{effectiveAgeRange.label}</span> · {benchmarkData.description}
+                </p>
+              </div>
+
+              {/* Selector Toggle: USD/Ha o USD/Kg */}
+              <div className="inline-flex p-1 bg-stone-100 rounded-xl border border-stone-200 text-xs shadow-2xs">
+                <button
+                  onClick={() => setComparisonMetric("ha")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer",
+                    comparisonMetric === "ha"
+                      ? "bg-[#4a3e39] text-white shadow-xs"
+                      : "text-stone-600 hover:text-stone-900"
+                  )}
+                >
+                  USD / Ha / Año
+                </button>
+                <button
+                  onClick={() => setComparisonMetric("kg")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer",
+                    comparisonMetric === "kg"
+                      ? "bg-[#4a3e39] text-white shadow-xs"
+                      : "text-stone-600 hover:text-stone-900"
+                  )}
+                >
+                  USD / Kilo
+                </button>
+              </div>
+            </div>
+
+            {/* Gráfico */}
+            <div className="w-full h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={comparisonChartData}
+                  margin={{ top: 15, right: 20, left: 10, bottom: 25 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ede8e1" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "#8c7b70", fontSize: 11 }}
+                    angle={-15}
+                    textAnchor="end"
+                    interval={0}
+                    height={45}
+                  />
+                  <YAxis
+                    tick={{ fill: "#8c7b70", fontSize: 11 }}
+                    tickFormatter={(val) =>
+                      comparisonMetric === "ha" ? `$${val.toLocaleString("es-AR")}` : `$${val.toFixed(2)}`
+                    }
+                  />
+                  <Tooltip
+                    formatter={(value: any, name: any) => [
+                      comparisonMetric === "ha"
+                        ? `$${Number(value).toLocaleString("es-AR")} USD/Ha/Año`
+                        : `$${Number(value).toFixed(2)} USD/Kg`,
+                      name,
+                    ]}
+                    contentStyle={{
+                      backgroundColor: "#ffffff",
+                      borderRadius: "12px",
+                      border: "1px solid #ede8e1",
+                      fontSize: "12px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                    }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                  <Bar
+                    dataKey="Mi Finca"
+                    fill="#ba995c"
+                    radius={[4, 4, 0, 0]}
+                    name="Mi Finca (Media en esta etapa)"
+                  />
+                  <Bar
+                    dataKey="Media Otros"
+                    fill="#94a3b8"
+                    radius={[4, 4, 0, 0]}
+                    name="Media Otros Productores"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Bloque 4: Tabla Detallada Comparativa por Rubro */}
+          <div className="bg-white rounded-2xl border border-stone-200/60 p-6 shadow-md">
+            <div className="mb-4">
+              <h3 className="text-base sm:text-lg font-bold text-primary">
+                Detalle Comparativo por Rubro (Promedio en esta Etapa de Edad)
+              </h3>
+              <p className="text-xs text-[#8f827a] mt-0.5">
+                Comparativa transversal de costos anuales por hectárea y por kilo para cada rubro frente a la media de otros productores para {effectiveAgeRange.label}.
+              </p>
+            </div>
+
+            <div className="w-full overflow-x-auto pb-1">
+              <table className="w-full min-w-[750px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-[#e8e2d9] text-xs font-semibold text-[#8f827a] uppercase tracking-wider bg-stone-50/50">
+                    <th className="sticky left-0 z-[5] bg-stone-50/95 py-3 text-left pl-3 shadow-[1px_0_0_0_#e8e2d9]">
+                      Rubro / Categoría
+                    </th>
+                    <th className="py-3 text-right pr-4">Mi Costo / Ha / Año</th>
+                    <th className="py-3 text-right pr-4">Media Otros / Ha</th>
+                    <th className="py-3 text-right pr-4">Diferencia Ha</th>
+                    <th className="py-3 text-right pr-4">Mi Costo / Kg</th>
+                    <th className="py-3 text-right pr-4">Media Otros / Kg</th>
+                    <th className="py-3 text-right pr-3">Diferencia Kg</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f0eae1]">
+                  {comparisonList.map((item) => {
+                    const categoryConfig = CATEGORIES_CONFIG[item.key];
+                    const IconComponent = categoryConfig?.icon || MoreHorizontal;
+                    const iconColor = categoryConfig?.color || "#64748b";
+
+                    return (
+                      <tr
+                        key={item.key}
+                        className="hover:bg-[#faf8f5] transition-colors"
+                      >
+                        <td className="sticky left-0 z-[5] bg-white py-3.5 pl-3 shadow-[1px_0_0_0_#f0eae1]">
+                          <div className="flex items-center gap-2">
+                            <IconComponent
+                              className="w-4 h-4 shrink-0"
+                              style={{ color: iconColor }}
+                            />
+                            <span className="font-semibold text-primary text-sm whitespace-nowrap">
+                              {item.label}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 text-right font-semibold text-primary pr-4 whitespace-nowrap">
+                          ${formatDecimal(item.producerCostHa, 2)}
+                        </td>
+                        <td className="py-3.5 text-right text-stone-600 pr-4 whitespace-nowrap">
+                          ${formatDecimal(item.benchmarkCostHa, 2)}
+                        </td>
+                        <td className="py-3.5 text-right pr-4 whitespace-nowrap">
+                          <div className="flex items-center justify-end">
+                            {renderComparisonBadge(item.diffHa, item.diffHaPercent, false)}
+                          </div>
+                        </td>
+                        <td className="py-3.5 text-right font-semibold text-primary pr-4 whitespace-nowrap">
+                          {item.producerCostKg > 0 ? (
+                            `$${formatDecimal(item.producerCostKg, 2)}`
+                          ) : (
+                            <span className="text-stone-300 font-normal">—</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 text-right text-stone-600 pr-4 whitespace-nowrap">
+                          {item.benchmarkCostKg > 0 ? (
+                            `$${formatDecimal(item.benchmarkCostKg, 2)}`
+                          ) : (
+                            <span className="text-stone-300 font-normal">—</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 text-right pr-3 whitespace-nowrap">
+                          <div className="flex items-center justify-end">
+                            {item.producerCostKg > 0 && item.benchmarkCostKg > 0 ? (
+                              renderComparisonBadge(item.diffKg, item.diffKgPercent, false)
+                            ) : (
+                              <span className="text-stone-300">—</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-[#e8e2d9] bg-[#faf8f5]/80 font-semibold text-xs text-[#2b2623]">
+                    <td className="sticky left-0 z-[5] bg-[#faf8f5] py-3.5 pl-3 font-bold text-sm text-primary shadow-[1px_0_0_0_#e8e2d9]">
+                      Total U$D Medio Anual
+                    </td>
+                    <td className="py-3.5 text-right font-bold text-sm text-primary pr-4 whitespace-nowrap">
+                      ${formatDecimal(producerTotalCostHa, 2)}
+                    </td>
+                    <td className="py-3.5 text-right font-bold text-sm text-stone-700 pr-4 whitespace-nowrap">
+                      ${formatDecimal(benchmarkData.totalCostosHa, 2)}
+                    </td>
+                    <td className="py-3.5 text-right pr-4 whitespace-nowrap">
+                      <div className="flex items-center justify-end">
+                        {renderComparisonBadge(diffTotalHa, diffTotalHaPercent, false)}
+                      </div>
+                    </td>
+                    <td className="py-3.5 text-right font-bold text-sm text-primary pr-4 whitespace-nowrap">
+                      {producerTotalCostKg > 0 ? (
+                        `$${formatDecimal(producerTotalCostKg, 2)}`
+                      ) : (
+                        <span className="text-stone-400 font-normal">—</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 text-right font-bold text-sm text-stone-700 pr-4 whitespace-nowrap">
+                      {benchmarkData.totalCostosKg > 0 ? (
+                        `$${formatDecimal(benchmarkData.totalCostosKg, 2)}`
+                      ) : (
+                        <span className="text-stone-400 font-normal">—</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 text-right pr-3 whitespace-nowrap">
+                      <div className="flex items-center justify-end">
+                        {producerTotalCostKg > 0 && benchmarkData.totalCostosKg > 0 ? (
+                          renderComparisonBadge(diffTotalKg, diffTotalKgPercent, false)
+                        ) : (
+                          <span className="text-stone-300">—</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
