@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ import {
   Leaf,
   Pill,
   Bug,
+  ArrowRight,
 } from "lucide-react";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import { useDataStore } from "@/stores";
@@ -355,25 +357,6 @@ const Costos = () => {
   const totalInsumosCostoPorHa = totalAreaPlantada > 0 ? totalInsumosAmount / totalAreaPlantada : 0;
   const totalInsumosCostoPorKg = totalKilos > 0 ? totalInsumosAmount / totalKilos : 0;
 
-  // Lista de insumos para la tabla de detalle de insumos
-  const insumosList = useMemo(() => {
-    return Object.entries(INSUMOS_CONFIG).map(([key, config]) => {
-      const amount = insumosBreakdown[key] || 0;
-      const costoPorHa =
-        insumosCostPerHa[key] ?? (totalAreaPlantada > 0 ? amount / totalAreaPlantada : 0);
-      const costoPorKg =
-        insumosCostPerKg[key] ?? (totalKilos > 0 ? amount / totalKilos : 0);
-      return {
-        key,
-        label: config.label,
-        color: config.color,
-        icon: config.icon,
-        amount,
-        costoPorHa,
-        costoPorKg,
-      };
-    });
-  }, [insumosBreakdown, insumosCostPerHa, insumosCostPerKg, totalAreaPlantada, totalKilos]);
 
   // Campañas ordenadas para navegación previa / siguiente
   const sortedCampaignYears = useMemo(() => {
@@ -448,6 +431,163 @@ const Costos = () => {
     productions,
   ]);
 
+  // Kilos cosechados en la campaña anterior
+  const prevTotalKilos = useMemo(() => {
+    if (!prevCampaignObj) return 0;
+    return getTotalProductionByCampaign(prevCampaignObj.id);
+  }, [prevCampaignObj, getTotalProductionByCampaign, productions]);
+
+  // Costos por categoría de la campaña anterior
+  const prevCostsByCategory = useMemo(() => {
+    if (!prevCampaignObj) return {};
+    return getCostByCategory(prevCampaignObj.id);
+  }, [prevCampaignObj, getCostByCategory, costs]);
+
+  // Costos por ha y por kg por categoría de la campaña anterior
+  const prevCostsPerHaByCategory = useMemo(() => {
+    if (!prevCampaignObj || prevTotalAreaPlantada <= 0) return {};
+    return getCostPerHaByCategory(prevCampaignObj.id, prevTotalAreaPlantada);
+  }, [prevCampaignObj, getCostPerHaByCategory, prevTotalAreaPlantada, costs]);
+
+  const prevCostsPerKgByCategory = useMemo(() => {
+    if (!prevCampaignObj || prevTotalKilos <= 0) return {};
+    return getCostPerKgByCategory(prevCampaignObj.id, prevTotalKilos);
+  }, [prevCampaignObj, getCostPerKgByCategory, prevTotalKilos, costs]);
+
+  // Insumos breakdown y costos por ha y kg de la campaña anterior
+  const prevInsumosBreakdown = useMemo(() => {
+    if (!prevCampaignObj) return {};
+    return getInsumosBreakdown(prevCampaignObj.id);
+  }, [prevCampaignObj, getInsumosBreakdown, costs]);
+
+  const prevInsumosCostPerHa = useMemo(() => {
+    if (!prevCampaignObj || prevTotalAreaPlantada <= 0) return {};
+    return getInsumosCostPerHa(prevCampaignObj.id, prevTotalAreaPlantada);
+  }, [prevCampaignObj, getInsumosCostPerHa, prevTotalAreaPlantada, costs]);
+
+  const prevInsumosCostPerKg = useMemo(() => {
+    if (!prevCampaignObj || prevTotalKilos <= 0) return {};
+    return getInsumosCostPerKg(prevCampaignObj.id, prevTotalKilos);
+  }, [prevCampaignObj, getInsumosCostPerKg, prevTotalKilos, costs]);
+
+  const prevTotalInsumosAmount = useMemo(() => {
+    return Object.values(prevInsumosBreakdown).reduce((sum, v) => sum + (Number(v) || 0), 0);
+  }, [prevInsumosBreakdown]);
+
+  const prevTotalInsumosCostoPorHa =
+    prevTotalAreaPlantada > 0 ? prevTotalInsumosAmount / prevTotalAreaPlantada : 0;
+  const prevTotalInsumosCostoPorKg =
+    prevTotalKilos > 0 ? prevTotalInsumosAmount / prevTotalKilos : 0;
+
+  // Función utilitaria para calcular variación entre campaña actual y anterior
+  const calcVariation = useCallback((currentVal: number, prevVal: number) => {
+    if (!prevCampaignObj || prevVal <= 0 || currentVal <= 0) {
+      return { diff: currentVal - prevVal, percentage: null };
+    }
+    const diff = currentVal - prevVal;
+    const percentage = (diff / prevVal) * 100;
+    return { diff, percentage };
+  }, [prevCampaignObj]);
+
+  // Variaciones de totales de insumos para el footer de la tabla
+  const totalInsumosVariation = useMemo(() => {
+    return calcVariation(totalInsumosAmount, prevTotalInsumosAmount);
+  }, [calcVariation, totalInsumosAmount, prevTotalInsumosAmount]);
+
+  const totalInsumosCostoPorHaVariation = useMemo(() => {
+    return calcVariation(totalInsumosCostoPorHa, prevTotalInsumosCostoPorHa);
+  }, [calcVariation, totalInsumosCostoPorHa, prevTotalInsumosCostoPorHa]);
+
+  const totalInsumosCostoPorKgVariation = useMemo(() => {
+    return calcVariation(totalInsumosCostoPorKg, prevTotalInsumosCostoPorKg);
+  }, [calcVariation, totalInsumosCostoPorKg, prevTotalInsumosCostoPorKg]);
+
+  // Lista de insumos para la tabla de detalle de insumos con variaciones
+  const insumosList = useMemo(() => {
+    return Object.entries(INSUMOS_CONFIG).map(([key, config]) => {
+      const amount = insumosBreakdown[key] || 0;
+      const costoPorHa =
+        insumosCostPerHa[key] ?? (totalAreaPlantada > 0 ? amount / totalAreaPlantada : 0);
+      const costoPorKg =
+        insumosCostPerKg[key] ?? (totalKilos > 0 ? amount / totalKilos : 0);
+
+      const prevAmount = prevInsumosBreakdown[key] || 0;
+      const prevCostoPorHa =
+        prevInsumosCostPerHa[key] ??
+        (prevTotalAreaPlantada > 0 ? prevAmount / prevTotalAreaPlantada : 0);
+      const prevCostoPorKg =
+        prevInsumosCostPerKg[key] ??
+        (prevTotalKilos > 0 ? prevAmount / prevTotalKilos : 0);
+
+      const varTotal = calcVariation(amount, prevAmount);
+      const varCostoPorHa = calcVariation(costoPorHa, prevCostoPorHa);
+      const varCostoPorKg = calcVariation(costoPorKg, prevCostoPorKg);
+
+      return {
+        key,
+        label: config.label,
+        color: config.color,
+        icon: config.icon,
+        amount,
+        costoPorHa,
+        costoPorKg,
+        varTotal,
+        varCostoPorHa,
+        varCostoPorKg,
+      };
+    });
+  }, [
+    insumosBreakdown,
+    insumosCostPerHa,
+    insumosCostPerKg,
+    totalAreaPlantada,
+    totalKilos,
+    prevInsumosBreakdown,
+    prevInsumosCostPerHa,
+    prevInsumosCostPerKg,
+    prevTotalAreaPlantada,
+    prevTotalKilos,
+    calcVariation,
+  ]);
+
+  // Helper para renderizar badges de variación en las tablas
+  const renderVariationBadge = useCallback(
+    (diff: number, percentage: number | null) => {
+      if (percentage === null || !prevCampaignObj) return null;
+      const isPositive = diff > 0;
+      const isNegative = diff < 0;
+
+      return (
+        <span
+          className={cn(
+            "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] md:text-[11px] font-semibold border shrink-0",
+            isPositive
+              ? "bg-rose-50 text-rose-700 border-rose-200/80"
+              : isNegative
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
+                : "bg-stone-50 text-stone-600 border-stone-200"
+          )}
+          title={
+            prevCampaignYear
+              ? isPositive
+                ? `+${formatDecimal(percentage, 1)}% vs ${prevCampaignYear}`
+                : `${formatDecimal(percentage, 1)}% vs ${prevCampaignYear}`
+              : undefined
+          }
+        >
+          {isPositive ? (
+            <TrendingUp className="w-2.5 h-2.5 text-rose-600 shrink-0" />
+          ) : isNegative ? (
+            <TrendingDown className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+          ) : null}
+          {isPositive ? "+" : ""}
+          {formatDecimal(percentage, 1)}%
+        </span>
+      );
+    },
+    [prevCampaignObj, prevCampaignYear]
+  );
+
   // Lista de rubros con desglose y porcentajes para la campaña actual (orden descendente)
   const breakdownList = useMemo(() => {
     return Object.entries(CATEGORIES_CONFIG)
@@ -499,6 +639,25 @@ const Costos = () => {
           costsPerKgByCategory[key] !== undefined
             ? costsPerKgByCategory[key]
             : calcularCostoPorKgRubro(key);
+
+        const prevAmount = prevCostsByCategory[key] || 0;
+        const prevCostoPorHa =
+          prevCostsPerHaByCategory[key] !== undefined
+            ? prevCostsPerHaByCategory[key]
+            : prevTotalAreaPlantada > 0
+              ? prevAmount / prevTotalAreaPlantada
+              : 0;
+        const prevCostoPorKg =
+          prevCostsPerKgByCategory[key] !== undefined
+            ? prevCostsPerKgByCategory[key]
+            : prevTotalKilos > 0
+              ? prevAmount / prevTotalKilos
+              : 0;
+
+        const varTotal = calcVariation(amount, prevAmount);
+        const varCostoPorHa = calcVariation(costoPorHa, prevCostoPorHa);
+        const varCostoPorKg = calcVariation(costoPorKg, prevCostoPorKg);
+
         return {
           key,
           label: config.label,
@@ -507,6 +666,9 @@ const Costos = () => {
           amount,
           costoPorHa,
           costoPorKg,
+          varTotal,
+          varCostoPorHa,
+          varCostoPorKg,
           cost: matchingCost,
         };
       })
@@ -518,7 +680,21 @@ const Costos = () => {
     costsPerKgByCategory,
     calcularCostoPorHaRubro,
     calcularCostoPorKgRubro,
+    prevCostsByCategory,
+    prevCostsPerHaByCategory,
+    prevCostsPerKgByCategory,
+    prevTotalAreaPlantada,
+    prevTotalKilos,
+    calcVariation,
   ]);
+
+  // Rubro con mayor costo por hectárea en la campaña actual
+  const highestCostoPorHaRubro = useMemo(() => {
+    if (!registeredCategoriesList || registeredCategoriesList.length === 0) return null;
+    const itemsWithCosto = registeredCategoriesList.filter((item) => item.costoPorHa > 0);
+    if (itemsWithCosto.length === 0) return null;
+    return [...itemsWithCosto].sort((a, b) => b.costoPorHa - a.costoPorHa)[0];
+  }, [registeredCategoriesList]);
 
   // Historial: Años disponibles en el sistema (min 2010 a max 2026 por defecto como en el screenshot)
   const allHistoricalYears = useMemo(() => {
@@ -744,18 +920,35 @@ const Costos = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Header Principal */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-primary tracking-tight">
             Costos Operativos
           </h1>
+          <p className="text-xs sm:text-sm text-[#8f827a] mt-1 max-w-3xl leading-relaxed transition-all">
+            {activeTab === "resumen" && (
+              <>
+                Consulta los indicadores clave, la distribución por rubros y las variaciones anuales de la campaña <span className="font-semibold text-primary">{currentCampaign}</span> con respecto a la campaña <span className="font-semibold text-primary">{prevCampaignYear || "anterior"}</span>.
+              </>
+            )}
+            {activeTab === "historico" && (
+              <>
+                Analiza la evolución de tus costos operativos a lo largo de los años, identificando tendencias multianuales en el total, por hectárea y por kilo producido.
+              </>
+            )}
+            {activeTab === "comparaciones" && (
+              <>
+                Compara la estructura de costos y métricas financieras entre distintas campañas para evaluar la eficiencia y el comportamiento del monte.
+              </>
+            )}
+          </p>
         </div>
         <Button
           onClick={() => {
             setEditingCosto(null);
             setSheetOpen(true);
           }}
-          className="bg-[#4a3e39] hover:bg-[#3d322d] text-white px-5 py-2.5 rounded-xl font-medium gap-2 shadow-xs transition-colors"
+          className="bg-[#4a3e39] hover:bg-[#3d322d] text-white px-5 py-2.5 rounded-xl font-medium gap-2 shadow-xs transition-colors shrink-0"
         >
           <Plus className="h-4 w-4 stroke-[2.5]" />
           Nuevo Costo
@@ -868,7 +1061,7 @@ const Costos = () => {
                     <span className="text-xs sm:text-sm font-medium text-[#8f827a]">
                       USD
                     </span>
-                    {totalCostosVariation.percentage !== null && (
+                    {totalCostos > 0 && totalCostosVariation.percentage !== null && (
                       <span
                         className={cn(
                           "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-semibold border",
@@ -892,79 +1085,44 @@ const Costos = () => {
                 </div>
 
                 {/* Footer valor absoluto */}
-                <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between">
-                  <span className="font-medium">
-                    {!prevCampaignYear
-                      ? "Sin campaña anterior"
-                      : totalCostosVariation.diff > 0
-                        ? `${formatCurrency(Math.abs(totalCostosVariation.diff))} más esta campaña`
-                        : totalCostosVariation.diff < 0
-                          ? `${formatCurrency(Math.abs(totalCostosVariation.diff))} menos esta campaña`
-                          : "Mismo total que la campaña anterior"}
-                  </span>
-                  {prevCampaignYear && (
-                    <span className="text-[10px] text-primary/70 font-normal">vs {prevCampaignYear}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Card 2: Kilos Cosechados por ha */}
-              <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-xs flex flex-col justify-between shadow-md h-full overflow-hidden">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <Wheat className="w-3.5 h-3.5 md:w-5 md:h-5 text-[#f2794a] shrink-0 stroke-[2.2]" />
-                    <p className="text-xs md:text-lg font-semibold text-primary">
-                      Kilos Cosechados por ha
-                    </p>
-                  </div>
-                  <div className="flex items-baseline justify-between flex-wrap gap-2 mt-2">
-                    <span className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                      {formatDecimal(kilosPorHectarea, 2)}
-                    </span>
-                    <span className="text-xs sm:text-sm font-medium text-[#8f827a]">
-                      Kg/Ha
-                    </span>
-                    {kilosPorHaVariation.percentage !== null && (
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-semibold border",
-                          kilosPorHaVariation.diff > 0
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
-                            : kilosPorHaVariation.diff < 0
-                              ? "bg-rose-50 text-rose-700 border-rose-200/80"
-                              : "bg-stone-50 text-stone-600 border-stone-200"
-                        )}
-                      >
-                        {kilosPorHaVariation.diff > 0 ? (
-                          <TrendingUp className="w-3 h-3 text-emerald-600" />
-                        ) : kilosPorHaVariation.diff < 0 ? (
-                          <TrendingDown className="w-3 h-3 text-rose-600" />
-                        ) : null}
-                        {kilosPorHaVariation.diff > 0 ? "+" : ""}
-                        {formatDecimal(kilosPorHaVariation.percentage, 1)}%
+                <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between gap-2">
+                  {totalCostos <= 0 ? (
+                    <>
+                      <span className="font-medium text-[#8f827a]">
+                        No has registrado costos aún
                       </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Footer valor absoluto */}
-                <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between">
-                  <span className="font-medium">
-                    {!prevCampaignYear
-                      ? "Sin campaña anterior"
-                      : kilosPorHaVariation.diff > 0
-                        ? `${formatDecimal(Math.abs(kilosPorHaVariation.diff), 2)} kg/ha más esta campaña`
-                        : kilosPorHaVariation.diff < 0
-                          ? `${formatDecimal(Math.abs(kilosPorHaVariation.diff), 2)} kg/ha menos esta campaña`
-                          : "Misma cosecha/ha que la campaña anterior"}
-                  </span>
-                  {prevCampaignYear && (
-                    <span className="text-[10px] text-primary/70 font-normal">vs {prevCampaignYear}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCosto(null);
+                          setSheetOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors shrink-0 group cursor-pointer"
+                      >
+                        <span>Agregar costo</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-medium">
+                        {!prevCampaignYear
+                          ? "Sin campaña anterior"
+                          : totalCostosVariation.diff > 0
+                            ? `${formatCurrency(Math.abs(totalCostosVariation.diff))} más esta campaña`
+                            : totalCostosVariation.diff < 0
+                              ? `${formatCurrency(Math.abs(totalCostosVariation.diff))} menos esta campaña`
+                              : "Mismo total que la campaña anterior"}
+                      </span>
+                      {prevCampaignYear && (
+                        <span className="text-[10px] text-primary/70 font-normal">vs {prevCampaignYear}</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
 
-              {/* Card 3: Costo Total por ha */}
+              {/* Card 2: Costo Total por ha */}
               <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-xs flex flex-col justify-between shadow-md h-full overflow-hidden">
                 <div>
                   <div className="flex items-center gap-1.5">
@@ -980,7 +1138,7 @@ const Costos = () => {
                     <span className="text-xs sm:text-sm font-medium text-[#8f827a]">
                       USD/Ha
                     </span>
-                    {costoPorHaVariation.percentage !== null && (
+                    {totalAreaPlantada > 0 && totalCostos > 0 && costoPorHaVariation.percentage !== null && (
                       <span
                         className={cn(
                           "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-semibold border",
@@ -1004,18 +1162,138 @@ const Costos = () => {
                 </div>
 
                 {/* Footer valor absoluto */}
-                <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between">
-                  <span className="font-medium">
-                    {!prevCampaignYear
-                      ? "Sin campaña anterior"
-                      : costoPorHaVariation.diff > 0
-                        ? `$${formatDecimal(Math.abs(costoPorHaVariation.diff), 2)} USD/Ha más esta campaña`
-                        : costoPorHaVariation.diff < 0
-                          ? `$${formatDecimal(Math.abs(costoPorHaVariation.diff), 2)} USD/Ha menos esta campaña`
-                          : "Mismo costo/ha que la campaña anterior"}
-                  </span>
-                  {prevCampaignYear && (
-                    <span className="text-[10px] text-primary/70 font-normal">vs {prevCampaignYear}</span>
+                <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between gap-2">
+                  {totalAreaPlantada <= 0 ? (
+                    <>
+                      <span className="font-medium text-[#8f827a]">
+                        No has registrado tus lotes aún
+                      </span>
+                      <Link
+                        to="/montes"
+                        className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors shrink-0 group cursor-pointer"
+                      >
+                        <span>Ir a montes</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    </>
+                  ) : totalCostos <= 0 ? (
+                    <>
+                      <span className="font-medium text-[#8f827a]">
+                        No has registrado costos aún
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCosto(null);
+                          setSheetOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors shrink-0 group cursor-pointer"
+                      >
+                        <span>Agregar costo</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-medium">
+                        {!prevCampaignYear
+                          ? "Sin campaña anterior"
+                          : costoPorHaVariation.diff > 0
+                            ? `$${formatDecimal(Math.abs(costoPorHaVariation.diff), 2)} USD/Ha más esta campaña`
+                            : costoPorHaVariation.diff < 0
+                              ? `$${formatDecimal(Math.abs(costoPorHaVariation.diff), 2)} USD/Ha menos esta campaña`
+                              : "Mismo costo/ha que la campaña anterior"}
+                      </span>
+                      {prevCampaignYear && (
+                        <span className="text-[10px] text-primary/70 font-normal">vs {prevCampaignYear}</span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 3: Kilos Cosechados por ha */}
+              <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-xs flex flex-col justify-between shadow-md h-full overflow-hidden">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <Wheat className="w-3.5 h-3.5 md:w-5 md:h-5 text-[#f2794a] shrink-0 stroke-[2.2]" />
+                    <p className="text-xs md:text-lg font-semibold text-primary">
+                      Kilos Cosechados por ha
+                    </p>
+                  </div>
+                  <div className="flex items-baseline justify-between flex-wrap gap-2 mt-2">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+                      {formatDecimal(kilosPorHectarea, 2)}
+                    </span>
+                    <span className="text-xs sm:text-sm font-medium text-[#8f827a]">
+                      Kg/Ha
+                    </span>
+                    {totalAreaPlantada > 0 && totalKilos > 0 && kilosPorHaVariation.percentage !== null && (
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-semibold border",
+                          kilosPorHaVariation.diff > 0
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
+                            : kilosPorHaVariation.diff < 0
+                              ? "bg-rose-50 text-rose-700 border-rose-200/80"
+                              : "bg-stone-50 text-stone-600 border-stone-200"
+                        )}
+                      >
+                        {kilosPorHaVariation.diff > 0 ? (
+                          <TrendingUp className="w-3 h-3 text-emerald-600" />
+                        ) : kilosPorHaVariation.diff < 0 ? (
+                          <TrendingDown className="w-3 h-3 text-rose-600" />
+                        ) : null}
+                        {kilosPorHaVariation.diff > 0 ? "+" : ""}
+                        {formatDecimal(kilosPorHaVariation.percentage, 1)}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer valor absoluto */}
+                <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between gap-2">
+                  {totalAreaPlantada <= 0 ? (
+                    <>
+                      <span className="font-medium text-[#8f827a]">
+                        No has registrado tus lotes aún
+                      </span>
+                      <Link
+                        to="/montes"
+                        className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors shrink-0 group cursor-pointer"
+                      >
+                        <span>Ir a montes</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    </>
+                  ) : totalKilos <= 0 ? (
+                    <>
+                      <span className="font-medium text-[#8f827a]">
+                        No has registrado tu cosecha aún
+                      </span>
+                      <Link
+                        to="/produccion"
+                        className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors shrink-0 group cursor-pointer"
+                      >
+                        <span>Ir a producción</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-medium">
+                        {!prevCampaignYear
+                          ? "Sin campaña anterior"
+                          : kilosPorHaVariation.diff > 0
+                            ? `${formatDecimal(Math.abs(kilosPorHaVariation.diff), 2)} kg/ha más esta campaña`
+                            : kilosPorHaVariation.diff < 0
+                              ? `${formatDecimal(Math.abs(kilosPorHaVariation.diff), 2)} kg/ha menos esta campaña`
+                              : "Misma cosecha/ha que la campaña anterior"}
+                      </span>
+                      {prevCampaignYear && (
+                        <span className="text-[10px] text-primary/70 font-normal">vs {prevCampaignYear}</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -1036,7 +1314,7 @@ const Costos = () => {
                     <span className="text-xs sm:text-sm font-medium text-[#8f827a]">
                       USD/Kg
                     </span>
-                    {costoPorKgVariation.percentage !== null && (
+                    {totalKilos > 0 && totalCostos > 0 && costoPorKgVariation.percentage !== null && (
                       <span
                         className={cn(
                           "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-semibold border",
@@ -1060,37 +1338,257 @@ const Costos = () => {
                 </div>
 
                 {/* Footer valor absoluto */}
-                <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between">
-                  <span className="font-medium">
-                    {!prevCampaignYear
-                      ? "Sin campaña anterior"
-                      : costoPorKgVariation.diff > 0
-                        ? `$${formatDecimal(Math.abs(costoPorKgVariation.diff), 2)} USD/Kg más esta campaña`
-                        : costoPorKgVariation.diff < 0
-                          ? `$${formatDecimal(Math.abs(costoPorKgVariation.diff), 2)} USD/Kg menos esta campaña`
-                          : "Mismo costo/kg que la campaña anterior"}
-                  </span>
-                  {prevCampaignYear && (
-                    <span className="text-[10px] text-primary/70 font-normal">vs {prevCampaignYear}</span>
+                <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between gap-2">
+                  {totalKilos <= 0 ? (
+                    <>
+                      <span className="font-medium text-[#8f827a]">
+                        No has registrado tu cosecha aun
+                      </span>
+                      <Link
+                        to="/produccion"
+                        className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors shrink-0 group cursor-pointer"
+                      >
+                        <span>Ir a producción</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    </>
+                  ) : totalCostos <= 0 ? (
+                    <>
+                      <span className="font-medium text-[#8f827a]">
+                        No has registrado costos aún
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCosto(null);
+                          setSheetOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors shrink-0 group cursor-pointer"
+                      >
+                        <span>Agregar costo</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-medium">
+                        {!prevCampaignYear
+                          ? "Sin campaña anterior"
+                          : costoPorKgVariation.diff > 0
+                            ? `$${formatDecimal(Math.abs(costoPorKgVariation.diff), 2)} USD/Kg más esta campaña`
+                            : costoPorKgVariation.diff < 0
+                              ? `$${formatDecimal(Math.abs(costoPorKgVariation.diff), 2)} USD/Kg menos esta campaña`
+                              : "Mismo costo/kg que la campaña anterior"}
+                      </span>
+                      {prevCampaignYear && (
+                        <span className="text-[10px] text-primary/70 font-normal">vs {prevCampaignYear}</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
+
             </div>
 
-            {/* Columna 3: Card de Desglose de Costos (Barras de %) */}
-            <div className="lg:col-span-1 bg-white rounded-2xl border border-stone-200/60 p-6 shadow-xs flex flex-col justify-between shadow-md">
-              <h2 className="text-base md:text-lg font-bold text-primary mb-6">
-                Desglose de Costos
-              </h2>
+            {/* Columna 3: Card de Grafico circular y Card Mayor Costo / ha */}
+            <div className="lg:col-span-1 flex flex-col gap-4">
+              {/* Card de Grafico circular */}
+              <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-xs flex flex-col justify-between shadow-md">
+                <h2 className="text-sm md:text-base font-bold text-primary mb-2">
+                  Rubros / Categorias
+                </h2>
 
+                <div className="relative flex items-center justify-center flex-1 min-h-[250px]">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={donutData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={100}
+                        paddingAngle={donutData.length > 1 ? 2.5 : 0}
+                        stroke="none"
+                      >
+                        {donutData.map((entry, index) => (
+                          <Cell key={`donut-cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(val: any, name: any) => {
+                          if (totalCostos === 0) return ["$0 (0%)", name];
+                          const pct = ((Number(val) / totalCostos) * 100).toFixed(1);
+                          return [`${formatCurrency(Number(val))} (${pct}%)`, name];
+                        }}
+                        contentStyle={{
+                          backgroundColor: "#ffffff",
+                          borderRadius: "12px",
+                          border: "1px solid #ede8e1",
+                          fontSize: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  {/* Texto en el hueco del donut: Valor del costo total operativo */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 text-center">
+                    <span className="text-xl sm:text-2xl font-extrabold text-primary tracking-tight">
+                      {formatCurrency(totalCostos)}
+                    </span>
+                    <span className="text-[10px] font-bold tracking-widest text-[#8f827a] uppercase mt-0.5">
+                      Costo Total <br /> Operativo
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card de Mayor Costo / ha */}
+              <div className="bg-white rounded-2xl border border-stone-200/60 p-5 shadow-xs flex flex-col justify-between shadow-md overflow-hidden flex-1">
+                {highestCostoPorHaRubro ? (
+                  <>
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {(() => {
+                            const IconComponent = highestCostoPorHaRubro.icon;
+                            return (
+                              <IconComponent
+                                className="w-4 h-4 shrink-0 stroke-[2.2]"
+                                style={{ color: highestCostoPorHaRubro.color }}
+                              />
+                            );
+                          })()}
+                          <p className="text-xs md:text-sm font-semibold text-primary truncate">
+                            Mayor Costo / Ha
+                          </p>
+                        </div>
+                        <span
+                          className="px-2 py-0.5 text-[11px] font-semibold rounded-full border shrink-0 truncate max-w-[130px]"
+                          style={{
+                            backgroundColor: `${highestCostoPorHaRubro.color}15`,
+                            color: highestCostoPorHaRubro.color,
+                            borderColor: `${highestCostoPorHaRubro.color}35`,
+                          }}
+                        >
+                          {highestCostoPorHaRubro.label}
+                        </span>
+                      </div>
+
+                      <div className="flex items-baseline justify-between flex-wrap gap-2 mt-2">
+                        <span className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+                          ${formatDecimal(highestCostoPorHaRubro.costoPorHa, 2)}
+                        </span>
+                        <span className="text-xs sm:text-sm font-medium text-[#8f827a]">
+                          USD/Ha
+                        </span>
+                        {renderVariationBadge(
+                          highestCostoPorHaRubro.varCostoPorHa.diff,
+                          highestCostoPorHaRubro.varCostoPorHa.percentage
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Footer valor absoluto */}
+                    <div className="-mx-5 -mb-5 mt-4 px-5 py-3 bg-background border-t border-stone-200/60 text-xs text-primary flex items-center justify-between gap-2">
+                      {totalAreaPlantada <= 0 ? (
+                        <>
+                          <span className="font-medium text-[#8f827a]">
+                            No has registrado tus lotes aún
+                          </span>
+                          <Link
+                            to="/montes"
+                            className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors shrink-0 group cursor-pointer"
+                          >
+                            <span>Ir a montes</span>
+                            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-medium truncate">
+                            {!prevCampaignYear
+                              ? "Sin campaña anterior"
+                              : highestCostoPorHaRubro.varCostoPorHa.percentage === null
+                                ? "Sin costo previo en este rubro"
+                                : highestCostoPorHaRubro.varCostoPorHa.diff > 0
+                                  ? `$${formatDecimal(Math.abs(highestCostoPorHaRubro.varCostoPorHa.diff), 2)} USD/Ha más`
+                                  : highestCostoPorHaRubro.varCostoPorHa.diff < 0
+                                    ? `$${formatDecimal(Math.abs(highestCostoPorHaRubro.varCostoPorHa.diff), 2)} USD/Ha menos`
+                                    : "Mismo costo/ha que el año anterior"}
+                          </span>
+                          {prevCampaignYear && (
+                            <span className="text-[10px] text-primary/70 font-normal shrink-0">
+                              vs {prevCampaignYear}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col justify-between h-full py-1">
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="w-4 h-4 text-stone-400" />
+                      <p className="text-xs md:text-sm font-semibold text-primary">
+                        Mayor Costo / Ha
+                      </p>
+                    </div>
+                    <div className="my-3 text-center">
+                      <p className="text-xs text-[#8f827a]">
+                        {totalAreaPlantada <= 0
+                          ? "No has registrado tus lotes aún"
+                          : "No has registrado costos aún"}
+                      </p>
+                    </div>
+                    <div className="-mx-5 -mb-5 px-5 py-3 bg-background border-t border-stone-200/60 text-xs flex justify-end">
+                      {totalAreaPlantada <= 0 ? (
+                        <Link
+                          to="/montes"
+                          className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors cursor-pointer"
+                        >
+                          <span>Ir a montes</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCosto(null);
+                            setSheetOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 font-semibold underline text-accent hover:text-primary transition-colors cursor-pointer"
+                        >
+                          <span>Agregar costo</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Columna 4: Barras de % */}
+            <div className="lg:col-span-1 bg-white rounded-2xl border border-stone-200/60 p-6 shadow-xs flex flex-col justify-between shadow-md">
+              <h2 className="text-sm md:text-base font-bold text-primary mb-4">
+                Ranking de Costos por rubro
+              </h2>
               <div className="space-y-3.5 flex-1">
                 {breakdownList.map((item) => (
                   <div key={item.key} className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-medium text-[#2b2623]">{item.label}</span>
-                      <span className="font-semibold text-[#2b2623]">
-                        {item.percentage.toFixed(1)}%
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-[#8f827a]">
+                          {formatCurrency(item.amount)}
+                        </span>
+                        <span className="font-semibold text-[#2b2623] min-w-[38px] text-right">
+                          {item.percentage.toFixed(1)}%
+                        </span>
+                      </div>
                     </div>
                     <div className="w-full bg-[#f6f2ec] rounded-full h-2 overflow-hidden">
                       <div
@@ -1106,93 +1604,10 @@ const Costos = () => {
               </div>
             </div>
 
-            {/* Columna 4: Card con el Gráfico Circular y Etiquetas Horizontales */}
-            <div className="lg:col-span-1 bg-white rounded-2xl border border-stone-200/60 p-6 shadow-xs flex flex-col justify-between shadow-md">
-              <h2 className="text-base md:text-lg font-bold text-primary mb-2">
-                Distribución de Costos por rubros
-              </h2>
-
-              <div className="relative flex items-center justify-center flex-1 min-h-[240px]">
-                <ResponsiveContainer width="100%" height={240}>
-                  <PieChart>
-                    <Pie
-                      data={donutData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={75}
-                      outerRadius={95}
-                      paddingAngle={donutData.length > 1 ? 2.5 : 0}
-                      stroke="none"
-                    >
-                      {donutData.map((entry, index) => (
-                        <Cell key={`donut-cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val: any, name: any) => {
-                        if (totalCostos === 0) return ["$0 (0%)", name];
-                        const pct = ((Number(val) / totalCostos) * 100).toFixed(1);
-                        return [`${formatCurrency(Number(val))} (${pct}%)`, name];
-                      }}
-                      contentStyle={{
-                        backgroundColor: "#ffffff",
-                        borderRadius: "12px",
-                        border: "1px solid #ede8e1",
-                        fontSize: "12px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-
-                {/* Texto en el hueco del donut: Valor del costo total operativo */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 text-center">
-                  <span className="text-xl font-extrabold text-primary tracking-tight">
-                    {formatCurrency(totalCostos)}
-                  </span>
-                  <span className="text-[9px] font-bold tracking-widest text-[#8f827a] uppercase mt-0.5">
-                    Total Operativo
-                  </span>
-                </div>
-              </div>
-
-              {/* Etiquetas debajo del gráfico circular (una a la par de la otra, no apiladas) */}
-              {breakdownList.some((item) => item.amount > 0) && (
-                <div className="pt-3 mt-3">
-                  <p className="text-sm text-center text-[#8f827a] font-medium mb-3">
-                    Valores en $ USD
-                  </p>
-                  <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 mt-2">
-                    {breakdownList
-                      .filter((item) => item.amount > 0)
-                      .map((item) => (
-                        <div
-                          key={item.key}
-                          className="inline-flex items-center gap-1.5 text-xs text-[#8f827a] px-2 py-1 whitespace-nowrap"
-                        >
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="font-medium">
-                            {item.label}:{" "}
-                            <span className="text-[#8f827a]">
-                              {formatCurrency(item.amount)}
-                            </span>
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
           </div>
 
-          {/* Fila Inferior: Detalle de Costos y Detalle de Insumos (en la misma fila) */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+          {/* Fila Inferior: Detalle de Costos y Detalle de Insumos (cada una en su propia fila completa) */}
+          <div className="flex flex-col gap-6">
             {/* Tabla 1: Detalle de Costos campaña */}
             <div className="w-full bg-white rounded-2xl border border-stone-200/60 p-6 shadow-md flex flex-col justify-between">
               <div className="flex items-center justify-between mb-5">
@@ -1218,11 +1633,11 @@ const Costos = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#e8e2d9] text-xs text-[#8f827a] font-medium">
-                      <th className="text-left pb-3 font-medium">Rubro/Categoría</th>
-                      <th className="text-right pb-3 font-medium pr-4">Total</th>
-                      <th className="text-right pb-3 font-medium pr-4">Costo / ha</th>
-                      <th className="text-right pb-3 font-medium pr-4">Costo / kg</th>
-                      <th className="text-right pb-3 font-medium w-24 pr-2">Acciones</th>
+                      <th className="text-left pb-3 font-medium whitespace-nowrap">Rubro/Categoría</th>
+                      <th className="text-right pb-3 font-medium pr-4 whitespace-nowrap">Total</th>
+                      <th className="text-right pb-3 font-medium pr-4 whitespace-nowrap">Costo / ha</th>
+                      <th className="text-right pb-3 font-medium pr-4 whitespace-nowrap">Costo / kg</th>
+                      <th className="text-right pb-3 font-medium w-24 pr-2 whitespace-nowrap">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f2ece3]">
@@ -1243,23 +1658,36 @@ const Costos = () => {
                               </div>
                             </td>
                             <td className="py-3.5 text-right font-semibold text-[#2b2623] text-sm pr-4 whitespace-nowrap">
-                              {formatCurrency(item.amount)}
+                              <div className="flex items-center justify-end gap-2">
+                                <span>{formatCurrency(item.amount)}</span>
+                                {renderVariationBadge(item.varTotal.diff, item.varTotal.percentage)}
+                              </div>
                             </td>
                             <td className="py-3.5 text-right text-sm text-[#2b2623] pr-4 whitespace-nowrap">
-                              <span className="font-semibold">
-                                ${formatDecimal(item.costoPorHa, 2)}
-                              </span>
-                              <span className="text-xs text-[#8f827a] font-normal ml-1">
-                                USD/Ha
-                              </span>
+                              <div className="flex items-center justify-end gap-2">
+                                <div>
+                                  <span className="font-semibold">
+                                    ${formatDecimal(item.costoPorHa, 2)}
+                                  </span>
+                                  <span className="text-xs text-[#8f827a] font-normal ml-1">
+                                    USD/Ha
+                                  </span>
+                                </div>
+                                {renderVariationBadge(item.varCostoPorHa.diff, item.varCostoPorHa.percentage)}
+                              </div>
                             </td>
                             <td className="py-3.5 text-right text-sm text-[#2b2623] pr-4 whitespace-nowrap">
-                              <span className="font-semibold">
-                                ${formatDecimal(item.costoPorKg, 2)}
-                              </span>
-                              <span className="text-xs text-[#8f827a] font-normal ml-1">
-                                USD/Kg
-                              </span>
+                              <div className="flex items-center justify-end gap-2">
+                                <div>
+                                  <span className="font-semibold">
+                                    ${formatDecimal(item.costoPorKg, 2)}
+                                  </span>
+                                  <span className="text-xs text-[#8f827a] font-normal ml-1">
+                                    USD/Kg
+                                  </span>
+                                </div>
+                                {renderVariationBadge(item.varCostoPorKg.diff, item.varCostoPorKg.percentage)}
+                              </div>
                             </td>
                             <td className="py-3.5 text-right pr-2 whitespace-nowrap">
                               <div className="flex items-center justify-end gap-2.5 text-stone-400">
@@ -1318,15 +1746,28 @@ const Costos = () => {
                           Total Operativo
                         </td>
                         <td className="py-3.5 text-right font-bold text-sm text-primary pr-4 whitespace-nowrap">
-                          {formatCurrency(totalCostos)}
+                          <div className="flex items-center justify-end gap-2">
+                            <span>{formatCurrency(totalCostos)}</span>
+                            {renderVariationBadge(totalCostosVariation.diff, totalCostosVariation.percentage)}
+                          </div>
                         </td>
                         <td className="py-3.5 text-right text-sm font-bold text-primary pr-4 whitespace-nowrap">
-                          ${formatDecimal(costoPorHectarea, 2)}{" "}
-                          <span className="text-xs font-normal text-[#8f827a]">USD/Ha</span>
+                          <div className="flex items-center justify-end gap-2">
+                            <div>
+                              <span>${formatDecimal(costoPorHectarea, 2)} </span>
+                              <span className="text-xs font-normal text-[#8f827a]">USD/Ha</span>
+                            </div>
+                            {renderVariationBadge(costoPorHaVariation.diff, costoPorHaVariation.percentage)}
+                          </div>
                         </td>
                         <td className="py-3.5 text-right text-sm font-bold text-primary pr-4 whitespace-nowrap">
-                          ${formatDecimal(costoPorKilo, 2)}{" "}
-                          <span className="text-xs font-normal text-[#8f827a]">USD/Kg</span>
+                          <div className="flex items-center justify-end gap-2">
+                            <div>
+                              <span>${formatDecimal(costoPorKilo, 2)} </span>
+                              <span className="text-xs font-normal text-[#8f827a]">USD/Kg</span>
+                            </div>
+                            {renderVariationBadge(costoPorKgVariation.diff, costoPorKgVariation.percentage)}
+                          </div>
                         </td>
                         <td className="py-3.5 pr-2"></td>
                       </tr>
@@ -1363,11 +1804,11 @@ const Costos = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#e8e2d9] text-xs text-[#8f827a] font-medium">
-                      <th className="text-left pb-3 font-medium">Insumo</th>
-                      <th className="text-right pb-3 font-medium pr-4">Total</th>
-                      <th className="text-right pb-3 font-medium pr-4">Costo / ha</th>
-                      <th className="text-right pb-3 font-medium pr-4">Costo / kg</th>
-                      <th className="text-right pb-3 font-medium w-16 pr-2">Acciones</th>
+                      <th className="text-left pb-3 font-medium whitespace-nowrap">Insumo</th>
+                      <th className="text-right pb-3 font-medium pr-4 whitespace-nowrap">Total</th>
+                      <th className="text-right pb-3 font-medium pr-4 whitespace-nowrap">Costo / ha</th>
+                      <th className="text-right pb-3 font-medium pr-4 whitespace-nowrap">Costo / kg</th>
+                      <th className="text-right pb-3 font-medium w-16 pr-2 whitespace-nowrap">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f2ece3]">
@@ -1403,31 +1844,44 @@ const Costos = () => {
                                   : "text-stone-400 font-normal"
                               )}
                             >
-                              {formatCurrency(item.amount)}
+                              <div className="flex items-center justify-end gap-2">
+                                <span>{formatCurrency(item.amount)}</span>
+                                {hasValue && renderVariationBadge(item.varTotal.diff, item.varTotal.percentage)}
+                              </div>
                             </td>
                             <td className="py-3.5 text-right text-sm text-[#2b2623] pr-4 whitespace-nowrap">
-                              <span
-                                className={cn(
-                                  hasValue ? "font-semibold" : "text-stone-400 font-normal"
-                                )}
-                              >
-                                ${formatDecimal(item.costoPorHa, 2)}
-                              </span>
-                              <span className="text-xs text-[#8f827a] font-normal ml-1">
-                                USD/Ha
-                              </span>
+                              <div className="flex items-center justify-end gap-2">
+                                <div>
+                                  <span
+                                    className={cn(
+                                      hasValue ? "font-semibold" : "text-stone-400 font-normal"
+                                    )}
+                                  >
+                                    ${formatDecimal(item.costoPorHa, 2)}
+                                  </span>
+                                  <span className="text-xs text-[#8f827a] font-normal ml-1">
+                                    USD/Ha
+                                  </span>
+                                </div>
+                                {hasValue && renderVariationBadge(item.varCostoPorHa.diff, item.varCostoPorHa.percentage)}
+                              </div>
                             </td>
                             <td className="py-3.5 text-right text-sm text-[#2b2623] pr-4 whitespace-nowrap">
-                              <span
-                                className={cn(
-                                  hasValue ? "font-semibold" : "text-stone-400 font-normal"
-                                )}
-                              >
-                                ${formatDecimal(item.costoPorKg, 2)}
-                              </span>
-                              <span className="text-xs text-[#8f827a] font-normal ml-1">
-                                USD/Kg
-                              </span>
+                              <div className="flex items-center justify-end gap-2">
+                                <div>
+                                  <span
+                                    className={cn(
+                                      hasValue ? "font-semibold" : "text-stone-400 font-normal"
+                                    )}
+                                  >
+                                    ${formatDecimal(item.costoPorKg, 2)}
+                                  </span>
+                                  <span className="text-xs text-[#8f827a] font-normal ml-1">
+                                    USD/Kg
+                                  </span>
+                                </div>
+                                {hasValue && renderVariationBadge(item.varCostoPorKg.diff, item.varCostoPorKg.percentage)}
+                              </div>
                             </td>
                             <td className="py-3.5 text-right pr-2 whitespace-nowrap">
                               <div className="flex items-center justify-end gap-2.5 text-stone-400">
@@ -1469,15 +1923,28 @@ const Costos = () => {
                           Total Insumos
                         </td>
                         <td className="py-3.5 text-right font-bold text-sm text-primary pr-4 whitespace-nowrap">
-                          {formatCurrency(totalInsumosAmount)}
+                          <div className="flex items-center justify-end gap-2">
+                            <span>{formatCurrency(totalInsumosAmount)}</span>
+                            {renderVariationBadge(totalInsumosVariation.diff, totalInsumosVariation.percentage)}
+                          </div>
                         </td>
                         <td className="py-3.5 text-right text-sm font-bold text-primary pr-4 whitespace-nowrap">
-                          ${formatDecimal(totalInsumosCostoPorHa, 2)}{" "}
-                          <span className="text-xs font-normal text-[#8f827a]">USD/Ha</span>
+                          <div className="flex items-center justify-end gap-2">
+                            <div>
+                              <span>${formatDecimal(totalInsumosCostoPorHa, 2)} </span>
+                              <span className="text-xs font-normal text-[#8f827a]">USD/Ha</span>
+                            </div>
+                            {renderVariationBadge(totalInsumosCostoPorHaVariation.diff, totalInsumosCostoPorHaVariation.percentage)}
+                          </div>
                         </td>
                         <td className="py-3.5 text-right text-sm font-bold text-primary pr-4 whitespace-nowrap">
-                          ${formatDecimal(totalInsumosCostoPorKg, 2)}{" "}
-                          <span className="text-xs font-normal text-[#8f827a]">USD/Kg</span>
+                          <div className="flex items-center justify-end gap-2">
+                            <div>
+                              <span>${formatDecimal(totalInsumosCostoPorKg, 2)} </span>
+                              <span className="text-xs font-normal text-[#8f827a]">USD/Kg</span>
+                            </div>
+                            {renderVariationBadge(totalInsumosCostoPorKgVariation.diff, totalInsumosCostoPorKgVariation.percentage)}
+                          </div>
                         </td>
                         <td className="py-3.5 pr-2"></td>
                       </tr>
@@ -1691,7 +2158,7 @@ const Costos = () => {
           {/* --- TABLA EVOLUCIÓN (TAL CUAL LA QUE YA ESTABA) --- */}
           <Card className="border-border/50 shadow-md">
             <CardHeader>
-              <CardTitle className="text-foreground">Evolución de Costos</CardTitle>
+              <CardTitle className="text-primary">Evolución de Costos</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1">
               <div className="relative w-full max-w-full overflow-x-auto border-none pb-1">

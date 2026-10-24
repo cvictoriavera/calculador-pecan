@@ -21,6 +21,7 @@ $manifest_path = CALCULADOR_PECAN_PLUGIN_DIR . 'dist/.vite/manifest.json';
 if (file_exists($manifest_path)) {
     // --- MODO PRODUCCIÓN ---
     $manifest = json_decode(file_get_contents($manifest_path), true);
+    $build_version = (string) filemtime($manifest_path);
     
     if ($manifest && isset($manifest['index.html'])) {
         $entry = $manifest['index.html'];
@@ -40,7 +41,7 @@ if (file_exists($manifest_path)) {
                         $vendor_handle, 
                         plugin_dir_url(__FILE__) . '../dist/' . $import_chunk['file'], 
                         [], 
-                        null, 
+                        $build_version, 
                         true
                     );
                     
@@ -56,7 +57,7 @@ if (file_exists($manifest_path)) {
             'calculador-pecan-js', 
             plugin_dir_url(__FILE__) . '../dist/' . $js_file, 
             $dependencies, // Aquí pasamos las dependencias
-            '1.0.0', 
+            $build_version, 
             true
         );
 
@@ -67,7 +68,7 @@ if (file_exists($manifest_path)) {
                     'calculador-pecan-css-' . basename($css_file), 
                     plugin_dir_url(__FILE__) . '../dist/' . $css_file, 
                     [], 
-                    '1.0.0'
+                    $build_version
                 );
             }
         }
