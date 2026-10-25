@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Settings, Save, Database, Trash2, Loader2, History, Download, Upload } from "lucide-react";
 import { getCurrentUser } from "@/services/userService";
 import { apiRequest } from "@/services/api";
@@ -32,13 +33,16 @@ const Config = () => {
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isMigrating, setIsMigrating] = useState(false);
   const { toast } = useToast();
-  const { initialYear, setInitialYear, currentProjectId, projects, deleteProject, loadCampaigns, loadProjects } = useApp();
+  const { initialYear, setInitialYear, currentProjectId, projects, deleteProject, loadCampaigns, loadProjects, isAdmin } = useApp();
+
+  const isAdminUser = Boolean(isAdmin || userRoles.includes('administrator'));
 
   const [pais, setPais] = useState("Argentina");
   const [provincia, setProvincia] = useState("");
   const [departamento, setDepartamento] = useState("");
   const [municipio, setMunicipio] = useState("");
   const [descripcion, setDescripcion] = useState(""); // Variable de estado en español
+  const [allowBenchmarking, setAllowBenchmarking] = useState(false);
   
   // Estado para el selector de año
   const [añoInicio, setAñoInicio] = useState(initialYear || new Date().getFullYear());
@@ -91,6 +95,14 @@ const Config = () => {
         setProjectName(currentProject.project_name);
         // Cargar descripción si existe
         if (currentProject.description) setDescripcion(currentProject.description);
+        if (currentProject.allow_benchmarking !== undefined && currentProject.allow_benchmarking !== null) {
+          setAllowBenchmarking(
+            Number(currentProject.allow_benchmarking) === 1 ||
+            currentProject.allow_benchmarking === true
+          );
+        } else {
+          setAllowBenchmarking(false);
+        }
       }
     }
   }, [projects, currentProjectId]);
@@ -148,6 +160,14 @@ const Config = () => {
         setDepartamento(currentProject.departamento || "");
         setMunicipio(currentProject.municipio || "");
         setDescripcion(currentProject.description || "");
+        if (currentProject.allow_benchmarking !== undefined && currentProject.allow_benchmarking !== null) {
+          setAllowBenchmarking(
+            Number(currentProject.allow_benchmarking) === 1 ||
+            currentProject.allow_benchmarking === true
+          );
+        } else {
+          setAllowBenchmarking(false);
+        }
       }
     }
   }, [currentProjectId, projects]);
@@ -373,10 +393,16 @@ const Config = () => {
       setIsUpdatingProject(true);
       try {
          // CORRECCIÓN AQUÍ: description (clave API) : descripcion (variable estado)
-         await updateProject(currentProjectId, {
+         const payload: { project_name: string; description: string; allow_benchmarking?: number } = {
              project_name: projectName.trim(),
              description: descripcion.trim()
-         });
+         };
+
+         if (isAdminUser) {
+             payload.allow_benchmarking = allowBenchmarking ? 1 : 0;
+         }
+
+         await updateProject(currentProjectId, payload);
          await loadProjects();
          toast({ title: "Éxito", description: "Los datos del proyecto han sido actualizados." });
       } catch(error) {
@@ -441,6 +467,28 @@ const Config = () => {
             <Label htmlFor="descripcion">Descripción del Proyecto</Label>
             <Textarea id="descripcion" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
           </div>
+
+          {/* SWITCH BENCHMARKING (SOLO ADMINISTRADORES) */}
+          {isAdminUser && (
+            <div className="border-t border-border/50 pt-4 mt-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="allow-benchmarking" className="text-base font-normal cursor-pointer text-foreground">
+                    Permitir Benchmarking (Estadísticas)
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Excluir el proyecto del análisis estadístico.
+                  </p>
+                </div>
+                <Switch
+                  id="allow-benchmarking"
+                  checked={allowBenchmarking}
+                  onCheckedChange={setAllowBenchmarking}
+                />
+              </div>
+            </div>
+          )}
+
           <Button onClick={handleSaveProjectData} disabled={isUpdatingProject || !projectName.trim()} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 mt-4">
             <Save className="h-5 w-5" /> {isUpdatingProject ? "Guardando..." : "Guardar Cambios"}
           </Button>

@@ -63,16 +63,23 @@ class CCP_Proyectos_DB {
 	 * @param int $user_id    The ID of the user to verify ownership.
 	 * @return object|null A project object or null if not found or not owned by the user.
 	 */
-	public function get_by_id( $project_id, $user_id ) {
-		if ( ! is_numeric( $project_id ) || ! is_numeric( $user_id ) ) {
+	public function get_by_id( $project_id, $user_id = null ) {
+		if ( ! is_numeric( $project_id ) ) {
 			return null;
 		}
 
-		$query = $this->wpdb->prepare(
-			"SELECT * FROM {$this->table_name} WHERE id = %d AND user_id = %d",
-			absint( $project_id ),
-			absint( $user_id )
-		);
+		if ( ! is_null( $user_id ) && is_numeric( $user_id ) ) {
+			$query = $this->wpdb->prepare(
+				"SELECT * FROM {$this->table_name} WHERE id = %d AND user_id = %d",
+				absint( $project_id ),
+				absint( $user_id )
+			);
+		} else {
+			$query = $this->wpdb->prepare(
+				"SELECT * FROM {$this->table_name} WHERE id = %d",
+				absint( $project_id )
+			);
+		}
 
 		return $this->wpdb->get_row( $query );
 	}
@@ -139,18 +146,23 @@ class CCP_Proyectos_DB {
 	/**
 	 * Update an existing project.
 	 *
-	 * @param int   $project_id The ID of the project to update.
-	 * @param array $data       The new data for the project.
-	 * @param int   $user_id    The ID of the user to verify ownership.
+	 * @param int      $project_id The ID of the project to update.
+	 * @param array    $data       The new data for the project.
+	 * @param int|null $user_id    The ID of the user to verify ownership (optional for admin).
 	 * @return bool True on success, false on failure.
 	 */
-	public function update( $project_id, $data, $user_id ) {
-		if ( ! is_numeric( $project_id ) || ! is_numeric( $user_id ) || empty( $data ) ) {
+	public function update( $project_id, $data, $user_id = null ) {
+		if ( ! is_numeric( $project_id ) || empty( $data ) ) {
 			return false;
 		}
 
-		// Verify ownership
-		$existing = $this->get_by_id( $project_id, $user_id );
+		// Verify ownership if user_id is provided
+		if ( ! is_null( $user_id ) && is_numeric( $user_id ) ) {
+			$existing = $this->get_by_id( $project_id, $user_id );
+		} else {
+			$existing = $this->get_by_id( $project_id );
+		}
+
 		if ( null === $existing ) {
 			return false;
 		}
@@ -187,6 +199,10 @@ class CCP_Proyectos_DB {
 			$update_data['zona'] = sanitize_text_field( $data['zona'] );
 			$format[] = '%s';
 		}
+		if ( isset( $data['allow_benchmarking'] ) ) {
+			$update_data['allow_benchmarking'] = intval( $data['allow_benchmarking'] );
+			$format[] = '%d';
+		}
 		if ( isset( $data['status'] ) ) {
 			$update_data['status'] = sanitize_text_field( $data['status'] );
 			$format[] = '%s';
@@ -200,11 +216,18 @@ class CCP_Proyectos_DB {
 		$update_data['updated_at'] = current_time( 'mysql', 1 );
 		$format[] = '%s';
 
-		$where = array(
-			'id'      => absint( $project_id ),
-			'user_id' => absint( $user_id ),
-		);
-		$where_format = array( '%d', '%d' );
+		if ( ! is_null( $user_id ) && is_numeric( $user_id ) ) {
+			$where = array(
+				'id'      => absint( $project_id ),
+				'user_id' => absint( $user_id ),
+			);
+			$where_format = array( '%d', '%d' );
+		} else {
+			$where = array(
+				'id' => absint( $project_id ),
+			);
+			$where_format = array( '%d' );
+		}
 
 		$result = $this->wpdb->update(
 			$this->table_name,

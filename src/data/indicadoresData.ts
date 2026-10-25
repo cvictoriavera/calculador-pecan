@@ -20,6 +20,11 @@ export interface ProductorData {
   cosecha: number;
   adm: number | null;
   mant: number | null;
+  meta?: {
+    haYearsCost?: number;
+    haYearsProd?: number;
+    instances?: number;
+  };
 }
 
 export type CellColor = 'green' | 'yellow' | 'red' | 'neutral';
@@ -46,406 +51,354 @@ export interface FormattedRowItem {
   mant: { val: number | string; color?: CellColor };
 }
 
-export const PRODUCTORES_TOTALES: ProductorData[] = [
+export type AgeBracketId = "young" | "9-11" | "custom";
+
+export interface AgeBracketConfig {
+  id: AgeBracketId;
+  label: string;
+  rangeLabel: string;
+  badge: string;
+  description: string;
+  minAge: number;
+  maxAge: number;
+}
+
+// Filtros específicos solicitados: solo 1 a 5 años, 9 a 11 años y personalizado
+export const AGE_BRACKETS_CONFIG: AgeBracketConfig[] = [
   {
-    id: "richard-lanza",
-    productor: "richard.lanza",
-    finca: "Quinta La Delicia",
-    provincia: "Córdoba",
-    has: 2.0,
-    kilos: 1560,
-    totalCostos: 15209,
-    insumos: {
-      total: 336,
-      suelo: 92,
-      foliares: 244,
-      fung: null,
-      herb: null,
-      insect: null,
-    },
-    combustible: 92,
-    mObra: 9600,
-    energia: 448,
-    cosecha: 724,
-    adm: 3968,
-    mant: 41,
+    id: "young",
+    label: "1 a 5 años",
+    rangeLabel: "1 a 5 años",
+    badge: "Formación",
+    description: "Montes en desarrollo vegetativo temprano sin cosecha comercial aún.",
+    minAge: 1,
+    maxAge: 5,
   },
   {
-    id: "cesar-pescio",
-    productor: "cesar.pescio",
-    finca: "los divinos",
-    provincia: "Buenos Aires",
-    has: 8.0,
-    kilos: 3000,
-    totalCostos: 31396,
-    insumos: {
-      total: 7337,
-      suelo: 5210,
-      foliares: 1210,
-      fung: 123,
-      herb: null,
-      insect: 794,
-    },
-    combustible: 940,
-    mObra: 19350,
-    energia: 661,
-    cosecha: 3108,
-    adm: null,
-    mant: null,
+    id: "9-11",
+    label: "9 a 11 años",
+    rangeLabel: "9 a 11 años",
+    badge: "Producción media",
+    description: "Evaluación sobre montes en entrada a producción media.",
+    minAge: 9,
+    maxAge: 11,
   },
   {
-    id: "herminia-viva",
-    productor: "herminia.viva",
-    finca: "La Fe",
-    provincia: "Buenos Aires",
-    has: 15.3,
-    kilos: 4198,
-    totalCostos: 32653,
-    insumos: {
-      total: 376,
-      suelo: null,
-      foliares: 376,
-      fung: null,
-      herb: null,
-      insect: null,
-    },
-    combustible: 654,
-    mObra: 19000,
-    energia: 3000,
-    cosecha: 1000,
-    adm: 7903,
-    mant: 720,
-  },
-  {
-    id: "juan-martin",
-    productor: "juan martin.b",
-    finca: "Tinkuy",
-    provincia: "Tucumán",
-    has: 14.0,
-    kilos: 11592,
-    totalCostos: 48194,
-    insumos: {
-      total: 10552,
-      suelo: 6524,
-      foliares: 1947,
-      fung: 1726,
-      herb: null,
-      insect: 355,
-    },
-    combustible: 1138,
-    mObra: 13176,
-    energia: 4419,
-    cosecha: 8138,
-    adm: 8839,
-    mant: 1932,
-  },
-  {
-    id: "javier-aragon",
-    productor: "javier.aragon",
-    finca: "Establecimiento El Legado SA",
-    provincia: "Córdoba",
-    has: 29.6,
-    kilos: 24030,
-    totalCostos: 108281,
-    insumos: {
-      total: 25311,
-      suelo: 14610,
-      foliares: 8755,
-      fung: 434,
-      herb: null,
-      insect: 1512,
-    },
-    combustible: 10130,
-    mObra: 26578,
-    energia: 11900,
-    cosecha: 11790,
-    adm: 18721,
-    mant: 3851,
+    id: "custom",
+    label: "Personalizado...",
+    rangeLabel: "Rango a medida",
+    badge: "Personalizado",
+    description: "Definir un rango de edad específico para evaluar la cohorte histórica.",
+    minAge: 1,
+    maxAge: 40,
   },
 ];
 
-export const TOTAL_GENERAL: ProductorData = {
-  id: "total",
-  productor: "TOTAL",
-  finca: "",
-  provincia: "",
-  has: 68.9,
-  kilos: 44380,
-  totalCostos: 235733,
-  insumos: {
-    total: 43912,
-    suelo: 26436,
-    foliares: 12532,
-    fung: 2283,
-    herb: 0,
-    insect: 2661,
-  },
-  combustible: 12954,
-  mObra: 87704,
-  energia: 20428,
-  cosecha: 24760,
-  adm: 39431,
-  mant: 6544,
-};
+// -------------------------------------------------------------
+// CÁLCULO DINÁMICO DE TOTALES Y PROMEDIOS
+// -------------------------------------------------------------
+export function calculateTotals(producers: ProductorData[]): {
+  totalGeneral: ProductorData;
+  totalPorHa: FormattedRowItem;
+  totalPorKilo: FormattedRowItem;
+} {
+  const totalGeneral: ProductorData = {
+    id: "total",
+    productor: "TOTAL",
+    finca: "",
+    provincia: "",
+    has: Number(producers.reduce((sum, p) => sum + p.has, 0).toFixed(1)),
+    kilos: producers.reduce((sum, p) => sum + p.kilos, 0),
+    totalCostos: producers.reduce((sum, p) => sum + p.totalCostos, 0),
+    insumos: {
+      total: producers.reduce((sum, p) => sum + (p.insumos.total || 0), 0),
+      suelo: producers.reduce((sum, p) => sum + (p.insumos.suelo || 0), 0),
+      foliares: producers.reduce((sum, p) => sum + (p.insumos.foliares || 0), 0),
+      fung: producers.reduce((sum, p) => sum + (p.insumos.fung || 0), 0),
+      herb: producers.reduce((sum, p) => sum + (p.insumos.herb || 0), 0),
+      insect: producers.reduce((sum, p) => sum + (p.insumos.insect || 0), 0),
+    },
+    combustible: producers.reduce((sum, p) => sum + p.combustible, 0),
+    mObra: producers.reduce((sum, p) => sum + p.mObra, 0),
+    energia: producers.reduce((sum, p) => sum + p.energia, 0),
+    cosecha: producers.reduce((sum, p) => sum + p.cosecha, 0),
+    adm: producers.reduce((sum, p) => sum + (p.adm || 0), 0),
+    mant: producers.reduce((sum, p) => sum + (p.mant || 0), 0),
+  };
 
-// Tabla 2: Datos Por Hectárea con sus estilos semafóricos exactos de la imagen
-export const TABLA_POR_HA: FormattedRowItem[] = [
-  {
-    id: "richard-lanza",
-    productor: "richard.lanza",
-    finca: "Quinta La De",
-    provincia: "Córdoba",
-    has: 2.0,
-    kilos: { val: 780, color: 'green' },
-    totalCostos: { val: 7605, color: 'red' },
-    insumosTotal: { val: 168, color: 'green' },
-    insumosSuelo: { val: 46, color: 'green' },
-    insumosFoliares: { val: 122, color: 'green' },
-    insumosFung: { val: "-", color: 'yellow' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: "-", color: 'green' },
-    combustible: { val: 46, color: 'green' },
-    mObra: { val: 4800, color: 'red' },
-    energia: { val: 224, color: 'green' },
-    cosecha: { val: 362, color: 'yellow' },
-    adm: { val: 1984, color: 'red' },
-    mant: { val: 21, color: 'green' },
-  },
-  {
-    id: "cesar-pescio",
-    productor: "cesar.pescio",
-    finca: "los divinos",
-    provincia: "Buenos Aires",
-    has: 8.0,
-    kilos: { val: 375, color: 'red' },
-    totalCostos: { val: 3925, color: 'red' },
-    insumosTotal: { val: 917, color: 'red' },
-    insumosSuelo: { val: 651, color: 'red' },
-    insumosFoliares: { val: 151, color: 'green' },
-    insumosFung: { val: 15, color: 'green' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: 99, color: 'red' },
-    combustible: { val: 118, color: 'yellow' },
-    mObra: { val: 2419, color: 'red' },
-    energia: { val: 83, color: 'green' },
-    cosecha: { val: 389, color: 'yellow' },
-    adm: { val: "-", color: 'green' },
-    mant: { val: "-", color: 'green' },
-  },
-  {
-    id: "herminia-viva",
-    productor: "herminia.viva",
-    finca: "La Fe",
-    provincia: "Buenos Aires",
-    has: 15.3,
-    kilos: { val: 274, color: 'red' },
-    totalCostos: { val: 2134, color: 'green' },
-    insumosTotal: { val: 25, color: 'green' },
-    insumosSuelo: { val: "-", color: 'green' },
-    insumosFoliares: { val: 25, color: 'green' },
-    insumosFung: { val: "-", color: 'yellow' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: "-", color: 'green' },
-    combustible: { val: 43, color: 'green' },
-    mObra: { val: 1242, color: 'yellow' },
-    energia: { val: 196, color: 'green' },
-    cosecha: { val: 65, color: 'green' },
-    adm: { val: 517, color: 'yellow' },
-    mant: { val: 47, color: 'green' },
-  },
-  {
-    id: "juan-martin",
-    productor: "juan martin.b",
-    finca: "Tinkuy",
-    provincia: "Tucumán",
-    has: 14.0,
-    kilos: { val: 828, color: 'green' },
-    totalCostos: { val: 3442, color: 'yellow' },
-    insumosTotal: { val: 754, color: 'red' },
-    insumosSuelo: { val: 466, color: 'red' },
-    insumosFoliares: { val: 139, color: 'red' },
-    insumosFung: { val: 123, color: 'red' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: 25, color: 'green' },
-    combustible: { val: 81, color: 'green' },
-    mObra: { val: 941, color: 'green' },
-    energia: { val: 316, color: 'yellow' },
-    cosecha: { val: 581, color: 'red' },
-    adm: { val: 631, color: 'red' },
-    mant: { val: 138, color: 'red' },
-  },
-  {
-    id: "javier-aragon",
-    productor: "javier.aragon",
-    finca: "Establecimie",
-    provincia: "Córdoba",
-    has: 29.6,
-    kilos: { val: 812, color: 'green' },
-    totalCostos: { val: 3658, color: 'yellow' },
-    insumosTotal: { val: 855, color: 'red' },
-    insumosSuelo: { val: 494, color: 'red' },
-    insumosFoliares: { val: 296, color: 'red' },
-    insumosFung: { val: 15, color: 'green' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: 51, color: 'red' },
-    combustible: { val: 342, color: 'red' },
-    mObra: { val: 898, color: 'green' },
-    energia: { val: 402, color: 'red' },
-    cosecha: { val: 398, color: 'yellow' },
-    adm: { val: 632, color: 'red' },
-    mant: { val: 130, color: 'red' },
-  },
-];
+  const has = totalGeneral.has > 0 ? totalGeneral.has : 0;
+  const kilos = totalGeneral.kilos > 0 ? totalGeneral.kilos : 0;
 
-export const TOTAL_POR_HA: FormattedRowItem = {
-  id: "total",
-  productor: "TOTAL",
-  finca: "",
-  provincia: "",
-  has: 68.9,
-  kilos: { val: 644, color: 'neutral' },
-  totalCostos: { val: 3421, color: 'neutral' },
-  insumosTotal: { val: 637, color: 'neutral' },
-  insumosSuelo: { val: 384, color: 'neutral' },
-  insumosFoliares: { val: 182, color: 'neutral' },
-  insumosFung: { val: 33, color: 'neutral' },
-  insumosHerb: { val: "-", color: 'neutral' },
-  insumosInsect: { val: 39, color: 'neutral' },
-  combustible: { val: 188, color: 'neutral' },
-  mObra: { val: 1273, color: 'neutral' },
-  energia: { val: 296, color: 'neutral' },
-  cosecha: { val: 359, color: 'neutral' },
-  adm: { val: 572, color: 'neutral' },
-  mant: { val: 95, color: 'neutral' },
-};
+  const totalPorHa: FormattedRowItem = {
+    id: "total",
+    productor: "TOTAL",
+    finca: "",
+    provincia: "",
+    has: totalGeneral.has,
+    kilos: { val: has > 0 ? Math.round(totalGeneral.kilos / has) : 0, color: 'neutral' },
+    totalCostos: { val: has > 0 ? Math.round(totalGeneral.totalCostos / has) : 0, color: 'neutral' },
+    insumosTotal: { val: has > 0 ? Math.round(totalGeneral.insumos.total / has) : 0, color: 'neutral' },
+    insumosSuelo: { val: has > 0 && totalGeneral.insumos.suelo ? Math.round(totalGeneral.insumos.suelo / has) : "-", color: 'neutral' },
+    insumosFoliares: { val: has > 0 && totalGeneral.insumos.foliares ? Math.round(totalGeneral.insumos.foliares / has) : "-", color: 'neutral' },
+    insumosFung: { val: has > 0 && totalGeneral.insumos.fung ? Math.round(totalGeneral.insumos.fung / has) : "-", color: 'neutral' },
+    insumosHerb: { val: (totalGeneral.insumos.herb || 0) > 0 ? Math.round((totalGeneral.insumos.herb || 0) / has) : "-", color: 'neutral' },
+    insumosInsect: { val: has > 0 && totalGeneral.insumos.insect ? Math.round(totalGeneral.insumos.insect / has) : "-", color: 'neutral' },
+    combustible: { val: has > 0 ? Math.round(totalGeneral.combustible / has) : 0, color: 'neutral' },
+    mObra: { val: has > 0 ? Math.round(totalGeneral.mObra / has) : 0, color: 'neutral' },
+    energia: { val: has > 0 ? Math.round(totalGeneral.energia / has) : 0, color: 'neutral' },
+    cosecha: { val: has > 0 ? Math.round(totalGeneral.cosecha / has) : 0, color: 'neutral' },
+    adm: { val: has > 0 && totalGeneral.adm ? Math.round(totalGeneral.adm / has) : "-", color: 'neutral' },
+    mant: { val: has > 0 && totalGeneral.mant ? Math.round(totalGeneral.mant / has) : "-", color: 'neutral' },
+  };
 
-// Tabla 3: Datos Por KILO con sus estilos semafóricos exactos de la imagen
-export const TABLA_POR_KILO: FormattedRowItem[] = [
-  {
-    id: "richard-lanza",
-    productor: "richard.lanza",
-    finca: "Quinta La De",
-    provincia: "Córdoba",
-    has: 2.0,
-    kilos: { val: 1560, color: 'neutral' },
-    totalCostos: { val: 9.75, color: 'red' },
-    insumosTotal: { val: 0.22, color: 'green' },
-    insumosSuelo: { val: 0.06, color: 'green' },
-    insumosFoliares: { val: 0.16, color: 'green' },
-    insumosFung: { val: "-", color: 'green' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: "-", color: 'green' },
-    combustible: { val: 0.06, color: 'green' },
-    mObra: { val: 6.15, color: 'red' },
-    energia: { val: 0.29, color: 'green' },
-    cosecha: { val: 0.46, color: 'green' },
-    adm: { val: 2.54, color: 'red' },
-    mant: { val: 0.03, color: 'green' },
-  },
-  {
-    id: "cesar-pescio",
-    productor: "cesar.pescio",
-    finca: "los divinos",
-    provincia: "Buenos Aires",
-    has: 8.0,
-    kilos: { val: 3000, color: 'neutral' },
-    totalCostos: { val: 10.47, color: 'red' },
-    insumosTotal: { val: 2.45, color: 'red' },
-    insumosSuelo: { val: 1.74, color: 'red' },
-    insumosFoliares: { val: 0.40, color: 'red' },
-    insumosFung: { val: 0.04, color: 'green' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: 0.26, color: 'red' },
-    combustible: { val: 0.31, color: 'yellow' },
-    mObra: { val: 6.45, color: 'red' },
-    energia: { val: 0.22, color: 'green' },
-    cosecha: { val: 1.04, color: 'red' },
-    adm: { val: "-", color: 'green' },
-    mant: { val: "-", color: 'green' },
-  },
-  {
-    id: "herminia-viva",
-    productor: "herminia.viva",
-    finca: "La Fe",
-    provincia: "Buenos Aires",
-    has: 15.3,
-    kilos: { val: 4198, color: 'neutral' },
-    totalCostos: { val: 7.78, color: 'red' },
-    insumosTotal: { val: 0.09, color: 'green' },
-    insumosSuelo: { val: "-", color: 'green' },
-    insumosFoliares: { val: 0.09, color: 'green' },
-    insumosFung: { val: "-", color: 'green' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: "-", color: 'green' },
-    combustible: { val: 0.16, color: 'green' },
-    mObra: { val: 4.53, color: 'red' },
-    energia: { val: 0.71, color: 'red' },
-    cosecha: { val: 0.24, color: 'green' },
-    adm: { val: 1.88, color: 'red' },
-    mant: { val: 0.17, color: 'red' },
-  },
-  {
-    id: "juan-martin",
-    productor: "juan martin.b",
-    finca: "Tinkuy",
-    provincia: "Tucumán",
-    has: 14.0,
-    kilos: { val: 11592, color: 'neutral' },
-    totalCostos: { val: 4.16, color: 'green' },
-    insumosTotal: { val: 0.91, color: 'yellow' },
-    insumosSuelo: { val: 0.56, color: 'yellow' },
-    insumosFoliares: { val: 0.17, color: 'green' },
-    insumosFung: { val: 0.15, color: 'red' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: 0.03, color: 'green' },
-    combustible: { val: 0.10, color: 'green' },
-    mObra: { val: 1.14, color: 'green' },
-    energia: { val: 0.38, color: 'green' },
-    cosecha: { val: 0.70, color: 'red' },
-    adm: { val: 0.76, color: 'green' },
-    mant: { val: 0.17, color: 'red' },
-  },
-  {
-    id: "javier-aragon",
-    productor: "javier.aragon",
-    finca: "Establecimie",
-    provincia: "Córdoba",
-    has: 29.6,
-    kilos: { val: 24030, color: 'neutral' },
-    totalCostos: { val: 4.51, color: 'green' },
-    insumosTotal: { val: 1.05, color: 'yellow' },
-    insumosSuelo: { val: 0.61, color: 'yellow' },
-    insumosFoliares: { val: 0.36, color: 'red' },
-    insumosFung: { val: 0.02, color: 'green' },
-    insumosHerb: { val: "-", color: 'yellow' },
-    insumosInsect: { val: 0.06, color: 'green' },
-    combustible: { val: 0.42, color: 'red' },
-    mObra: { val: 1.11, color: 'green' },
-    energia: { val: 0.50, color: 'yellow' },
-    cosecha: { val: 0.49, color: 'green' },
-    adm: { val: 0.78, color: 'green' },
-    mant: { val: 0.16, color: 'red' },
-  },
-];
+  const totalPorKilo: FormattedRowItem = {
+    id: "total",
+    productor: "TOTAL",
+    finca: "",
+    provincia: "",
+    has: 0,
+    kilos: { val: totalGeneral.kilos, color: 'neutral' },
+    totalCostos: { val: kilos > 0 ? Number((totalGeneral.totalCostos / kilos).toFixed(2)) : "-", color: 'neutral' },
+    insumosTotal: { val: kilos > 0 ? Number((totalGeneral.insumos.total / kilos).toFixed(2)) : "-", color: 'neutral' },
+    insumosSuelo: { val: kilos > 0 && totalGeneral.insumos.suelo ? Number((totalGeneral.insumos.suelo / kilos).toFixed(2)) : "-", color: 'neutral' },
+    insumosFoliares: { val: kilos > 0 && totalGeneral.insumos.foliares ? Number((totalGeneral.insumos.foliares / kilos).toFixed(2)) : "-", color: 'neutral' },
+    insumosFung: { val: kilos > 0 && totalGeneral.insumos.fung ? Number((totalGeneral.insumos.fung / kilos).toFixed(2)) : "-", color: 'neutral' },
+    insumosHerb: { val: kilos > 0 && totalGeneral.insumos.herb ? Number((totalGeneral.insumos.herb / kilos).toFixed(2)) : "-", color: 'neutral' },
+    insumosInsect: { val: kilos > 0 && totalGeneral.insumos.insect ? Number((totalGeneral.insumos.insect / kilos).toFixed(2)) : "-", color: 'neutral' },
+    combustible: { val: kilos > 0 ? Number((totalGeneral.combustible / kilos).toFixed(2)) : "-", color: 'neutral' },
+    mObra: { val: kilos > 0 ? Number((totalGeneral.mObra / kilos).toFixed(2)) : "-", color: 'neutral' },
+    energia: { val: kilos > 0 ? Number((totalGeneral.energia / kilos).toFixed(2)) : "-", color: 'neutral' },
+    cosecha: { val: kilos > 0 ? Number((totalGeneral.cosecha / kilos).toFixed(2)) : "-", color: 'neutral' },
+    adm: { val: kilos > 0 && totalGeneral.adm ? Number((totalGeneral.adm / kilos).toFixed(2)) : "-", color: 'neutral' },
+    mant: { val: kilos > 0 && totalGeneral.mant ? Number((totalGeneral.mant / kilos).toFixed(2)) : "-", color: 'neutral' },
+  };
 
-export const TOTAL_POR_KILO: FormattedRowItem = {
-  id: "total",
-  productor: "TOTAL",
-  finca: "",
-  provincia: "",
-  has: 0.0,
-  kilos: { val: 44380, color: 'neutral' },
-  totalCostos: { val: 5.31, color: 'neutral' },
-  insumosTotal: { val: 0.99, color: 'neutral' },
-  insumosSuelo: { val: 0.60, color: 'neutral' },
-  insumosFoliares: { val: 0.28, color: 'neutral' },
-  insumosFung: { val: 0.05, color: 'neutral' },
-  insumosHerb: { val: "-", color: 'neutral' },
-  insumosInsect: { val: 0.06, color: 'neutral' },
-  combustible: { val: 0.29, color: 'neutral' },
-  mObra: { val: 1.98, color: 'neutral' },
-  energia: { val: 0.46, color: 'neutral' },
-  cosecha: { val: 0.56, color: 'neutral' },
-  adm: { val: 0.89, color: 'neutral' },
-  mant: { val: 0.15, color: 'neutral' },
-};
+  return { totalGeneral, totalPorHa, totalPorKilo };
+}
+
+// Helper para determinar color semafórico comparando con la media del grupo
+export function getCostColor(
+  val: number | null | undefined,
+  avg: number,
+  higherIsBetter = false
+): CellColor {
+  if (val === null || val === undefined || isNaN(val) || val === 0) {
+    return 'neutral';
+  }
+  if (!avg || avg <= 0) return 'neutral';
+
+  const ratio = val / avg;
+
+  if (higherIsBetter) {
+    // Para rendimientos (Kilos/Ha)
+    if (ratio >= 1.08) return 'green';
+    if (ratio <= 0.88) return 'red';
+    return 'yellow';
+  } else {
+    // Para costos operativos (menos es mejor)
+    if (ratio <= 0.90) return 'green';
+    if (ratio >= 1.10) return 'red';
+    return 'yellow';
+  }
+}
+
+// -------------------------------------------------------------
+// DYNAMIC ROW GENERATION: POR HECTÁREA (HA)
+// -------------------------------------------------------------
+export function calculateTablaPorHa(
+  producers: ProductorData[],
+  totalGeneral: ProductorData
+): FormattedRowItem[] {
+  const avgHas = totalGeneral.has > 0 ? totalGeneral.has : 1;
+  const avgKilos = totalGeneral.kilos / avgHas;
+  const avgTotalCostos = totalGeneral.totalCostos / avgHas;
+  const avgInsumosTotal = totalGeneral.insumos.total / avgHas;
+  const avgInsumosSuelo = (totalGeneral.insumos.suelo || 0) / avgHas;
+  const avgInsumosFoliares = (totalGeneral.insumos.foliares || 0) / avgHas;
+  const avgInsumosFung = (totalGeneral.insumos.fung || 0) / avgHas;
+  const avgInsumosInsect = (totalGeneral.insumos.insect || 0) / avgHas;
+  const avgCombustible = totalGeneral.combustible / avgHas;
+  const avgMObra = totalGeneral.mObra / avgHas;
+  const avgEnergia = totalGeneral.energia / avgHas;
+  const avgCosecha = totalGeneral.cosecha / avgHas;
+  const avgAdm = (totalGeneral.adm || 0) / avgHas;
+  const avgMant = (totalGeneral.mant || 0) / avgHas;
+
+  return producers.map((p) => {
+    const has = p.has > 0 ? p.has : 1;
+    const kilosVal = Math.round(p.kilos / has);
+    const totalCostosVal = Math.round(p.totalCostos / has);
+    const insumosTotalVal = Math.round(p.insumos.total / has);
+    const insumosSueloVal = p.insumos.suelo !== null && p.insumos.suelo > 0 ? Math.round(p.insumos.suelo / has) : null;
+    const insumosFoliaresVal = p.insumos.foliares !== null && p.insumos.foliares > 0 ? Math.round(p.insumos.foliares / has) : null;
+    const insumosFungVal = p.insumos.fung !== null && p.insumos.fung > 0 ? Math.round(p.insumos.fung / has) : null;
+    const insumosHerbVal = p.insumos.herb !== null && p.insumos.herb > 0 ? Math.round(p.insumos.herb / has) : null;
+    const insumosInsectVal = p.insumos.insect !== null && p.insumos.insect > 0 ? Math.round(p.insumos.insect / has) : null;
+    const combustibleVal = Math.round(p.combustible / has);
+    const mObraVal = Math.round(p.mObra / has);
+    const energiaVal = Math.round(p.energia / has);
+    const cosechaVal = Math.round(p.cosecha / has);
+    const admVal = p.adm !== null && p.adm > 0 ? Math.round(p.adm / has) : null;
+    const mantVal = p.mant !== null && p.mant > 0 ? Math.round(p.mant / has) : null;
+
+    return {
+      id: p.id,
+      productor: p.productor,
+      finca: p.finca,
+      provincia: p.provincia,
+      has: p.has,
+      kilos: { val: kilosVal, color: getCostColor(kilosVal, avgKilos, true) },
+      totalCostos: { val: totalCostosVal, color: getCostColor(totalCostosVal, avgTotalCostos, false) },
+      insumosTotal: { val: insumosTotalVal, color: getCostColor(insumosTotalVal, avgInsumosTotal, false) },
+      insumosSuelo: {
+        val: insumosSueloVal !== null ? insumosSueloVal : "-",
+        color: insumosSueloVal !== null ? getCostColor(insumosSueloVal, avgInsumosSuelo, false) : 'green',
+      },
+      insumosFoliares: {
+        val: insumosFoliaresVal !== null ? insumosFoliaresVal : "-",
+        color: insumosFoliaresVal !== null ? getCostColor(insumosFoliaresVal, avgInsumosFoliares, false) : 'green',
+      },
+      insumosFung: {
+        val: insumosFungVal !== null ? insumosFungVal : "-",
+        color: insumosFungVal !== null ? getCostColor(insumosFungVal, avgInsumosFung, false) : 'yellow',
+      },
+      insumosHerb: {
+        val: insumosHerbVal !== null ? insumosHerbVal : "-",
+        color: 'yellow',
+      },
+      insumosInsect: {
+        val: insumosInsectVal !== null ? insumosInsectVal : "-",
+        color: insumosInsectVal !== null ? getCostColor(insumosInsectVal, avgInsumosInsect, false) : 'green',
+      },
+      combustible: { val: combustibleVal, color: getCostColor(combustibleVal, avgCombustible, false) },
+      mObra: { val: mObraVal, color: getCostColor(mObraVal, avgMObra, false) },
+      energia: { val: energiaVal, color: getCostColor(energiaVal, avgEnergia, false) },
+      cosecha: { val: cosechaVal, color: getCostColor(cosechaVal, avgCosecha, false) },
+      adm: {
+        val: admVal !== null ? admVal : "-",
+        color: admVal !== null ? getCostColor(admVal, avgAdm, false) : 'green',
+      },
+      mant: {
+        val: mantVal !== null ? mantVal : "-",
+        color: mantVal !== null ? getCostColor(mantVal, avgMant, false) : 'green',
+      },
+    };
+  });
+}
+
+// -------------------------------------------------------------
+// DYNAMIC ROW GENERATION: POR KILO (KG)
+// -------------------------------------------------------------
+export function calculateTablaPorKilo(
+  producers: ProductorData[],
+  totalGeneral: ProductorData
+): FormattedRowItem[] {
+  const avgKilos = totalGeneral.kilos > 0 ? totalGeneral.kilos : 1;
+  const avgTotalCostos = totalGeneral.totalCostos / avgKilos;
+  const avgInsumosTotal = totalGeneral.insumos.total / avgKilos;
+  const avgInsumosSuelo = (totalGeneral.insumos.suelo || 0) / avgKilos;
+  const avgInsumosFoliares = (totalGeneral.insumos.foliares || 0) / avgKilos;
+  const avgInsumosFung = (totalGeneral.insumos.fung || 0) / avgKilos;
+  const avgInsumosInsect = (totalGeneral.insumos.insect || 0) / avgKilos;
+  const avgCombustible = totalGeneral.combustible / avgKilos;
+  const avgMObra = totalGeneral.mObra / avgKilos;
+  const avgEnergia = totalGeneral.energia / avgKilos;
+  const avgCosecha = totalGeneral.cosecha / avgKilos;
+  const avgAdm = (totalGeneral.adm || 0) / avgKilos;
+  const avgMant = (totalGeneral.mant || 0) / avgKilos;
+
+  return producers.map((p) => {
+    const kilos = p.kilos;
+    if (kilos <= 0) {
+      return {
+        id: p.id,
+        productor: p.productor,
+        finca: p.finca,
+        provincia: p.provincia,
+        has: p.has,
+        kilos: { val: 0, color: 'neutral' },
+        totalCostos: { val: "-", color: 'neutral' },
+        insumosTotal: { val: "-", color: 'neutral' },
+        insumosSuelo: { val: "-", color: 'neutral' },
+        insumosFoliares: { val: "-", color: 'neutral' },
+        insumosFung: { val: "-", color: 'neutral' },
+        insumosHerb: { val: "-", color: 'neutral' },
+        insumosInsect: { val: "-", color: 'neutral' },
+        combustible: { val: "-", color: 'neutral' },
+        mObra: { val: "-", color: 'neutral' },
+        energia: { val: "-", color: 'neutral' },
+        cosecha: { val: "-", color: 'neutral' },
+        adm: { val: "-", color: 'neutral' },
+        mant: { val: "-", color: 'neutral' },
+      };
+    }
+
+    const totalCostosKg = Number((p.totalCostos / kilos).toFixed(2));
+    const insumosTotalKg = Number((p.insumos.total / kilos).toFixed(2));
+    const insumosSueloKg = p.insumos.suelo !== null && p.insumos.suelo > 0 ? Number((p.insumos.suelo / kilos).toFixed(2)) : null;
+    const insumosFoliaresKg = p.insumos.foliares !== null && p.insumos.foliares > 0 ? Number((p.insumos.foliares / kilos).toFixed(2)) : null;
+    const insumosFungKg = p.insumos.fung !== null && p.insumos.fung > 0 ? Number((p.insumos.fung / kilos).toFixed(2)) : null;
+    const insumosHerbKg = p.insumos.herb !== null && p.insumos.herb > 0 ? Number((p.insumos.herb / kilos).toFixed(2)) : null;
+    const insumosInsectKg = p.insumos.insect !== null && p.insumos.insect > 0 ? Number((p.insumos.insect / kilos).toFixed(2)) : null;
+    const combustibleKg = Number((p.combustible / kilos).toFixed(2));
+    const mObraKg = Number((p.mObra / kilos).toFixed(2));
+    const energiaKg = Number((p.energia / kilos).toFixed(2));
+    const cosechaKg = Number((p.cosecha / kilos).toFixed(2));
+    const admKg = p.adm !== null && p.adm > 0 ? Number((p.adm / kilos).toFixed(2)) : null;
+    const mantKg = p.mant !== null && p.mant > 0 ? Number((p.mant / kilos).toFixed(2)) : null;
+
+    return {
+      id: p.id,
+      productor: p.productor,
+      finca: p.finca,
+      provincia: p.provincia,
+      has: p.has,
+      kilos: { val: p.kilos, color: 'neutral' },
+      totalCostos: { val: totalCostosKg, color: getCostColor(totalCostosKg, avgTotalCostos, false) },
+      insumosTotal: { val: insumosTotalKg, color: getCostColor(insumosTotalKg, avgInsumosTotal, false) },
+      insumosSuelo: {
+        val: insumosSueloKg !== null ? insumosSueloKg : "-",
+        color: insumosSueloKg !== null ? getCostColor(insumosSueloKg, avgInsumosSuelo, false) : 'green',
+      },
+      insumosFoliares: {
+        val: insumosFoliaresKg !== null ? insumosFoliaresKg : "-",
+        color: insumosFoliaresKg !== null ? getCostColor(insumosFoliaresKg, avgInsumosFoliares, false) : 'green',
+      },
+      insumosFung: {
+        val: insumosFungKg !== null ? insumosFungKg : "-",
+        color: insumosFungKg !== null ? getCostColor(insumosFungKg, avgInsumosFung, false) : 'green',
+      },
+      insumosHerb: {
+        val: insumosHerbKg !== null ? insumosHerbKg : "-",
+        color: 'yellow',
+      },
+      insumosInsect: {
+        val: insumosInsectKg !== null ? insumosInsectKg : "-",
+        color: insumosInsectKg !== null ? getCostColor(insumosInsectKg, avgInsumosInsect, false) : 'green',
+      },
+      combustible: { val: combustibleKg, color: getCostColor(combustibleKg, avgCombustible, false) },
+      mObra: { val: mObraKg, color: getCostColor(mObraKg, avgMObra, false) },
+      energia: { val: energiaKg, color: getCostColor(energiaKg, avgEnergia, false) },
+      cosecha: { val: cosechaKg, color: getCostColor(cosechaKg, avgCosecha, false) },
+      adm: {
+        val: admKg !== null ? admKg : "-",
+        color: admKg !== null ? getCostColor(admKg, avgAdm, false) : 'green',
+      },
+      mant: {
+        val: mantKg !== null ? mantKg : "-",
+        color: mantKg !== null ? getCostColor(mantKg, avgMant, false) : 'green',
+      },
+    };
+  });
+}
+
+// -------------------------------------------------------------
+// VALORES POR DEFECTO / COMPATIBILIDAD
+// -------------------------------------------------------------
+export const PRODUCTORES_TOTALES: ProductorData[] = [];
+const defaultTotals = calculateTotals([]);
+export const TOTAL_GENERAL: ProductorData = defaultTotals.totalGeneral;
+export const TOTAL_POR_HA: FormattedRowItem = defaultTotals.totalPorHa;
+export const TOTAL_POR_KILO: FormattedRowItem = defaultTotals.totalPorKilo;
+export const TABLA_POR_HA: FormattedRowItem[] = [];
+export const TABLA_POR_KILO: FormattedRowItem[] = [];

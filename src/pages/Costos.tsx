@@ -233,40 +233,11 @@ export interface BenchmarkProfile {
 }
 
 export const BENCHMARK_BY_AGE: Record<
-  "all" | "young" | "early" | "full" | "mature",
+  "young" | "9-11",
   BenchmarkProfile
 > = {
-  all: {
-    label: "Media General (Todos los montes)",
-    description: "Promedio global del clúster de productores sin distinción de edad.",
-    kilosPorHa: 644,
-    totalCostosHa: 3421,
-    totalCostosKg: 5.31,
-    byCategoryHa: {
-      insumos: 637,
-      combustible: 188,
-      "mano-obra": 1273,
-      energia: 296,
-      cosecha: 359,
-      "gastos-admin": 572,
-      mantenimientos: 95,
-      "costos-oportunidad": 0,
-      otros: 1,
-    },
-    byCategoryKg: {
-      insumos: 0.99,
-      combustible: 0.29,
-      "mano-obra": 1.98,
-      energia: 0.46,
-      cosecha: 0.56,
-      "gastos-admin": 0.89,
-      mantenimientos: 0.15,
-      "costos-oportunidad": 0,
-      otros: 0,
-    },
-  },
   young: {
-    label: "Jóvenes en formación (1 a 5 años)",
+    label: "Formación (1 a 5 años)",
     description: "Montes en desarrollo vegetativo temprano, sin cosecha comercial aún.",
     kilosPorHa: 0,
     totalCostosHa: 1940,
@@ -294,89 +265,31 @@ export const BENCHMARK_BY_AGE: Record<
       otros: 0,
     },
   },
-  early: {
-    label: "Entrada a producción (6 a 10 años)",
-    description: "Primeras cosechas comerciales y despegue de la curva de rendimiento.",
-    kilosPorHa: 480,
-    totalCostosHa: 2945,
-    totalCostosKg: 6.14,
+  "9-11": {
+    label: "Base CAPPecan (9 a 11 años)",
+    description: "Promedio de referencia del clúster CAPPecan en montes de 9 a 11 años.",
+    kilosPorHa: 644,
+    totalCostosHa: 3421,
+    totalCostosKg: 5.31,
     byCategoryHa: {
-      insumos: 520,
-      combustible: 160,
-      "mano-obra": 1150,
-      energia: 260,
-      cosecha: 280,
-      "gastos-admin": 490,
-      mantenimientos: 85,
+      insumos: 637,
+      combustible: 188,
+      "mano-obra": 1273,
+      energia: 296,
+      cosecha: 359,
+      "gastos-admin": 572,
+      mantenimientos: 95,
       "costos-oportunidad": 0,
-      otros: 0,
+      otros: 1,
     },
     byCategoryKg: {
-      insumos: 1.08,
-      combustible: 0.33,
-      "mano-obra": 2.40,
-      energia: 0.54,
-      cosecha: 0.58,
-      "gastos-admin": 1.02,
-      mantenimientos: 0.18,
-      "costos-oportunidad": 0,
-      otros: 0,
-    },
-  },
-  full: {
-    label: "Plena producción (11 a 15 años)",
-    description: "Cosechas consolidadas y alta eficiencia en costos de cosecha e insumos.",
-    kilosPorHa: 950,
-    totalCostosHa: 3900,
-    totalCostosKg: 4.11,
-    byCategoryHa: {
-      insumos: 720,
-      combustible: 210,
-      "mano-obra": 1420,
-      energia: 340,
-      cosecha: 480,
-      "gastos-admin": 620,
-      mantenimientos: 110,
-      "costos-oportunidad": 0,
-      otros: 0,
-    },
-    byCategoryKg: {
-      insumos: 0.76,
-      combustible: 0.22,
-      "mano-obra": 1.49,
-      energia: 0.36,
-      cosecha: 0.51,
-      "gastos-admin": 0.65,
-      mantenimientos: 0.12,
-      "costos-oportunidad": 0,
-      otros: 0,
-    },
-  },
-  mature: {
-    label: "Adultos consolidados (16+ años)",
-    description: "Máximo volumen cosechado por hectárea y máxima dilución del costo unitario.",
-    kilosPorHa: 1400,
-    totalCostosHa: 4440,
-    totalCostosKg: 3.17,
-    byCategoryHa: {
-      insumos: 850,
-      combustible: 230,
-      "mano-obra": 1550,
-      energia: 380,
-      cosecha: 650,
-      "gastos-admin": 660,
-      mantenimientos: 120,
-      "costos-oportunidad": 0,
-      otros: 0,
-    },
-    byCategoryKg: {
-      insumos: 0.61,
-      combustible: 0.16,
-      "mano-obra": 1.11,
-      energia: 0.27,
-      cosecha: 0.46,
-      "gastos-admin": 0.47,
-      mantenimientos: 0.09,
+      insumos: 0.99,
+      combustible: 0.29,
+      "mano-obra": 1.98,
+      energia: 0.46,
+      cosecha: 0.56,
+      "gastos-admin": 0.89,
+      mantenimientos: 0.15,
       "costos-oportunidad": 0,
       otros: 0,
     },
@@ -417,7 +330,7 @@ const Costos = () => {
   const [mostrarCostoKg, setMostrarCostoKg] = useState<boolean>(true);
 
   // Estados para Tab 3: Comparaciones
-  const [ageRangePreset, setAgeRangePreset] = useState<"all" | "young" | "early" | "full" | "mature" | "custom">("all");
+  const [ageRangePreset, setAgeRangePreset] = useState<"young" | "9-11" | "custom">("9-11");
   const [customMinAge, setCustomMinAge] = useState<number>(1);
   const [customMaxAge, setCustomMaxAge] = useState<number>(15);
   const [comparisonMetric, setComparisonMetric] = useState<"ha" | "kg">("ha");
@@ -964,22 +877,17 @@ const Costos = () => {
   const effectiveAgeRange = useMemo(() => {
     switch (ageRangePreset) {
       case "young":
-        return { min: 1, max: 5, label: "Jóvenes (1 a 5 años)" };
-      case "early":
-        return { min: 6, max: 10, label: "Entrada a producción (6 a 10 años)" };
-      case "full":
-        return { min: 11, max: 15, label: "Plena producción (11 a 15 años)" };
-      case "mature":
-        return { min: 16, max: 99, label: "Adultos consolidados (16+ años)" };
+        return { min: 1, max: 5, label: "Formación (1 a 5 años)" };
+      case "9-11":
+        return { min: 9, max: 11, label: "Base CAPPecan (9 a 11 años)" };
       case "custom":
         return {
           min: Math.min(customMinAge, customMaxAge),
           max: Math.max(customMinAge, customMaxAge),
           label: `Rango personalizado (${Math.min(customMinAge, customMaxAge)} a ${Math.max(customMinAge, customMaxAge)} años)`,
         };
-      case "all":
       default:
-        return { min: 0, max: 99, label: "Todos los montes (toda la trayectoria)" };
+        return { min: 9, max: 11, label: "Base CAPPecan (9 a 11 años)" };
     }
   }, [ageRangePreset, customMinAge, customMaxAge]);
 
@@ -1110,17 +1018,12 @@ const Costos = () => {
   // Benchmark de la media de otros productores según el rango etario
   const benchmarkData = useMemo(() => {
     if (ageRangePreset === "young") return BENCHMARK_BY_AGE.young;
-    if (ageRangePreset === "early") return BENCHMARK_BY_AGE.early;
-    if (ageRangePreset === "full") return BENCHMARK_BY_AGE.full;
-    if (ageRangePreset === "mature") return BENCHMARK_BY_AGE.mature;
-    if (ageRangePreset === "all") return BENCHMARK_BY_AGE.all;
+    if (ageRangePreset === "9-11") return BENCHMARK_BY_AGE["9-11"];
 
     // Custom
     const avgAge = (effectiveAgeRange.min + effectiveAgeRange.max) / 2;
-    if (avgAge < 6) return BENCHMARK_BY_AGE.young;
-    if (avgAge <= 10) return BENCHMARK_BY_AGE.early;
-    if (avgAge <= 15) return BENCHMARK_BY_AGE.full;
-    return BENCHMARK_BY_AGE.mature;
+    if (avgAge <= 5) return BENCHMARK_BY_AGE.young;
+    return BENCHMARK_BY_AGE["9-11"];
   }, [ageRangePreset, effectiveAgeRange]);
 
   // Métricas medias anuales del productor en esta etapa etaria
@@ -2787,13 +2690,13 @@ const Costos = () => {
                 </p>
               </div>
 
-              {/* Botón reset a todos */}
-              {ageRangePreset !== "all" && (
+              {/* Botón reset a default */}
+              {ageRangePreset !== "9-11" && (
                 <button
-                  onClick={() => setAgeRangePreset("all")}
+                  onClick={() => setAgeRangePreset("9-11")}
                   className="text-xs font-semibold text-[#8c735d] hover:text-[#524135] underline underline-offset-2 self-start sm:self-auto cursor-pointer"
                 >
-                  Restablecer a toda la trayectoria
+                  Restablecer a 9 a 11 años
                 </button>
               )}
             </div>
@@ -2801,11 +2704,8 @@ const Costos = () => {
             {/* Presets de Rango de Edad */}
             <div className="flex flex-wrap items-center gap-2">
               {[
-                { id: "all", label: "Toda la trayectoria", badge: "Sin filtro" },
                 { id: "young", label: "1 a 5 años", badge: "Formación" },
-                { id: "early", label: "6 a 10 años", badge: "Entrada producción" },
-                { id: "full", label: "11 a 15 años", badge: "Plena producción" },
-                { id: "mature", label: "16+ años", badge: "Consolidados" },
+                { id: "9-11", label: "9 a 11 años", badge: "Base CAPPecan" },
                 { id: "custom", label: "Personalizado...", badge: "Rango a medida" },
               ].map((preset) => {
                 const isActive = ageRangePreset === preset.id;
@@ -2917,10 +2817,10 @@ const Costos = () => {
                   Aún no tienes registros de campañas donde tus montes hayan tenido entre {effectiveAgeRange.min} y {effectiveAgeRange.max} años de edad.
                 </p>
                 <button
-                  onClick={() => setAgeRangePreset("all")}
+                  onClick={() => setAgeRangePreset(ageRangePreset === "9-11" ? "young" : "9-11")}
                   className="mt-2 text-xs font-bold text-amber-900 hover:underline cursor-pointer"
                 >
-                  Hacer clic aquí para ver toda la trayectoria de tus montes
+                  Hacer clic aquí para cambiar al rango de {ageRangePreset === "9-11" ? "1 a 5 años" : "9 a 11 años"}
                 </button>
               </div>
             )}

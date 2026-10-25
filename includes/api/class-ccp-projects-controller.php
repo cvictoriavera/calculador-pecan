@@ -179,7 +179,12 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		$user_id = get_current_user_id();
 		$project_id = (int) $request->get_param( 'id' );
 
-		$project = $this->proyectos_db->get_by_id( $project_id, $user_id );
+		$current_user = wp_get_current_user();
+		$is_admin = current_user_can( 'manage_options' ) || in_array( 'administrator', (array) ( $current_user->roles ?? array() ), true );
+
+		$project = $is_admin
+			? $this->proyectos_db->get_by_id( $project_id )
+			: $this->proyectos_db->get_by_id( $project_id, $user_id );
 
 		if ( is_null( $project ) ) {
 			return new WP_Error( 'rest_project_invalid_id', __( 'Invalid project ID.', 'calculador-pecan' ), array( 'status' => 404 ) );
@@ -213,8 +218,14 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		$project_id = (int) $request->get_param( 'id' );
 		$params = $request->get_json_params();
 
-		// Verify ownership
-		$existing_project = $this->proyectos_db->get_by_id( $project_id, $user_id );
+		$current_user = wp_get_current_user();
+		$is_admin = current_user_can( 'manage_options' ) || in_array( 'administrator', (array) ( $current_user->roles ?? array() ), true );
+
+		// Verify ownership (administrators have access to all projects)
+		$existing_project = $is_admin
+			? $this->proyectos_db->get_by_id( $project_id )
+			: $this->proyectos_db->get_by_id( $project_id, $user_id );
+
 		if ( is_null( $existing_project ) ) {
 			return new WP_Error( 'rest_project_invalid_id', __( 'Invalid project ID or access denied.', 'calculador-pecan' ), array( 'status' => 404 ) );
 		}
@@ -237,7 +248,10 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 			$update_data['municipio'] = sanitize_text_field( $params['municipio'] );
 		}
 		if ( isset( $params['allow_benchmarking'] ) ) {
-			$update_data['allow_benchmarking'] = intval( $params['allow_benchmarking'] );
+			// Solo administradores pueden modificar el switch de benchmarking
+			if ( $is_admin ) {
+				$update_data['allow_benchmarking'] = intval( $params['allow_benchmarking'] ) ? 1 : 0;
+			}
 		}
 		if ( isset( $params['description'] ) ) {
 			$update_data['description'] = sanitize_textarea_field( $params['description'] );
@@ -248,14 +262,18 @@ class CCP_Projects_Controller extends WP_REST_Controller {
 		}
 
 		// Update the project
-		$result = $this->proyectos_db->update( $project_id, $update_data, $user_id );
+		$result = $is_admin
+			? $this->proyectos_db->update( $project_id, $update_data )
+			: $this->proyectos_db->update( $project_id, $update_data, $user_id );
 
 		if ( ! $result ) {
 			return new WP_Error( 'update_failed', __( 'Could not update project.', 'calculador-pecan' ), array( 'status' => 500 ) );
 		}
 
 		// Get updated project
-		$updated_project = $this->proyectos_db->get_by_id( $project_id, $user_id );
+		$updated_project = $is_admin
+			? $this->proyectos_db->get_by_id( $project_id )
+			: $this->proyectos_db->get_by_id( $project_id, $user_id );
 
 		$response = rest_ensure_response( $updated_project );
 		return $response;

@@ -49,6 +49,7 @@ interface Project {
   provincia?: string;
   departamento?: string;
   municipio?: string;
+  allow_benchmarking?: number | boolean;
   status: string;
   created_at: string;
   updated_at: string;
@@ -56,6 +57,7 @@ interface Project {
 
 interface AppContextType {
   user: User | null;
+  isAdmin: boolean;
   isTrialMode: boolean;
   projectName: string;
   setProjectName: (name: string) => void;
@@ -144,6 +146,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     fetchUser();
   }, []);
+
+  const isAdmin = useMemo(() => {
+    const settings = (window as any).pecanSettings;
+    if (typeof settings?.isAdmin === 'boolean') {
+      return settings.isAdmin;
+    }
+    if (user?.roles && Array.isArray(user.roles)) {
+      return user.roles.includes('administrator');
+    }
+    if (import.meta.env.DEV && !settings) {
+      return true;
+    }
+    return false;
+  }, [user]);
 
   const loadAllCosts = useDataStore(state => state.loadAllCosts);
   const loadAllInvestments = useDataStore(state => state.loadAllInvestments);
@@ -815,6 +831,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const contextValue = useMemo(() => ({
     user,
+    isAdmin,
     isTrialMode,
     projectName,
     setProjectName,
@@ -847,7 +864,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     completeOnboarding,
     logout,
   }), [
-    user, isTrialMode, projectName, currentProjectId, initialYear, projects,
+    user, isAdmin, isTrialMode, projectName, currentProjectId, initialYear, projects,
     projectsLoading, campaigns, campaignsLoading, currentCampaign,
     currentCampaignId, montes, montesLoading, costsLoading, isOnboardingComplete, isLoading, isLoggingOut, isChangingProject,
     logout

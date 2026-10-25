@@ -81,10 +81,15 @@ if (file_exists($manifest_path)) {
 
 show_admin_bar(false);
 
+$current_wp_user = wp_get_current_user();
+$is_admin = current_user_can('manage_options') || in_array('administrator', (array) ($current_wp_user->roles ?? []), true);
+
 $pecan_settings = array(
     'root' => esc_url_raw(rest_url()),
     'nonce' => wp_create_nonce('wp_rest'),
     'logoutUrl' => wp_logout_url(home_url('/acceder/')),
+    'isAdmin' => $is_admin,
+    'userRoles' => (array) ($current_wp_user->roles ?? []),
 );
 
 // Salida minimalista sin header/footer de WordPress
