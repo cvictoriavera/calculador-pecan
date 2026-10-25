@@ -1,6 +1,6 @@
 <?php
 /**
- * REST API Indicadores Controller (Admin Only)
+ * REST API Indicadores Controller (Admin & Benchmark)
  *
  * Agrega y consolida datos reales de la base de datos para benchmarking multianual por cohorte etaria.
  *
@@ -24,7 +24,7 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 	protected $namespace = 'ccp/v1';
 
 	/**
-	 * Base del controller.
+	 * Base del controller para admin.
 	 *
 	 * @var string
 	 */
@@ -34,6 +34,7 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 	 * Registrar rutas REST.
 	 */
 	public function register_routes() {
+		// Ruta 1: Admin Completa (Listado detallado de todos los productores para administradores)
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -57,10 +58,35 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// Ruta 2: Benchmark Media Agregada (Para comparaciones de productores autenticados sin exponer datos privados)
+		register_rest_route(
+			$this->namespace,
+			'/indicadores/benchmark',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_benchmark' ),
+					'permission_callback' => array( $this, 'check_authenticated_permissions' ),
+					'args'                => array(
+						'min_age' => array(
+							'type'              => 'integer',
+							'default'           => 9,
+							'sanitize_callback' => 'absint',
+						),
+						'max_age' => array(
+							'type'              => 'integer',
+							'default'           => 11,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+			)
+		);
 	}
 
 	/**
-	 * Permisos: solo administradores pueden acceder a datos consolidados de todos los usuarios.
+	 * Permisos: solo administradores pueden acceder a datos consolidados individuales de todos los usuarios.
 	 */
 	public function check_admin_permissions( $request ) {
 		if ( ! is_user_logged_in() ) {
@@ -78,11 +104,19 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Obtener indicadores agregados por productor según rango etario biológico.
+	 * Permisos para benchmark consolidado: cualquier usuario autenticado en el sistema.
+	 */
+	public function check_authenticated_permissions( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_forbidden', 'Debes iniciar sesión para consultar el benchmark de productores.', array( 'status' => 401 ) );
+		}
+		return true;
+	}
+
+	/**
+	 * Endpoint Admin: Obtener indicadores agregados por productor según rango etario biológico.
 	 */
 	public function get_indicadores( $request ) {
-		global $wpdb;
-
 		$min_age = (int) $request->get_param( 'min_age' );
 		$max_age = (int) $request->get_param( 'max_age' );
 
@@ -92,6 +126,184 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 		if ( $max_age < $min_age ) {
 			$max_age = $min_age;
 		}
+
+		$producers_output = $this->get_aggregated_producers( $min_age, $max_age );
+
+		return rest_ensure_response( array(
+			'min_age'   => $min_age,
+			'max_age'   => $max_age,
+			'count'     => count( $producers_output ),
+			'producers' => $producers_output,
+		) );
+	}
+
+	/**
+	 * Endpoint Benchmark: Obtener la media de los productores calculada exactamente como en Indicadores.
+	 */
+	public function get_benchmark( $request ) {
+		$min_age = (int) $request->get_param( 'min_age' );
+		$max_age = (int) $request->get_param( 'max_age' );
+
+		if ( $min_age <= 0 ) {
+			$min_age = 1;
+		}
+		if ( $max_age < $min_age ) {
+			$max_age = $min_age;
+		}
+
+		$producers = $this->get_aggregated_producers( $min_age, $max_age );
+		$count     = count( $producers );
+
+		// Fallback si no hay proyectos en la base de datos para este rango etario
+		if ( $count === 0 ) {
+			$avg_age  = ( $min_age + $max_age ) / 2.0;
+			$is_young = $avg_age <= 5;
+
+			$fallback_profile = array(
+				'label'         => $is_young ? 'Formación (1 a 5 años)' : '9 a 11 años (Producción media)',
+				'description'   => 'Valores agronómicos de referencia (sin proyectos en este rango en la BD).',
+				'kilosPorHa'    => $is_young ? 0 : 644,
+				'totalCostosHa' => $is_young ? 1940 : 3421,
+				'totalCostosKg' => $is_young ? 0.0 : 5.31,
+				'byCategoryHa'  => $is_young ? array(
+					'insumos'            => 350,
+					'combustible'        => 120,
+					'mano-obra'          => 850,
+					'energia'            => 180,
+					'cosecha'            => 0,
+					'gastos-admin'       => 380,
+					'mantenimientos'     => 60,
+					'costos-oportunidad' => 0,
+					'otros'              => 0,
+				) : array(
+					'insumos'            => 637,
+					'combustible'        => 188,
+					'mano-obra'          => 1273,
+					'energia'            => 296,
+					'cosecha'            => 359,
+					'gastos-admin'       => 572,
+					'mantenimientos'     => 95,
+					'costos-oportunidad' => 0,
+					'otros'              => 1,
+				),
+				'byCategoryKg'  => $is_young ? array(
+					'insumos'            => 0.0,
+					'combustible'        => 0.0,
+					'mano-obra'          => 0.0,
+					'energia'            => 0.0,
+					'cosecha'            => 0.0,
+					'gastos-admin'       => 0.0,
+					'mantenimientos'     => 0.0,
+					'costos-oportunidad' => 0.0,
+					'otros'              => 0.0,
+				) : array(
+					'insumos'            => 0.99,
+					'combustible'        => 0.29,
+					'mano-obra'          => 1.98,
+					'energia'            => 0.46,
+					'cosecha'            => 0.56,
+					'gastos-admin'       => 0.89,
+					'mantenimientos'     => 0.15,
+					'costos-oportunidad' => 0.0,
+					'otros'              => 0.0,
+				),
+			);
+
+			return rest_ensure_response( array(
+				'min_age'         => $min_age,
+				'max_age'         => $max_age,
+				'producers_count' => 0,
+				'total_has'       => 0,
+				'is_fallback'     => true,
+				'benchmark'       => $fallback_profile,
+			) );
+		}
+
+		// Cálculo consolidado de medias ponderadas
+		$total_has     = 0.0;
+		$total_kilos   = 0.0;
+		$total_costos  = 0.0;
+		$total_insumos = 0.0;
+		$total_comb    = 0.0;
+		$total_mobra   = 0.0;
+		$total_ener    = 0.0;
+		$total_cos     = 0.0;
+		$total_adm     = 0.0;
+		$total_mant    = 0.0;
+
+		foreach ( $producers as $p ) {
+			$total_has     += (float) $p['has'];
+			$total_kilos   += (float) $p['kilos'];
+			$total_costos  += (float) $p['totalCostos'];
+			$total_insumos += (float) ( $p['insumos']['total'] ?? 0 );
+			$total_comb    += (float) ( $p['combustible'] ?? 0 );
+			$total_mobra   += (float) ( $p['mObra'] ?? 0 );
+			$total_ener    += (float) ( $p['energia'] ?? 0 );
+			$total_cos     += (float) ( $p['cosecha'] ?? 0 );
+			$total_adm     += (float) ( $p['adm'] ?? 0 );
+			$total_mant    += (float) ( $p['mant'] ?? 0 );
+		}
+
+		$has_div   = $total_has > 0 ? $total_has : 1.0;
+		$kilos_div = $total_kilos > 0 ? $total_kilos : 0.0;
+
+		$kilos_ha = $total_has > 0 ? round( $total_kilos / $has_div ) : 0;
+		$costo_ha = $total_has > 0 ? round( $total_costos / $has_div ) : 0;
+		$costo_kg = $kilos_div > 0 ? round( $total_costos / $kilos_div, 2 ) : 0.0;
+
+		$by_category_ha = array(
+			'mano-obra'          => $total_has > 0 ? round( $total_mobra / $has_div ) : 0,
+			'cosecha'            => $total_has > 0 ? round( $total_cos / $has_div ) : 0,
+			'energia'            => $total_has > 0 ? round( $total_ener / $has_div ) : 0,
+			'mantenimientos'     => $total_has > 0 ? round( $total_mant / $has_div ) : 0,
+			'combustible'        => $total_has > 0 ? round( $total_comb / $has_div ) : 0,
+			'insumos'            => $total_has > 0 ? round( $total_insumos / $has_div ) : 0,
+			'gastos-admin'       => $total_has > 0 ? round( $total_adm / $has_div ) : 0,
+			'costos-oportunidad' => 0,
+			'otros'              => 0,
+		);
+
+		$by_category_kg = array(
+			'mano-obra'          => $kilos_div > 0 ? round( $total_mobra / $kilos_div, 2 ) : 0.0,
+			'cosecha'            => $kilos_div > 0 ? round( $total_cos / $kilos_div, 2 ) : 0.0,
+			'energia'            => $kilos_div > 0 ? round( $total_ener / $kilos_div, 2 ) : 0.0,
+			'mantenimientos'     => $kilos_div > 0 ? round( $total_mant / $kilos_div, 2 ) : 0.0,
+			'combustible'        => $kilos_div > 0 ? round( $total_comb / $kilos_div, 2 ) : 0.0,
+			'insumos'            => $kilos_div > 0 ? round( $total_insumos / $kilos_div, 2 ) : 0.0,
+			'gastos-admin'       => $kilos_div > 0 ? round( $total_adm / $kilos_div, 2 ) : 0.0,
+			'costos-oportunidad' => 0.0,
+			'otros'              => 0.0,
+		);
+
+		$benchmark_profile = array(
+			'label'         => "Media de Productores ({$min_age} a {$max_age} años)",
+			'description'   => "Media calculada sobre {$count} " . ( $count === 1 ? 'productor' : 'productores' ) . " en la base de datos (" . round( $total_has, 1 ) . " Has evaluadas).",
+			'kilosPorHa'    => $kilos_ha,
+			'totalCostosHa' => $costo_ha,
+			'totalCostosKg' => $costo_kg,
+			'byCategoryHa'  => $by_category_ha,
+			'byCategoryKg'  => $by_category_kg,
+		);
+
+		return rest_ensure_response( array(
+			'min_age'         => $min_age,
+			'max_age'         => $max_age,
+			'producers_count' => $count,
+			'total_has'       => round( $total_has, 1 ),
+			'is_fallback'     => false,
+			'benchmark'       => $benchmark_profile,
+		) );
+	}
+
+	/**
+	 * Consulta y agrega los datos de los proyectos activos en el rango etario solicitado.
+	 *
+	 * @param int $min_age Edad mínima.
+	 * @param int $max_age Edad máxima.
+	 * @return array
+	 */
+	private function get_aggregated_producers( $min_age, $max_age ) {
+		global $wpdb;
 
 		$table_projects    = $wpdb->prefix . 'pecan_projects';
 		$table_users       = $wpdb->prefix . 'users';
@@ -119,21 +331,12 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 		" );
 
 		if ( empty( $projects ) ) {
-			return rest_ensure_response( array(
-				'min_age'    => $min_age,
-				'max_age'    => $max_age,
-				'producers'  => array(),
-			) );
+			return array();
 		}
 
 		$producers_output = array();
 
 		foreach ( $projects as $proj ) {
-			// Excluir proyectos con benchmarking desactivado (0)
-			if ( isset( $proj->allow_benchmarking ) && (int) $proj->allow_benchmarking === 0 ) {
-				continue;
-			}
-
 			$p_id = (int) $proj->project_id;
 
 			// Montes activos del proyecto
@@ -341,7 +544,7 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 				}
 			}
 
-			// Superficie representativa (suma de has físicas de los montes involucrados)
+			// Superficie física total de montes
 			$physical_has_evaluated = 0.0;
 			foreach ( array_keys( $matching_montes_seen ) as $mid ) {
 				if ( isset( $montes_by_id[ $mid ] ) ) {
@@ -349,14 +552,17 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 				}
 			}
 
+			// Superficie representativa para prorrateo multianual (Ha-Años si hay costos acumulados)
+			$evaluated_has = $cohort_ha_years_cost > 0 ? $cohort_ha_years_cost : ( $cohort_ha_years_prod > 0 ? $cohort_ha_years_prod : $physical_has_evaluated );
+
 			// Solo incluir al productor si tuvo montes en este rango y tiene datos
-			if ( $physical_has_evaluated > 0 && ( $cohort_total_costs > 0 || $cohort_total_kilos > 0 ) ) {
+			if ( $evaluated_has > 0 && ( $cohort_total_costs > 0 || $cohort_total_kilos > 0 ) ) {
 				$producers_output[] = array(
 					'id'          => 'proj_' . $p_id,
 					'productor'   => ! empty( $proj->display_name ) ? $proj->display_name : $proj->user_login,
 					'finca'       => $proj->project_name,
 					'provincia'   => ! empty( $proj->provincia ) ? $proj->provincia : 'Sin provincia',
-					'has'         => round( $physical_has_evaluated, 1 ),
+					'has'         => round( $evaluated_has, 1 ),
 					'kilos'       => round( $cohort_total_kilos ),
 					'totalCostos' => round( $cohort_total_costs ),
 					'insumos'     => array(
@@ -374,6 +580,7 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 					'adm'         => $cohort_adm > 0 ? round( $cohort_adm ) : null,
 					'mant'        => $cohort_mant > 0 ? round( $cohort_mant ) : null,
 					'meta'        => array(
+						'physicalHas' => round( $physical_has_evaluated, 1 ),
 						'haYearsCost' => round( $cohort_ha_years_cost, 1 ),
 						'haYearsProd' => round( $cohort_ha_years_prod, 1 ),
 						'instances'   => $instances_count,
@@ -382,12 +589,7 @@ class CCP_Indicadores_Controller extends WP_REST_Controller {
 			}
 		}
 
-		return rest_ensure_response( array(
-			'min_age'   => $min_age,
-			'max_age'   => $max_age,
-			'count'     => count( $producers_output ),
-			'producers' => $producers_output,
-		) );
+		return $producers_output;
 	}
 
 	/**

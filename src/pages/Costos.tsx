@@ -66,6 +66,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
+  Loader2,
+  Database,
 } from "lucide-react";
 import AddCostoSheet from "@/components/costos/AddCostoSheet";
 import { useDataStore } from "@/stores";
@@ -73,6 +75,7 @@ import { useApp } from "@/contexts/AppContext";
 import { useCalculationsStore } from "@/stores/calculationsStore";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getBenchmarkIndicadores } from "@/services/indicadoresService";
 
 // Definición y estilos de cada rubro/categoría
 export interface CategoryConfig {
@@ -221,7 +224,7 @@ const formatDecimal = (val: number, decimals = 2) => {
   });
 };
 
-// Perfiles de referencia de la media de productores (Cluster CAPPecan) segmentados por edad de monte
+// Perfiles de referencia de la media de productores segmentados por edad de monte
 export interface BenchmarkProfile {
   label: string;
   description: string;
@@ -266,8 +269,8 @@ export const BENCHMARK_BY_AGE: Record<
     },
   },
   "9-11": {
-    label: "Base CAPPecan (9 a 11 años)",
-    description: "Promedio de referencia del clúster CAPPecan en montes de 9 a 11 años.",
+    label: "9 a 11 años (Producción media)",
+    description: "Promedio de referencia en montes de 9 a 11 años.",
     kilosPorHa: 644,
     totalCostosHa: 3421,
     totalCostosKg: 5.31,
@@ -334,6 +337,13 @@ const Costos = () => {
   const [customMinAge, setCustomMinAge] = useState<number>(1);
   const [customMaxAge, setCustomMaxAge] = useState<number>(15);
   const [comparisonMetric, setComparisonMetric] = useState<"ha" | "kg">("ha");
+  const [dbBenchmark, setDbBenchmark] = useState<BenchmarkProfile | null>(null);
+  const [benchmarkLoading, setBenchmarkLoading] = useState<boolean>(false);
+  const [benchmarkInfo, setBenchmarkInfo] = useState<{
+    producersCount: number;
+    totalHas: number;
+    isFallback: boolean;
+  } | null>(null);
 
   // Modal intervalo de años (Screenshot 3)
   const [intervalModalOpen, setIntervalModalOpen] = useState(false);
@@ -879,7 +889,7 @@ const Costos = () => {
       case "young":
         return { min: 1, max: 5, label: "Formación (1 a 5 años)" };
       case "9-11":
-        return { min: 9, max: 11, label: "Base CAPPecan (9 a 11 años)" };
+        return { min: 9, max: 11, label: "9 a 11 años (Producción media)" };
       case "custom":
         return {
           min: Math.min(customMinAge, customMaxAge),
@@ -887,13 +897,15 @@ const Costos = () => {
           label: `Rango personalizado (${Math.min(customMinAge, customMaxAge)} a ${Math.max(customMinAge, customMaxAge)} años)`,
         };
       default:
-        return { min: 9, max: 11, label: "Base CAPPecan (9 a 11 años)" };
+        return { min: 9, max: 11, label: "9 a 11 años (Producción media)" };
     }
   }, [ageRangePreset, customMinAge, customMaxAge]);
 
   // Cálculo agregado de todas las campañas donde algún monte tuvo la edad seleccionada
   const cohortAnalysis = useMemo(() => {
     let totalHaYears = 0;
+    let totalHaYearsCost = 0;
+    let totalHaYearsProd = 0;
     let totalKilosInBracket = 0;
     let totalCostsInBracket = 0;
     const categoryCosts: Record<string, number> = {};
@@ -927,7 +939,7 @@ const Costos = () => {
       const matchingAreaInYear = matchingInYear.reduce((s, m) => s + (Number(m.hectareas) || 0), 0);
       const areaRatio = matchingAreaInYear / farmTotalAreaInYear;
 
-      // Hectáreas-año
+      // Hectáreas-año físicas
       totalHaYears += matchingAreaInYear;
       activeCampaignsSet.add(cYear);
 
@@ -945,12 +957,17 @@ const Costos = () => {
 
       // Costos de la campaña c prorrateados para estos montes
       const campCosts = costs.filter((cost) => Number(cost.campaign_id) === Number(camp.id));
-      campCosts.forEach((cost) => {
-        const cat = cost.category;
-        const attributed = (Number(cost.total_amount) || 0) * areaRatio;
-        categoryCosts[cat] = (categoryCosts[cat] || 0) + attributed;
-        totalCostsInBracket += attributed;
-      });
+      const campTotalCost = campCosts.reduce((s, cost) => s + (Number(cost.total_amount) || 0), 0);
+
+      if (campTotalCost > 0) {
+        totalHaYearsCost += matchingAreaInYear;
+        campCosts.forEach((cost) => {
+          const cat = cost.category;
+          const attributed = (Number(cost.total_amount) || 0) * areaRatio;
+          categoryCosts[cat] = (categoryCosts[cat] || 0) + attributed;
+          totalCostsInBracket += attributed;
+        });
+      }
 
       // Producción de la campaña c para estos montes
       const campProds = productions.filter((p) => Number(p.campaign_id) === Number(camp.id));
@@ -958,11 +975,18 @@ const Costos = () => {
       const assignedProds = campProds.filter((p) => matchingIds.includes(Number(p.monte_id)));
       const assignedKg = assignedProds.reduce((s, p) => s + (Number(p.quantity_kg) || 0), 0);
 
+      let campKg = 0;
       if (assignedKg > 0) {
-        totalKilosInBracket += assignedKg;
+        campKg = assignedKg;
       } else {
         const totalCampKg = campProds.reduce((s, p) => s + (Number(p.quantity_kg) || 0), 0);
-        totalKilosInBracket += totalCampKg * areaRatio;
+        campKg = totalCampKg * areaRatio;
+      }
+
+      const hasProdData = campKg > 0 || camp.status === "closed" || effectiveAgeRange.min <= 5;
+      if (hasProdData) {
+        totalHaYearsProd += matchingAreaInYear;
+        totalKilosInBracket += campKg;
       }
     });
 
@@ -1004,7 +1028,9 @@ const Costos = () => {
     });
 
     return {
-      totalHaYears,
+      totalHaYears: totalHaYearsCost > 0 ? totalHaYearsCost : totalHaYears,
+      totalHaYearsCost,
+      totalHaYearsProd,
       totalKilosInBracket,
       totalCostsInBracket,
       categoryCosts,
@@ -1015,22 +1041,50 @@ const Costos = () => {
     };
   }, [campaigns, montes, costs, productions, effectiveAgeRange]);
 
-  // Benchmark de la media de otros productores según el rango etario
-  const benchmarkData = useMemo(() => {
-    if (ageRangePreset === "young") return BENCHMARK_BY_AGE.young;
-    if (ageRangePreset === "9-11") return BENCHMARK_BY_AGE["9-11"];
+  // Consultar en tiempo real la media de productores desde la base de datos (idéntico a Indicadores)
+  useEffect(() => {
+    if (activeTab !== "comparaciones") return;
 
-    // Custom
-    const avgAge = (effectiveAgeRange.min + effectiveAgeRange.max) / 2;
-    if (avgAge <= 5) return BENCHMARK_BY_AGE.young;
+    let isMounted = true;
+    setBenchmarkLoading(true);
+
+    getBenchmarkIndicadores(effectiveAgeRange.min, effectiveAgeRange.max)
+      .then((res) => {
+        if (!isMounted) return;
+        setDbBenchmark(res.benchmark);
+        setBenchmarkInfo({
+          producersCount: res.producers_count,
+          totalHas: res.total_has,
+          isFallback: res.is_fallback,
+        });
+      })
+      .catch((err) => {
+        console.error("Error al obtener benchmark desde la base de datos:", err);
+        if (!isMounted) return;
+        const avgAge = (effectiveAgeRange.min + effectiveAgeRange.max) / 2;
+        setDbBenchmark(avgAge <= 5 ? BENCHMARK_BY_AGE.young : BENCHMARK_BY_AGE["9-11"]);
+        setBenchmarkInfo(null);
+      })
+      .finally(() => {
+        if (isMounted) setBenchmarkLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, effectiveAgeRange.min, effectiveAgeRange.max]);
+
+  // Benchmark de la media de productores (extraído de la BD o fallback agronómico)
+  const benchmarkData = useMemo(() => {
+    if (dbBenchmark) return dbBenchmark;
+    if (ageRangePreset === "young") return BENCHMARK_BY_AGE.young;
     return BENCHMARK_BY_AGE["9-11"];
-  }, [ageRangePreset, effectiveAgeRange]);
+  }, [dbBenchmark, ageRangePreset]);
 
   // Métricas medias anuales del productor en esta etapa etaria
   const producerTotalCostHa = useMemo(() => {
-    return cohortAnalysis.totalHaYears > 0
-      ? cohortAnalysis.totalCostsInBracket / cohortAnalysis.totalHaYears
-      : 0;
+    const denom = cohortAnalysis.totalHaYearsCost > 0 ? cohortAnalysis.totalHaYearsCost : cohortAnalysis.totalHaYears;
+    return denom > 0 ? cohortAnalysis.totalCostsInBracket / denom : 0;
   }, [cohortAnalysis]);
 
   const producerTotalCostKg = useMemo(() => {
@@ -1040,10 +1094,10 @@ const Costos = () => {
   }, [cohortAnalysis]);
 
   const producerRendimiento = useMemo(() => {
-    return cohortAnalysis.totalHaYears > 0
-      ? cohortAnalysis.totalKilosInBracket / cohortAnalysis.totalHaYears
-      : 0;
+    const denom = cohortAnalysis.totalHaYearsProd > 0 ? cohortAnalysis.totalHaYearsProd : cohortAnalysis.totalHaYears;
+    return denom > 0 ? cohortAnalysis.totalKilosInBracket / denom : 0;
   }, [cohortAnalysis]);
+
 
   const diffTotalHa = producerTotalCostHa - benchmarkData.totalCostosHa;
   const diffTotalHaPercent =
@@ -1065,10 +1119,10 @@ const Costos = () => {
 
   // Lista detallada comparativa por rubro
   const comparisonList = useMemo(() => {
+    const haDenom = cohortAnalysis.totalHaYearsCost > 0 ? cohortAnalysis.totalHaYearsCost : cohortAnalysis.totalHaYears;
     return Object.entries(CATEGORIES_CONFIG).map(([key, config]) => {
       const rubroTotal = cohortAnalysis.categoryCosts[key] || 0;
-      const producerCostHa =
-        cohortAnalysis.totalHaYears > 0 ? rubroTotal / cohortAnalysis.totalHaYears : 0;
+      const producerCostHa = haDenom > 0 ? rubroTotal / haDenom : 0;
       const producerCostKg =
         cohortAnalysis.totalKilosInBracket > 0 ? rubroTotal / cohortAnalysis.totalKilosInBracket : 0;
 
@@ -1341,13 +1395,13 @@ const Costos = () => {
       </div>
 
       {/* Selector de Tabs Principales (Pill Bar) */}
-      <div className="inline-flex p-1 bg-[#f6ebd8] rounded-xl border border-[#ede1cb]">
+      <div className="inline-flex p-1 bg-muted/70 rounded-xl ">
         <button
           onClick={() => setActiveTab("resumen")}
           className={cn(
             "px-5 py-2 rounded-lg text-sm font-medium transition-all",
             activeTab === "resumen"
-              ? "bg-white text-primary hover:text-accent shadow-xs font-semibold"
+              ? "bg-background text-primary hover:text-accent shadow-xs font-semibold"
               : "text-[#8c7b70] hover:text-accent"
           )}
         >
@@ -2668,8 +2722,22 @@ const Costos = () => {
                 Comparativa por Edad de Montes vs. Media de productores
               </h2>
             </div>
-            <div className="text-xs text-[#8f827a] bg-stone-50 px-3 py-1.5 rounded-xl border border-stone-200">
-              Trayectoria evaluada: <strong className="text-primary">{campaigns.length}</strong> campañas registradas
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="text-xs text-[#8f827a] bg-stone-50 px-3 py-1.5 rounded-xl border border-stone-200">
+                Trayectoria propia: <strong className="text-primary">{cohortAnalysis.monteSummaries.length}</strong> montes ({cohortAnalysis.totalHaYears.toFixed(1)} Has-Año)
+              </div>
+              <div className="text-xs text-stone-600 bg-emerald-50/70 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5 font-medium">
+                {benchmarkLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                ) : (
+                  <Database className="w-3.5 h-3.5 text-emerald-600" />
+                )}
+                <span>
+                  {benchmarkInfo && !benchmarkInfo.isFallback
+                    ? `Media BD: ${benchmarkInfo.producersCount} ${benchmarkInfo.producersCount === 1 ? 'productor' : 'productores'} (${benchmarkInfo.totalHas} Has)`
+                    : 'Referencia general'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -2705,7 +2773,7 @@ const Costos = () => {
             <div className="flex flex-wrap items-center gap-2">
               {[
                 { id: "young", label: "1 a 5 años", badge: "Formación" },
-                { id: "9-11", label: "9 a 11 años", badge: "Base CAPPecan" },
+                { id: "9-11", label: "9 a 11 años", badge: "Producción media" },
                 { id: "custom", label: "Personalizado...", badge: "Rango a medida" },
               ].map((preset) => {
                 const isActive = ageRangePreset === preset.id;
